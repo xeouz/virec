@@ -1,2 +1,0 @@
-/usr/bin/ar qc libvire-parser.a  CMakeFiles/vire-parser.dir/src/Vire/AST-Parse/parser.cpp.o
-/usr/bin/ranlib libvire-parser.a
