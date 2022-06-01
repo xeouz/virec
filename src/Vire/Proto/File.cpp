@@ -1,14 +1,15 @@
-#pragma once
-
 #include <iostream>
 #include <fstream>
 #include <string>
+
+#include "File.hpp"
 
 namespace vire
 {
 namespace proto
 {
-    static std::fstream openFile(const std::string& filename)
+
+    std::fstream openFile(const std::string& filename)
     {
         std::fstream file(filename);
 
@@ -20,7 +21,7 @@ namespace proto
         return file;
     }
 
-    static std::fstream openFile(const char* filename)
+    std::fstream openFile(const char* filename)
     {
         std::fstream file(filename);
 
@@ -32,7 +33,7 @@ namespace proto
         return file;
     }
 
-    static std::string readFile(std::fstream& file, char close=0)
+    std::string readFile(std::fstream& file, char close)
     {
         std::string buf, out;
 
@@ -46,5 +47,6 @@ namespace proto
 
         return out;
     }
+
 }
 }

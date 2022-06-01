@@ -1,0 +1,1 @@
+/home/dev0/Programming/llvm-project/build/bin/clang++     CMakeFiles/VIRELANG.dir/src/main.cpp.o  -o VIRELANG  libvire-parser.a libvire-proto-file.a 

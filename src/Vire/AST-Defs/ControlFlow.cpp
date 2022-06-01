@@ -18,8 +18,8 @@ public:
     : Condition(std::move(Condition)), ThenBlock(std::move(ThenBlock))
     {}
 
-    std::unique_ptr<ExprAST> getCondition() {return std::move(Condition);}
-    std::unique_ptr<ExprAST> getThenBlock() {return std::move(ThenBlock);}
+    const std::unique_ptr<ExprAST>& getCondition() {return Condition;}
+    const std::unique_ptr<ExprAST>& getThenBlock() {return ThenBlock;}
 };
 
 class IfExprAST : public ExprAST
@@ -45,9 +45,10 @@ public:
     : IfThen(std::move(IfThen)), ElseBlock(std::move(ElseBlock)), ElifLadder(std::move(ElifLadder)),
     has_else(1), has_finally(1), has_elif(1), ExprAST("",ast_if) {}
 
-    std::unique_ptr<IfThenExpr> getIfThen() {return std::move(IfThen);}
-    std::unique_ptr<ExprAST> getElseBlock() {return std::move(ElseBlock);}
-    std::vector<std::unique_ptr<IfThenExpr>> getElifLadder() {return std::move(ElifLadder);}
+    const std::unique_ptr<IfThenExpr>& getIfThen() {return IfThen;}
+    const std::unique_ptr<ExprAST>& getElseBlock() {return ElseBlock;}
+    const std::vector<std::unique_ptr<IfThenExpr>>& getElifLadder() {return ElifLadder;}
+    const std::unique_ptr<ExprAST>& getFinallyBlock() {return FinallyBlock;}
 };
 
 }

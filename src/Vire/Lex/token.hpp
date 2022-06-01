@@ -86,5 +86,5 @@ enum token
     tok_dot=-58,
 };
 
-const char* tokToStr(int type);
+static const char* tokToStr(int tok);
 }

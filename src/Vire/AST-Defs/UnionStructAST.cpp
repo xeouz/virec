@@ -23,7 +23,7 @@ public:
 
     const std::string& getName() const {return Name;}
 
-    std::unique_ptr<ExprAST> getMember(const std::string& varName);
+    const std::vector<std::unique_ptr<ExprAST>>& getMembers() const {return Members;}
 };
 
 class StructExprAST : public ExprAST
@@ -39,7 +39,7 @@ public:
 
     const std::string& getName() const {return Name;}
 
-    std::unique_ptr<ExprAST> getMember(const std::string& varName);
+    const std::vector<std::unique_ptr<ExprAST>>& getMembers() const {return Members;}
 };
 
 }

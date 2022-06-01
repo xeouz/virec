@@ -44,6 +44,8 @@ public:
     
     const std::string& getType() const {return returnType;}
     std::string getName() const {return Name;}
+
+    const std::vector<std::unique_ptr<VariableDefAST>>& getArgs() const {return Args;}
 };
 
 class ExternAST : public FunctionBaseAST
@@ -78,18 +80,7 @@ public:
     ReturnExprAST(std::vector<std::unique_ptr<ExprAST>> Values) : Values(std::move(Values)), ExprAST("",ast_return)
     {}
 
-    std::vector<std::unique_ptr<ExprAST>> getValues() 
-    {
-        std::vector<std::unique_ptr<ExprAST>> ret;
-
-        for(auto& item:Values)
-        {
-            std::unique_ptr<ExprAST> ast(static_cast<ExprAST*>(item.get()));
-            ret.push_back(std::move(ast));
-        }
-        
-        return std::move(ret);
-    }
+    const std::vector<std::unique_ptr<ExprAST>>& getValues() {return Values;}
 };
 
 }

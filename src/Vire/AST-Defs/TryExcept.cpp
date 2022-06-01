@@ -24,8 +24,8 @@ public:
     , ExprAST("",ast_try), has_except(1) {}
 
     std::unique_ptr<ExprAST> getCatchException() {return std::move(CatchException);}
-    std::vector<std::unique_ptr<ExprAST>> getTryBody() {return std::move(body);}
-    std::vector<std::unique_ptr<ExprAST>> getCatchBody() {return std::move(CatchBody);}
+    const std::vector<std::unique_ptr<ExprAST>>& getTryBody() {return body;}
+    const std::vector<std::unique_ptr<ExprAST>>& getCatchBody() {return CatchBody;}
 };
 
 }

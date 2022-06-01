@@ -40,8 +40,7 @@ enum asttype
     ast_new,
     ast_delete,
     ast_unsafe,
-
-    ast_let,
+    
     ast_reference,
 
     ast_try,

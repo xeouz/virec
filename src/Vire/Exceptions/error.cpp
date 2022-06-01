@@ -4,7 +4,7 @@
 #include <memory>
 #include <cstdlib>
 
-void LogExc(const char* str)
+static void LogExc(const char* str)
 {
     std::cout<<str<<std::endl;
     exit(1);

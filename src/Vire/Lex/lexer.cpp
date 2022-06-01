@@ -41,6 +41,7 @@ public:
         }
         this->jit=jit;
     }
+    ~Virelex(){}
 
     char getNext(char move_amt=0)
     {

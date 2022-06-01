@@ -22,16 +22,18 @@ public:
         }
     }
 
-    friend std::ostream& operator<<(std::ostream& os, const Viretoken* tok);
+    ~Viretoken(){}
+
+    inline friend std::ostream& operator<<(std::ostream& os, const Viretoken& tok);
 };
 
-std::ostream& operator<<(std::ostream& os, const Viretoken& tok)
+inline std::ostream& operator<<(std::ostream& os, const vire::Viretoken& tok)
 {
     os<<tokToStr(tok.type);
     return os;
 }
 
-const char* tokToStr(int tok)
+static const char* tokToStr(int tok)
 {
     switch(tok)
     {

@@ -1,0 +1,2 @@
+/usr/bin/ar qc libvire-proto-file.a  CMakeFiles/vire-proto-file.dir/src/Vire/Proto/File.cpp.o
+/usr/bin/ranlib libvire-proto-file.a

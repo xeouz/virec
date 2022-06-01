@@ -1,0 +1,5 @@
+/home/dev0/Programming/Virelang/build/CMakeFiles/edit_cache.dir
+/home/dev0/Programming/Virelang/build/CMakeFiles/vire-parser.dir
+/home/dev0/Programming/Virelang/build/CMakeFiles/rebuild_cache.dir
+/home/dev0/Programming/Virelang/build/CMakeFiles/vire-proto-file.dir
+/home/dev0/Programming/Virelang/build/CMakeFiles/VIRELANG.dir
