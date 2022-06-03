@@ -12,6 +12,8 @@ add_executable(VIRELANG src/main.cpp)
 # Compiling Parser lib
 include(cmake/Parser.cmake)
 include(cmake/Proto.cmake)
+include(cmake/VAnalyzer.cmake)
+include(cmake/ErrorBuilder.cmake)
 
 # Copy the resources to the build directory
 add_custom_command(

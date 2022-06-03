@@ -47,6 +47,8 @@ public:
     const unsigned char& isLet() const {return islet;}
     const unsigned char& isArr() const {return isarr;}
     const unsigned int& getArrSize() const {return arr_size;}
+
+    const std::unique_ptr<ExprAST>& getValue() const {return Value;}
 };
 
 class TypedVarAST : public ExprAST
