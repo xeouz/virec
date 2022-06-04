@@ -8,6 +8,8 @@
 #include <vector>
 #include <memory>
 
+#include "../Lex/token.cpp"
+
 namespace vire
 {
 // IntExprAST - Class for representing ints, eg - 123
@@ -15,7 +17,7 @@ class IntExprAST : public ExprAST
 {
     int val;
 public:
-    IntExprAST(int val) : val(val), ExprAST("int",ast_int) {}
+    IntExprAST(int val, std::unique_ptr<Viretoken> token=nullptr) : val(val), ExprAST("int",ast_int,std::move(token)) {}
 
     const int& getValue() const {return val;}
 };
@@ -25,7 +27,7 @@ class FloatExprAST: public ExprAST
 {
     float val;
 public:
-    FloatExprAST(float val) : val(val), ExprAST("float",ast_float) {}
+    FloatExprAST(float val, std::unique_ptr<Viretoken> token=nullptr) : val(val), ExprAST("float",ast_float, std::move(token)) {}
 
     const float& getValue() const {return val;}
 };
@@ -35,7 +37,7 @@ class DoubleExprAST: public ExprAST
 {
     double val;
 public:
-    DoubleExprAST(double val) : val(val), ExprAST("double",ast_double) {}
+    DoubleExprAST(double val, std::unique_ptr<Viretoken> token) : val(val), ExprAST("double",ast_double,std::move(token)) {}
 
     const double& getValue() const {return val;}
 };
@@ -45,7 +47,7 @@ class CharExprAST : public ExprAST
 {
     char val;
 public:
-    CharExprAST(char val) : val(val), ExprAST("char",ast_char) {}
+    CharExprAST(char val, std::unique_ptr<Viretoken> token=nullptr) : val(val), ExprAST("char",ast_char,std::move(token)) {}
 
     const char& getValue() const {return val;}
 };
@@ -55,7 +57,7 @@ class StrExprAST : public ExprAST
 {
     std::string val;
 public:
-    StrExprAST(const std::string& val) : val(val), ExprAST("str",ast_str) {}
+    StrExprAST(const std::string& val, std::unique_ptr<Viretoken> token=nullptr) : val(val), ExprAST("str",ast_str,std::move(token)) {}
 
     const std::string& getValue() const {return val;}
 };

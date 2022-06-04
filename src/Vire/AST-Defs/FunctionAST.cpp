@@ -7,19 +7,22 @@
 #include "ASTType.hpp"
 #include "ExprAST.cpp"
 #include "VariableAST.cpp"
+#include "../Lex/token.cpp"
 
 namespace vire
 {
 // CallExprAST - Class for function calls, eg - `print()`
 class CallExprAST : public ExprAST
 {
-    std::string Callee;
+    std::unique_ptr<Viretoken> Callee;
     std::vector<std::unique_ptr<ExprAST>> Args;
 public:
-    CallExprAST(const std::string& Callee, std::vector<std::unique_ptr<ExprAST>> Args)
-    : Callee(Callee), Args(std::move(Args)), ExprAST("void",ast_call){}
+    CallExprAST(std::unique_ptr<Viretoken> Callee, std::vector<std::unique_ptr<ExprAST>> Args)
+    : Callee(std::move(Callee)), Args(std::move(Args)), ExprAST("void",ast_call){}
 
-    const std::string& getName() const {return Callee;}
+    const std::string& getName() const {return Callee->value;}
+    const std::unique_ptr<Viretoken>& getToken() const {return Callee;}
+    std::unique_ptr<Viretoken> moveToken() {return std::move(Callee);}
     std::vector<std::unique_ptr<ExprAST>> getArgs() {return std::move(Args);}
 };
 
@@ -32,18 +35,18 @@ public:
 // PrototypeAST - Class for prototype functions, captures function name and args
 class PrototypeAST : public FunctionBaseAST
 {
-    std::string Name;
-    std::string returnType;
+    std::unique_ptr<Viretoken> Name;
+    std::unique_ptr<Viretoken> returnType;
     std::vector<std::unique_ptr<VariableDefAST>> Args;
 public:
     int asttype;
-    PrototypeAST(const std::string& Name, std::vector<std::unique_ptr<VariableDefAST>> Args, std::string returnType)
-    : Name(Name), Args(std::move(Args)), returnType(returnType) {}
-    PrototypeAST(const std::string& Name, std::vector<std::unique_ptr<VariableDefAST>> Args)
-    : Name(Name), Args(std::move(Args)), returnType("void") {}
+    PrototypeAST(std::unique_ptr<Viretoken> Name, std::vector<std::unique_ptr<VariableDefAST>> Args, std::unique_ptr<Viretoken> returnType)
+    : Name(std::move(Name)), Args(std::move(Args)), returnType(std::move(returnType)) {}
+    PrototypeAST(std::unique_ptr<Viretoken> Name, std::vector<std::unique_ptr<VariableDefAST>> Args)
+    : Name(std::move(Name)), Args(std::move(Args)), returnType(nullptr) {}
     
-    const std::string& getType() const {return returnType;}
-    std::string getName() const {return Name;}
+    const std::string& getType() const {return returnType->value;}
+    std::string getName() const {return Name->value;}
 
     const std::vector<std::unique_ptr<VariableDefAST>>& getArgs() const {return Args;}
 };
@@ -71,7 +74,6 @@ public:
     const std::string& getType() const {return Proto->getType();}
     std::string getName() const {return Proto->getName();}
 };
-
 
 class ReturnExprAST : public ExprAST
 {

@@ -5,6 +5,7 @@
 
 #include "VariableAST.cpp"
 #include "FunctionAST.cpp"
+#include "../Lex/token.cpp"
 
 #include <string>
 #include <vector>
@@ -15,20 +16,20 @@ namespace vire
 
 class ClassAST
 {
-    std::string Name;
-    std::string Parent;
+    std::unique_ptr<Viretoken> Name;
+    std::unique_ptr<Viretoken> Parent;
     std::vector<std::unique_ptr<FunctionBaseAST>> Functions;
     std::vector<std::unique_ptr<VariableDefAST>> Variables;
 public:
-    ClassAST(std::string Name, std::vector<std::unique_ptr<FunctionBaseAST>> Functions)
-    : Name(Name), Functions(std::move(Functions)), Parent("") {}
-    ClassAST(std::string Name, std::vector<std::unique_ptr<FunctionBaseAST>> Functions
+    ClassAST(std::unique_ptr<Viretoken> Name, std::vector<std::unique_ptr<FunctionBaseAST>> Functions)
+    : Name(std::move(Name)), Functions(std::move(Functions)), Parent(nullptr) {}
+    ClassAST(std::unique_ptr<Viretoken> Name, std::vector<std::unique_ptr<FunctionBaseAST>> Functions
     , std::vector<std::unique_ptr<VariableDefAST>> Variables)
-    : Name(Name), Functions(std::move(Functions)), Parent(""), Variables(std::move(Variables))
+    : Name(std::move(Name)), Functions(std::move(Functions)), Parent(nullptr), Variables(std::move(Variables))
     {}
-    ClassAST(std::string Name, std::vector<std::unique_ptr<FunctionBaseAST>> Functions
-    , std::vector<std::unique_ptr<VariableDefAST>> Variables, std::string Parent)
-    : Name(Name), Functions(std::move(Functions)), Parent(Parent), Variables(std::move(Variables))
+    ClassAST(std::unique_ptr<Viretoken> Name, std::vector<std::unique_ptr<FunctionBaseAST>> Functions
+    , std::vector<std::unique_ptr<VariableDefAST>> Variables, std::unique_ptr<Viretoken> Parent)
+    : Name(std::move(Name)), Functions(std::move(Functions)), Parent(std::move(Name)), Variables(std::move(Variables))
     {}
 
     template<typename T>
@@ -86,30 +87,30 @@ public:
         }
     }
 
-    const std::string& getParent() const {return Parent;}
-    const std::string& getName() const {return Name;}
+    const std::string& getParent() const {return Parent->value;}
+    const std::string& getName() const {return Name->value;}
 };
 
 class NewExprAST : public ExprAST
 {
-    std::string ClassName;
+    std::unique_ptr<Viretoken> ClassName;
     std::vector<std::unique_ptr<ExprAST>> Args;
 public:
-    NewExprAST(const std::string&ClassName, std::vector<std::unique_ptr<ExprAST>> Args)
-    : ClassName(ClassName), Args(std::move(Args)), ExprAST("",ast_new) {};
+    NewExprAST(std::unique_ptr<Viretoken> ClassName, std::vector<std::unique_ptr<ExprAST>> Args)
+    : ClassName(std::move(ClassName)), Args(std::move(Args)), ExprAST("",ast_new) {};
 
-    const std::string& getName() const {return ClassName;}
+    const std::string& getName() const {return ClassName->value;}
     std::vector<std::unique_ptr<ExprAST>> getArgs() {return std::move(Args);}
 };
 
 class DeleteExprAST : public ExprAST
 {
-    std::string varName;
+    std::unique_ptr<Viretoken> varName;
 public:
-    DeleteExprAST(const std::string& varName) : varName(varName), ExprAST("",ast_delete) 
+    DeleteExprAST(std::unique_ptr<Viretoken> varName) : varName(std::move(varName)), ExprAST("",ast_delete) 
     {}
 
-    const std::string& getName() const {return varName;}
+    const std::string& getName() const {return varName->value;}
 };
 
 class ClassAccessAST : public ExprAST

@@ -14,7 +14,19 @@ public:
     std::string value;
     char invalid;
 
-    Viretoken(std::string value, int type) : value(value), type(type)
+    std::size_t line;
+    std::size_t charpos;
+
+    Viretoken(std::string value, int type) 
+    : value(value), type(type), line(0), charpos(0)
+    {
+        if(type>=0)
+        {
+            this->invalid=1;
+        }
+    }
+    Viretoken(std::string value, int type, std::size_t line, std::size_t charpos) 
+    : value(value), type(type), line(line), charpos(charpos)
     {
         if(type>=0)
         {

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../Lex/token.hpp"
+#include "../Lex/token.cpp"
 
 #include <string>
 #include <memory>
@@ -15,10 +16,12 @@ class VariableExprAST : public ExprAST
 {
     std::string Name;
 public:
-    VariableExprAST(const std::string& Name) : Name(Name), ExprAST("",ast_var) {}
-    void setType(const std::string& newtype) {this->type=std::string(newtype);}
+    VariableExprAST(std::unique_ptr<Viretoken> Name) : Name(Name->value), ExprAST("",ast_var) 
+    {setToken(std::move(Name));} 
 
     const std::string& getName() const {return Name;}
+    const std::unique_ptr<Viretoken>& getToken() const {return token;}
+    std::unique_ptr<Viretoken> moveToken() {return std::move(token);}
 };
 
 class VariableAssignAST: public ExprAST
@@ -26,8 +29,8 @@ class VariableAssignAST: public ExprAST
     std::string Name;
     std::unique_ptr<ExprAST> Value;
 public: 
-    VariableAssignAST(const std::string& Name, std::unique_ptr<ExprAST> Value)
-    : Name(Name), Value(std::move(Value)), ExprAST("void",ast_varassign) {}
+    VariableAssignAST(std::unique_ptr<Viretoken> Name, std::unique_ptr<ExprAST> Value)
+    : Name(Name->value), Value(std::move(Value)), ExprAST("void",ast_varassign) {setToken(std::move(Name));}
 };
 
 class VariableDefAST : public ExprAST
@@ -37,12 +40,12 @@ class VariableDefAST : public ExprAST
     unsigned char isconst, islet, isarr;
     unsigned int arr_size;
 public:
-    VariableDefAST(const std::string& Name, const std::string& type, std::unique_ptr<ExprAST> Value,
+    VariableDefAST(std::unique_ptr<Viretoken> Name, const std::string& type, std::unique_ptr<ExprAST> Value,
     unsigned char isconst=0, unsigned char islet=0, unsigned char isarr=0, int arr_size=0)
-    : Name(Name),Value(std::move(Value)),ExprAST(type,ast_vardef),
-    isconst(isconst),islet(islet),isarr(isarr),arr_size(arr_size) {}
+    : Name(Name->value),Value(std::move(Value)),ExprAST(type,ast_vardef), 
+    isconst(isconst),islet(islet),isarr(isarr),arr_size(arr_size) {setToken(std::move(Name));}
 
-    std::string getName() const {return Name;}
+    const std::string& getName() const {return Name;}
     const unsigned char& isConst() const {return isconst;}
     const unsigned char& isLet() const {return islet;}
     const unsigned char& isArr() const {return isarr;}
@@ -53,12 +56,13 @@ public:
 
 class TypedVarAST : public ExprAST
 {
-    std::string Name;
+    std::unique_ptr<Viretoken> Name;
 public:
-    TypedVarAST(std::string Name, std::string Type) : Name(Name), ExprAST(Type, ast_typedvar)
-    {}
+    TypedVarAST(std::unique_ptr<Viretoken> Name, std::unique_ptr<Viretoken> Type) 
+    : Name(std::move(Name)), ExprAST(Type->value,ast_typedvar)
+    {setToken(std::move(Type));}
 
-    const std::string& getName() const {return Name;}
+    const std::string& getName() const {return Name->value;}
 };
 
 }

@@ -46,6 +46,7 @@ public:
 
     void getNextToken();
     void getNextToken(int toktype);
+    std::unique_ptr<Viretoken> copyCurrentToken();
 
     std::vector<std::unique_ptr<ExprAST>> ParseBlock();
 
@@ -64,7 +65,7 @@ public:
     std::unique_ptr<ExprAST> ParseBinopExpr(int ExprPrec, std::unique_ptr<ExprAST> LHS);
 
     std::unique_ptr<ExprAST> ParseVariableDef();
-    std::unique_ptr<ExprAST> ParseVariableAssign(const std::string& varName);
+    std::unique_ptr<ExprAST> ParseVariableAssign(std::unique_ptr<Viretoken> varName);
     std::unique_ptr<TypedVarAST> ParseTypedVar();
 
     std::unique_ptr<ExprAST> ParseForExpr();

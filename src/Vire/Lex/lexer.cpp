@@ -18,7 +18,8 @@ class Virelex
 protected:
     char cur;
     std::size_t indx;
-    
+    std::size_t line;
+    std::size_t charpos;
 public:
     unsigned char jit;
     std::string code;
@@ -122,7 +123,7 @@ public:
 
     std::unique_ptr<Viretoken> nomove_makeToken(std::string value, int type)
     {
-        auto tok=std::make_unique<Viretoken>(value,type);
+        auto tok=std::make_unique<Viretoken>(value,type,this->line,this->charpos+1);
         return std::move(tok);
     }
 
@@ -145,8 +146,18 @@ public:
     std::unique_ptr<Viretoken> getToken()
     {
         while(isspace(this->cur))
+        {
+            if(this->cur=='\n')
+            {
+                ++this->line;
+                this->charpos=0;
+            }
+            else
+            {
+                ++this->charpos;
+            }
             this->cur=getNext();
-        
+        }
         // Checks
         if(isalpha(this->cur))
         {
