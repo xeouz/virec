@@ -4,6 +4,7 @@ namespace vire
 {
 enum asttype
 {
+    ast_code,
     ast_var,
     ast_vardef,
     ast_varassign,

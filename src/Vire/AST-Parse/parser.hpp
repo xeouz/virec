@@ -37,7 +37,6 @@ public:
     Vireparse(std::unique_ptr<Virelex> lexer, std::unique_ptr<Commons> config)
     : lexer(std::move(lexer)), config(std::move(config)), CurTok(std::make_unique<Viretoken>("",tok_eof)) {}
 
-
     std::unique_ptr<ExprAST> LogError(const char* str,...);
     std::unique_ptr<PrototypeAST> LogErrorP(const char* str,...);
     std::unique_ptr<FunctionAST> LogErrorF(const char* str,...);
@@ -90,6 +89,8 @@ public:
 
     std::unique_ptr<ExprAST> ParseUnsafe();
     std::unique_ptr<ExprAST> ParseReference();
+
+    std::unique_ptr<CodeAST> ParseCode();
 };
 
 }

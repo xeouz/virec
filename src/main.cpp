@@ -13,22 +13,8 @@ int main()
     auto lexer=std::make_unique<vire::Virelex>(code);
     auto parser=std::make_unique<vire::Vireparse>(std::move(lexer));
 
-    parser->getNextToken();
-
-    auto var=parser->ParseVariableDef();
-    std::cout << "On line: " << var->getCharpos () << std::endl;
-
-    //std::unique_ptr<vire::VariableDefAST> f(static_cast<vire::VariableDefAST*>(parser->ParseVariableDef().release()));
-
-    //auto v=std::make_unique<vire::VAnalyzer>();
-    //v->verifyVarDef(f);
-
-    //auto e=new vire::errors::ErrorBuilder();
-
-    //e->addError<vire::errors::lex_unknown_char>('a','b');
-    //e->showErrors();
-
-    //delete e;
+    auto ast=parser->ParseCode();
+    std::cout << "Parsed AST" << std::endl;
 
     return 0;
 }

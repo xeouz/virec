@@ -106,17 +106,6 @@ namespace vire
         return std::move(Stms);
     }
 
-    std::unique_ptr<FunctionAST> Vireparse::ParseTopLevelExpr()
-    {
-        if(auto E=ParseExpression())
-        {
-            auto Proto=std::make_unique<PrototypeAST>(nullptr,std::vector<std::unique_ptr<VariableDefAST>>());
-            std::vector<std::unique_ptr<ExprAST>> stms;
-            stms.push_back(std::move(E));
-            return std::make_unique<FunctionAST>(std::move(Proto),std::move(stms));
-        }
-        return nullptr;
-    }
     std::unique_ptr<ExprAST> Vireparse::ParsePrimary()
     {
         switch(CurTok->type)
@@ -732,4 +721,54 @@ namespace vire
         return std::make_unique<ReferenceExprAST>(std::move(var));
     }
 
+    std::unique_ptr<CodeAST> Vireparse::ParseCode()
+    {
+        getNextToken();
+
+        std::vector<std::unique_ptr<ExprAST>> PreExecutionStatements;
+        std::vector<std::unique_ptr<FunctionBaseAST>> Functions;
+        std::vector<std::unique_ptr<ClassAST>> Classes;
+        std::vector<std::unique_ptr<ExprAST>> StructUnionDefs;
+        while(CurTok->type!=tok_eof)
+        {
+            if(CurTok->type==tok_class)
+            {
+                auto class_ast=ParseClass();
+                Classes.push_back(std::move(class_ast));
+            }
+            else if(CurTok->type==tok_func)
+            {
+                auto func_ast=ParseFunction();
+                Functions.push_back(std::move(func_ast));
+            }
+            else if(CurTok->type==tok_proto)
+            {
+                auto proto_ast=ParseProto();
+                Functions.push_back(std::move(proto_ast));
+            }
+            else if(CurTok->type==tok_extern)
+            {
+                auto extern_ast=ParseExtern();
+                Functions.push_back(std::move(extern_ast));
+            }
+            else if(CurTok->type==tok_struct)
+            {
+                auto struct_ast=ParseStruct();
+                StructUnionDefs.push_back(std::move(struct_ast));
+            }
+            else if(CurTok->type==tok_union)
+            {
+                auto union_ast=ParseUnion();
+                StructUnionDefs.push_back(std::move(union_ast));
+            }
+            else
+            {
+                auto statement=ParsePrimary();
+                PreExecutionStatements.push_back(std::move(statement));
+                getNextToken(tok_semicol);
+            }
+        }
+
+        return std::make_unique<CodeAST>(std::move(PreExecutionStatements),std::move(Functions),std::move(Classes),std::move(StructUnionDefs));
+    }
 }

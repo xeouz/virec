@@ -17,7 +17,7 @@ include(cmake/ErrorBuilder.cmake)
 
 # Copy the resources to the build directory
 add_custom_command(
-    TARGET VIRELANG POST_BUILD
+    TARGET VIRELANG PRE_BUILD
     COMMAND $(CMAKE_COMMAND) -E copy_directory
         $(CMAKE_SOURCE_DIR)/src/resources $<TARGET_FILE_DIR:VIRELANG>/resources
 )

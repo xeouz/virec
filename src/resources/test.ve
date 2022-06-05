@@ -1,3 +1,6 @@
+const abc = 10;
 
-
-const a = 10;
+func main()
+{
+    echo(abc);
+}

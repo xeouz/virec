@@ -12,4 +12,6 @@
 #include "Memory.cpp"
 #include "TryExcept.cpp"
 
+#include "CodeAST.cpp"
+
 #include "ASTType.hpp"

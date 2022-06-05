@@ -2,6 +2,7 @@
 
 #include <string>
 #include <memory>
+#include <vector>
 
 #include "../Lex/token.cpp"
 
@@ -23,4 +24,5 @@ public:
     virtual const std::size_t& getCharpos() const {return token->charpos;} 
     virtual void setToken(std::unique_ptr<Viretoken> token) {this->token.reset();this->token=std::move(token);}
 };
+
 }
