@@ -123,7 +123,8 @@ public:
 
     std::unique_ptr<Viretoken> nomove_makeToken(std::string value, int type)
     {
-        auto tok=std::make_unique<Viretoken>(value,type,this->line,this->charpos+1);
+        this->charpos+=value.length();
+        auto tok=std::make_unique<Viretoken>(value,type,this->line,this->charpos);
         return std::move(tok);
     }
 
@@ -147,15 +148,17 @@ public:
     {
         while(isspace(this->cur))
         {
-            if(this->cur=='\n')
+            if(this->cur=='\n' || this->cur=='\r')
             {
                 ++this->line;
                 this->charpos=0;
             }
             else
             {
+                
                 ++this->charpos;
             }
+            
             this->cur=getNext();
         }
         // Checks

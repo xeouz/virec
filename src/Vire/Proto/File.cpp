@@ -40,6 +40,7 @@ namespace proto
         while(std::getline(file,buf))
         {
             out += buf;
+            out += '\n';
         }
 
         if(close)
