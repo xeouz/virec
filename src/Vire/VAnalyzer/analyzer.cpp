@@ -2,29 +2,56 @@
 
 #include "../AST-Parse/Include.hpp"
 #include "../AST-Defs/Include.hpp"
+#include "../Error-Builder/Include.hpp"
+
+#include <string>
+#include <memory>
+#include <vector>
+#include <algorithm>
 
 namespace vire
 {
     bool VAnalyzer::isVarDefined(const std::string& name)
     {
+        if(!variables.empty())
+        {
+            for(int i=0; i<variables.size(); i++)
+            {
+                if(variables[i]->getName()==name)
+                {
+                    return true;
+                }
+            }
+        }
         return false;
     }
 
-    bool VAnalyzer::verifyVar(std::unique_ptr<VariableExprAST> var)
+    // Verification Functions
+    std::string VAnalyzer::verifyVar(const std::unique_ptr<VariableExprAST>& var)
     {
         // Check if it is defined
         if(!isVarDefined(var->getName()))
         {
             // Var is not defined
-            return false;
+            return "";
         }
-        return true;
+        return "";
     }
-    bool VAnalyzer::verifyVarDef(const std::unique_ptr<VariableDefAST>& var)
+    std::string VAnalyzer::verifyVarDef(const std::unique_ptr<VariableDefAST>& var)
     {
-        std::cout << "Hello there from vardef analyzer " << var->getName() << std::endl;
-
-        return false;
+        if(!isVarDefined(var->getName()))
+        {
+            if(var->isLet() || var->isConst())
+            {
+                if(var->getValue() == nullptr && var->getType() == "auto")
+                {
+                    // Requires a variable for definiton
+                    std::cout << "Error: " << var->getName() << " is not defined" << std::endl;
+                }
+            }
+        }
+        // Variable is already defined
+        return "";
     }
 
 }

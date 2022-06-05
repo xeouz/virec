@@ -8,6 +8,7 @@
 
 namespace vire
 {
+
 class ExprAST{
 protected:
     std::string type;

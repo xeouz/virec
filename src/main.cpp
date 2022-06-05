@@ -13,8 +13,15 @@ int main()
     auto lexer=std::make_unique<vire::Virelex>(code);
     auto parser=std::make_unique<vire::Vireparse>(std::move(lexer));
 
-    auto ast=parser->ParseCode();
-    std::cout << "Parsed AST" << std::endl;
+    parser->getNextToken();
+    auto ast=vire::case_static<vire::VariableDefAST>(std::move(parser->ParseVariableDef()));
+
+    auto analyzer=std::make_unique<vire::VAnalyzer>();
+    analyzer->verifyVarDef(ast);
+
+    auto builder=std::make_unique<vire::errors::ErrorBuilder>();
+    builder->setPrefix("This program");
+    auto f=builder->constructCodePosition(code, 2,5,4);
 
     return 0;
 }

@@ -14,4 +14,6 @@
 
 #include "CodeAST.cpp"
 
+#include "HelperFunctions.cpp"
+
 #include "ASTType.hpp"

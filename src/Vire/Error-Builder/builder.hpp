@@ -27,6 +27,9 @@ public:
 
     void setPrefix(const std::string& newprefix) {prefix=newprefix;}
 
+    std::string constructCodePosition
+    (const std::string& input, std::size_t line, std::size_t column, int column_len=1);
+
     template<errortypes X>
     void addError();
 
