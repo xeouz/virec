@@ -31,7 +31,8 @@ public:
     std::unique_ptr<ExprAST> moveCond() {return std::move(condExpr);}
     std::unique_ptr<ExprAST> moveIncr() {return std::move(incrExpr);}
 
-    std::vector<std::unique_ptr<ExprAST>> getBody() {return std::move(body);}
+    std::vector<std::unique_ptr<ExprAST>> const& getBody() { return body; }
+    std::vector<std::unique_ptr<ExprAST>> moveBody() {return std::move(body);}
 };
 
 class WhileExprAST : public ExprAST
@@ -45,7 +46,8 @@ public:
 
     std::unique_ptr<ExprAST> getCond() {return std::move(condExpr);}
     
-    std::vector<std::unique_ptr<ExprAST>> getBody() {return std::move(body);}
+    std::vector<std::unique_ptr<ExprAST>> const& getBody() { return body; }
+    std::vector<std::unique_ptr<ExprAST>> moveBody() {return std::move(body);}
 };
 
 class BreakExprAST : public ExprAST

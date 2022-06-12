@@ -25,6 +25,20 @@ namespace vire
         }
         return false;
     }
+    bool VAnalyzer::isFuncDefined(const std::string& name)
+    {
+        if(!functions.empty())
+        {
+            for(int i=0; i<functions.size(); i++)
+            {
+                if(functions[i]->getName()==name)
+                {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
     bool VAnalyzer::addVar(std::unique_ptr<VariableDefAST> var)
     {
         if(!isVarDefined(var->getName()))
@@ -34,6 +48,19 @@ namespace vire
         }
         return false;
     }
+
+    const std::unique_ptr<FunctionBaseAST>& VAnalyzer::getFunc(const std::string& name)
+    {
+        for(int i=0; i<functions.size(); i++)
+        {
+            if(functions[i]->getName()==name)
+            {
+                return functions[i];
+            }
+        }
+        return functions[0];
+    }
+    unsigned int VAnalyzer::getFuncArgCount(const std::string& name) {return getFunc(name)->getArgs().size();}
 
     const std::unique_ptr<VariableDefAST>& VAnalyzer::getVar(const std::string& name)
     {
@@ -98,7 +125,7 @@ namespace vire
         }
         return true;
     }
-    bool VAnalyzer::verifyVarDef(std::unique_ptr<VariableDefAST> var)
+    bool VAnalyzer::verifyVarDef(const std::unique_ptr<VariableDefAST>& var)
     {
         if(!isVarDefined(var->getName()))
         {
@@ -154,7 +181,6 @@ namespace vire
 
             type=value_type;
             var->setType(type);
-            addVar(std::move(var));
         }
         // Variable is already defined
         return true;
@@ -190,30 +216,44 @@ namespace vire
         return true;
     }
 
-    bool VAnalyzer::verifyInt(const std::unique_ptr<IntExprAST>& int_) { return true; }
+    bool VAnalyzer::verifyInt(const std::unique_ptr<IntExprAST>& int_) { return int_->getValue()==10?1:0; }
     bool VAnalyzer::verifyFloat(const std::unique_ptr<FloatExprAST>& float_) { return true; }
     bool VAnalyzer::verifyDouble(const std::unique_ptr<DoubleExprAST>& double_) { return true; }
     bool VAnalyzer::verifyChar(const std::unique_ptr<CharExprAST>& char_) { return true; }
     bool VAnalyzer::verifyStr(const std::unique_ptr<StrExprAST>& str) { return true; }
+    bool VAnalyzer::verifyArray(const std::unique_ptr<ArrayExprAST>& array)
+    {
+        const auto& elems=array->getElements();
+
+        for(const auto& elem : elems)
+        {
+            if(!verifyExpr(elem))
+            {
+                // Element is not valid
+                return false;
+            }
+        }
+        return true;
+    }
 
     bool VAnalyzer::verifyFor(const std::unique_ptr<ForExprAST>& for_)
-    {
+    { 
         const auto& init=for_->getInit();
         const auto& cond=for_->getCond();
         const auto& incr=for_->getIncr();
-        if(init->asttype!=ast_var && init->asttype!=ast_varassign && init->asttype!=ast_vardef)
+        if(!(init->asttype==ast_var || init->asttype==ast_varassign || init->asttype==ast_vardef))
         {
             // Init is not a variable definition
             return false;
         }
-        if(cond->asttype!=ast_var && cond->asttype!=ast_unop && cond->asttype!=ast_binop)
+        if(!(cond->asttype==ast_var || cond->asttype==ast_unop || cond->asttype==ast_binop))
         {
             // Cond is not a boolean expression
             return false;
         }
-        if(incr->asttype!=ast_var && init->asttype!=ast_varassign)
+        if(!(incr->asttype==ast_var || incr->asttype==ast_varassign))
         {
-            // Init is not a step operation
+            // Incr is not a step operation
             return false;
         }   
 
@@ -232,40 +272,157 @@ namespace vire
             // Incr is not valid
             return false;
         }
+
+        if(!verifyBlock(for_->getBody()))
+        {
+            // Block is not valid
+            return false;
+        }
+        
+        return true;
+    }
+    bool VAnalyzer::verifyWhile(const std::unique_ptr<WhileExprAST>& while_)
+    {
+        const auto& cond=while_->getCond();
+
+        if(cond->asttype!=ast_var && cond->asttype!=ast_unop && cond->asttype!=ast_binop)
+        {
+            // Cond is not a boolean expression
+            return false;
+        }
+
+        if(!verifyExpr(cond))
+        {
+            // Cond is not valid
+            return false;
+        }
+        if(!verifyBlock(while_->getBody()))
+        {
+            // Block is not valid
+            return false;
+        }
+        return true;
+    }
+    bool VAnalyzer::verifyBreak(const std::unique_ptr<BreakExprAST>& break_) { return true; }
+    bool VAnalyzer::verifyContinue(const std::unique_ptr<ContinueExprAST>& continue_) { return true; }    
+
+    bool VAnalyzer::verifyCall(const std::unique_ptr<CallExprAST>& call)
+    {
+        auto name=call->getName();
+
+        if(!isFuncDefined(name))
+        {
+            // Function is not defined
+            return false;
+        }
+
+        const auto& args=call->getArgs();
+        
+        if(args.size() != getFuncArgCount(name))
+        {
+            // Argument count mismatch
+            return false;
+        }
+
+        for(auto& arg: args)
+        {
+            if(!verifyExpr(arg))
+            {
+                // Argument is not valid
+                return false;
+            }
+        }
+    
+        return true;
+    }
+
+    bool VAnalyzer::verifyReturn(const std::unique_ptr<ReturnExprAST>& ret)
+    {
+        const auto& func=getFunc(ret->getName());
+        const auto& ret_type=func->getType();
+
+        if(ret_type!=getType(ret->getValues()[0]))
+        {
+            // Type mismatch
+            return false;
+        }
+
+        return true;
+    }
+
+    bool VAnalyzer::verifyBinop(const std::unique_ptr<BinaryExprAST>& binop)
+    {
+        const auto& left=binop->getLHS();
+        const auto& right=binop->getRHS();
+
+        if(!verifyExpr(left))
+        {
+            // Left is not valid
+            return false;
+        }
+        if(!verifyExpr(right))
+        {
+            // Right is not valid
+            return false;
+        }
+        
+        return true;
+    }
+    bool VAnalyzer::verifyUnop(const std::unique_ptr<UnaryExprAST>& unop)
+    {
+        const auto& expr=unop->getExpr();
+
+        if(!verifyExpr(expr))
+        {
+            // Expr is not valid
+            return false;
+        }
         
         return true;
     }
 
-/*
-    bool VAnalyzer::verifyExpr(std::unique_ptr<ExprAST> expr)
+    bool VAnalyzer::verifyBlock(std::vector<std::unique_ptr<ExprAST>> const& block)
     {
-        switch (expr->asttype)
+        for(const auto& expr : block)
         {
-            case ast_int: return verifyInt(cast_static<IntExprAST>(std::move(expr)));
-            case ast_float: return verifyFloat(cast_static<FloatExprAST>(std::move(expr)));
-            case ast_double: return verifyDouble(cast_static<DoubleExprAST>(std::move(expr)));
-            case ast_str: return verifyStr(cast_static<StrExprAST>(std::move(expr)));
-            case ast_char: return verifyChar(cast_static<CharExprAST>(std::move(expr)));
-            case ast_var: return verifyVar(cast_static<VariableExprAST>(std::move(expr)));
-            case ast_vardef: return verifyVarDef(cast_static<VariableDefAST>(std::move(expr)));
-            case ast_typedvar: return verifyTypedVar(cast_static<TypedVarAST>(std::move(expr)));
-            case ast_varassign: return verifyVarAssign(cast_static<VariableAssignAST>(std::move(expr)));
+            if(!verifyExpr(expr))
+            {
+                // Expr is not valid
+                return false;
+            }
+        }
+        return true;
+    }
+
+    bool VAnalyzer::verifyExpr(const std::unique_ptr<ExprAST>& expr)
+    {
+        switch(expr->asttype)
+        {
+            case ast_int: return verifyInt((const std::unique_ptr<IntExprAST>&)expr);
+            case ast_float: return verifyFloat((const std::unique_ptr<FloatExprAST>&)expr);
+            case ast_double: return verifyDouble((const std::unique_ptr<DoubleExprAST>&)expr);
+            case ast_str: return verifyStr((const std::unique_ptr<StrExprAST>&)expr);
+            case ast_char: return verifyChar((const std::unique_ptr<CharExprAST>&)expr);
+
+            case ast_binop: return verifyBinop((const std::unique_ptr<BinaryExprAST>&)expr);
+            case ast_unop: return verifyUnop((const std::unique_ptr<UnaryExprAST>&)expr);
+
+            case ast_var: return verifyVar((const std::unique_ptr<VariableExprAST>&)expr);
+            case ast_vardef: return verifyVarDef((const std::unique_ptr<VariableDefAST>&)expr);
+            case ast_typedvar: return verifyTypedVar((const std::unique_ptr<TypedVarAST>&)expr);
+            case ast_varassign: return verifyVarAssign((const std::unique_ptr<VariableAssignAST>&)expr);
+
+            case ast_call: return verifyCall((const std::unique_ptr<CallExprAST>&)expr);
+
+            case ast_for: return verifyFor((const std::unique_ptr<ForExprAST>&)expr);
+            case ast_while: return verifyWhile((const std::unique_ptr<WhileExprAST>&)expr);
+            case ast_array: return verifyArray((const std::unique_ptr<ArrayExprAST>&)expr);
+
+            case ast_break: return verifyBreak((const std::unique_ptr<BreakExprAST>&)expr);
+            case ast_continue: return verifyContinue((const std::unique_ptr<ContinueExprAST>&)expr);
+            case ast_return: return verifyReturn((const std::unique_ptr<ReturnExprAST>&)expr);
 
             default: return false;
         }
-    }
-*/
-    bool VAnalyzer::verifyArray(const std::unique_ptr<ArrayExprAST>& array)
-    {
-        //const std::vector<std::unique_ptr<ExprAST>>& values=array->getElements();
-        //bool is_valid=true;
-        /*for(int i=0; i<values.size(); i++)
-        {
-            if(!verifyExpr(values[i]))
-            {
-                is_valid=false;
-            }
-        }*/
-        return true;
     }
 }

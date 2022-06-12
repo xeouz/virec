@@ -620,7 +620,7 @@ namespace vire
         {
             std::unique_ptr<CallExprAST> call(static_cast<CallExprAST*>(id_expr.release()));
             IdName=call->moveToken();
-            Args=call->getArgs();
+            Args=call->moveArgs();
         }
 
         return std::make_unique<NewExprAST>(std::move(IdName),std::move(Args));

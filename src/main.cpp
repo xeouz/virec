@@ -16,10 +16,10 @@ int main()
     auto parser=std::make_unique<vire::Vireparse>(std::move(lexer)); 
   
     parser->getNextToken();
-    auto ast=vire::cast_static<vire::ForExprAST>(std::move(parser->ParseForExpr()));
-
+    auto ast=std::move(parser->ParseForExpr());
+ 
     auto analyzer=std::make_unique<vire::VAnalyzer>(builder, code);
-    analyzer->verifyFor(std::move(ast));
+    std::cout << analyzer->verifyExpr(ast) << std::endl;
 
     builder->showErrors();
 

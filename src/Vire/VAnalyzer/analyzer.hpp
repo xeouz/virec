@@ -32,6 +32,7 @@ public:
     bool isClassDefined(const std::string& name);
     bool isFuncDefined(const std::string& name);
     bool isFuncDefined(const std::unique_ptr<FunctionBaseAST>& func);
+    unsigned int getFuncArgCount(const std::string& name);
     
     bool addVar(std::unique_ptr<VariableDefAST> var);
     bool addFunc(std::unique_ptr<FunctionBaseAST> func);
@@ -45,11 +46,13 @@ public:
     std::string getType(const std::unique_ptr<TypedVarAST>& var);
     std::string getType(const std::unique_ptr<ArrayExprAST>& arr);
 
+    const std::unique_ptr<FunctionBaseAST>& getFunc(const std::string& name);
+
     // Verification functions
     // Return Empty "" String if valid
 
     bool verifyVar(const std::unique_ptr<VariableExprAST>& var);
-    bool verifyVarDef(std::unique_ptr<VariableDefAST> var);
+    bool verifyVarDef(const std::unique_ptr<VariableDefAST>& var);
     bool verifyTypedVar(const std::unique_ptr<TypedVarAST>& var);
     bool verifyVarAssign(const std::unique_ptr<VariableAssignAST>& var);
 
@@ -63,8 +66,8 @@ public:
     
     bool verifyFor(const std::unique_ptr<ForExprAST>& for_);
     bool verifyWhile(const std::unique_ptr<WhileExprAST>& while_);
-    bool verifyBreak(const std::unique_ptr<BreakExprAST>& break_);
-    bool verifyContinue(const std::unique_ptr<ContinueExprAST>& continue_);
+    bool verifyBreak(const std::unique_ptr<BreakExprAST>& break_); // verification needed for break execution statement
+    bool verifyContinue(const std::unique_ptr<ContinueExprAST>& continue_); // verification needed for continue execution statements
 
     bool verifyCall(const std::unique_ptr<CallExprAST>& call);
     bool verifyProto(std::unique_ptr<PrototypeAST> proto);
