@@ -18,11 +18,13 @@ class VAnalyzer
     std::vector<std::unique_ptr<ClassAST>> classes;
 
     // Error Builder
-    std::unique_ptr<errors::ErrorBuilder> errorBuilder;
+    const std::unique_ptr<errors::ErrorBuilder>& builder;
+
+    // Source Code
+    std::string code;
 public:
-    VAnalyzer() {}
-    VAnalyzer(std::unique_ptr<errors::ErrorBuilder> builder)
-    : errorBuilder(std::move(builder)) {}
+    VAnalyzer(const std::unique_ptr<errors::ErrorBuilder>& builder=nullptr, const std::string& code="")
+    : builder(builder), code(code) {}
 
     bool isVarDefined(const std::string& name);
     bool isStructDefined(const std::string& name);
@@ -31,54 +33,63 @@ public:
     bool isFuncDefined(const std::string& name);
     bool isFuncDefined(const std::unique_ptr<FunctionBaseAST>& func);
     
-    bool addVar(const std::unique_ptr<ExprAST>& var);
-    bool addFunc(const std::unique_ptr<ExprAST>& func);
-    bool addStruct(const std::unique_ptr<ExprAST>& struct_);
-    bool addUnion(const std::unique_ptr<ExprAST>& union_);
-    bool addClass(const std::unique_ptr<ExprAST>& class_);
+    bool addVar(std::unique_ptr<VariableDefAST> var);
+    bool addFunc(std::unique_ptr<FunctionBaseAST> func);
+    bool addStruct(std::unique_ptr<StructExprAST> struct_);
+    bool addUnion(std::unique_ptr<UnionExprAST> union_);
+    bool addClass(std::unique_ptr<ClassAST> class_);
+    const std::unique_ptr<VariableDefAST>& getVar(const std::string& name);
+
+    std::string getType(const std::unique_ptr<ExprAST>& expr);
+    std::string getType(const std::unique_ptr<VariableExprAST>& var);
+    std::string getType(const std::unique_ptr<TypedVarAST>& var);
+    std::string getType(const std::unique_ptr<ArrayExprAST>& arr);
 
     // Verification functions
-    // Return Empty "" String if valid, else return error message
+    // Return Empty "" String if valid
 
-    std::string verifyVar(const std::unique_ptr<VariableExprAST>& var);
-    std::string verifyVarDef(const std::unique_ptr<VariableDefAST>& var);
-    std::string verifyTypedVar(const std::unique_ptr<TypedVarAST>& var);
-    std::string verifyVarAssign(const std::unique_ptr<VariableAssignAST>& var);
+    bool verifyVar(std::unique_ptr<VariableExprAST> var);
+    bool verifyVarDef(std::unique_ptr<VariableDefAST> var);
+    bool verifyTypedVar(std::unique_ptr<TypedVarAST> var);
+    bool verifyVarAssign(std::unique_ptr<VariableAssignAST> var);
 
-    std::string verifyFor(const std::unique_ptr<ForExprAST>& for_);
-    std::string verifyWhile(const std::unique_ptr<WhileExprAST>& while_);
-    std::string verifyBreak(const std::unique_ptr<BreakExprAST>& break_);
-    std::string verifyContinue(const std::unique_ptr<ContinueExprAST>& continue_);
+    // Constant verification due to overflows and invalid escape sequences
+    bool verifyInt(std::unique_ptr<IntExprAST> int_); 
+    bool verifyFloat(std::unique_ptr<FloatExprAST> float_);
+    bool verifyDouble(std::unique_ptr<DoubleExprAST> double_);
+    bool verifyChar(std::unique_ptr<CharExprAST> char_);
+    bool verifyStr(std::unique_ptr<StrExprAST> str);
+    bool verifyArray(std::unique_ptr<ArrayExprAST> array);
+    
+    bool verifyFor(std::unique_ptr<ForExprAST> for_);
+    bool verifyWhile(std::unique_ptr<WhileExprAST> while_);
+    bool verifyBreak(std::unique_ptr<BreakExprAST> break_);
+    bool verifyContinue(std::unique_ptr<ContinueExprAST> continue_);
 
-    std::string verifyInt(const std::unique_ptr<IntExprAST>& int_);
-    std::string verifyFloat(const std::unique_ptr<FloatExprAST>& float_);
-    std::string verifyDouble(const std::unique_ptr<DoubleExprAST>& double_);
-    std::string verifyChar(const std::unique_ptr<CharExprAST>& char_);
-    std::string verifyStr(const std::unique_ptr<StrExprAST>& str);
-    std::string verifyArray(const std::unique_ptr<ArrayExprAST> array);
+    bool verifyCall(std::unique_ptr<CallExprAST> call);
+    bool verifyProto(std::unique_ptr<PrototypeAST> proto);
+    bool verifyExtern(std::unique_ptr<ExternAST> extern_);
+    bool verifyFunction(std::unique_ptr<FunctionAST> function);
+    bool verifyReturn(std::unique_ptr<ReturnExprAST> return_);
 
-    std::string verifyCall(const std::unique_ptr<CallExprAST>& call);
-    std::string verifyProto(const std::unique_ptr<PrototypeAST>& proto);
-    std::string verifyExtern(const std::unique_ptr<ExternAST>& extern_);
-    std::string verifyFunction(const std::unique_ptr<FunctionAST>& function);
-    std::string verifyReturn(const std::unique_ptr<ReturnExprAST>& return_);
+    bool verifyUnop(std::unique_ptr<UnaryExprAST> unop);
+    bool verifyBinop(std::unique_ptr<BinaryExprAST> binop);
 
-    std::string verifyUnop(const std::unique_ptr<UnaryExprAST>& unop);
-    std::string verifyBinop(const std::unique_ptr<BinaryExprAST>& binop);
+    bool verifyClass(std::unique_ptr<ClassAST> class_);
+    bool verifyNew(std::unique_ptr<NewExprAST> new_);
+    bool verifyDelete(std::unique_ptr<DeleteExprAST> delete_);
 
-    std::string verifyClass(const std::unique_ptr<ClassAST>& class_);
-    std::string verifyNew(const std::unique_ptr<NewExprAST>& new_);
-    std::string verifyDelete(const std::unique_ptr<DeleteExprAST>& delete_);
+    bool verifyUnion(std::unique_ptr<UnionExprAST> union_);
+    bool verifyStruct(std::unique_ptr<StructExprAST> struct_);
 
-    std::string verifyUnion(const std::unique_ptr<UnionExprAST>& union_);
-    std::string verifyStruct(const std::unique_ptr<StructExprAST>& struct_);
+    bool verifyIf(std::unique_ptr<IfExprAST> if_);
 
-    std::string verifyIf(const std::unique_ptr<IfExprAST>& if_);
+    bool verifyUnsafe(std::unique_ptr<UnsafeAST> unsafe);
+    bool verifyReference(std::unique_ptr<ReferenceExprAST> reference);
 
-    std::string verifyUnsafe(const std::unique_ptr<UnsafeAST>& unsafe);
-    std::string verifyReference(const std::unique_ptr<ReferenceExprAST>& reference);
+    bool verifyCode(std::unique_ptr<CodeAST> code);
 
-    std::string verifyCode(const std::unique_ptr<CodeAST>& code);
+    bool verifyExpr(std::unique_ptr<ExprAST> expr);
 
     std::vector<std::string> getErrors();
 };

@@ -8,7 +8,7 @@
 
 #include "token.hpp"
 #include "token.cpp"
-#include "../Exceptions/error.cpp"
+#include "../Error-Builder/Include.hpp"
 
 namespace vire
 {
@@ -20,12 +20,14 @@ protected:
     std::size_t indx;
     std::size_t line;
     std::size_t charpos;
+    const std::unique_ptr<errors::ErrorBuilder>& builder; // error builder
 public:
     unsigned char jit;
     std::string code;
     std::size_t len;
 
-    Virelex(std::string code, unsigned char jit=0)
+    Virelex(std::string code, unsigned char jit=0, const std::unique_ptr<errors::ErrorBuilder>& builder=nullptr)
+    : builder(builder)
     {
         this->cur=' ';
         this->indx=-1;
@@ -41,7 +43,9 @@ public:
             this->len=0;
         }
         this->jit=jit;
+        this->charpos=-1;
     }
+    
     ~Virelex(){}
 
     char getNext(char move_amt=0)
@@ -50,6 +54,7 @@ public:
             return EOF;
         
         this->indx+=move_amt+1;
+        this->charpos++;
         
         return this->code.at(this->indx);
     }
@@ -87,10 +92,17 @@ public:
             this->cur=getNext();
 
             if(this->cur=='.' && type==0)
+            {
                 type=1;
+                numstr+=this->cur;
+                this->cur=getNext();
+            }
             else if(this->cur=='.' && type==1)
-                LogExc("Invalid float, has 2 decimal points");
-                
+            {
+                builder->addError<errors::lex_unknown_char>(code, this->cur, '\0', line, charpos);
+                break;
+            }
+            
         } while (isdigit(this->cur) || this->cur=='.');
         
         int ttype=0;
@@ -109,10 +121,16 @@ public:
         std::string str="";
         this->cur=getNext(); // consume the start d-quote
 
-        while(this->cur!='\"' && this->cur!=EOF)
+        while(this->cur!='\"')
         {
             str+=this->cur;
             this->cur=getNext();
+
+            if(this->cur==EOF)
+            {
+                builder->addError<errors::lex_unknown_char>(code, ' ', '\0', line, charpos);
+                return nullptr;
+            }
         }
 
         this->cur=getNext(); // consume the end d-quote
@@ -123,7 +141,6 @@ public:
 
     std::unique_ptr<Viretoken> nomove_makeToken(std::string value, int type)
     {
-        this->charpos+=value.length();
         auto tok=std::make_unique<Viretoken>(value,type,this->line,this->charpos);
         return std::move(tok);
     }
@@ -328,7 +345,11 @@ public:
 
             case EOF: return makeToken("",tok_eof);
 
-            default: std::cout << "Unknown character: " << this->cur << std::endl; return nullptr;
+            default: {
+                builder->addError<errors::lex_unknown_char>(this->code,this->cur,'\0',this->line,this->charpos);
+                this->cur=getNext();
+                return nullptr;
+            }
         }
     }
     std::unique_ptr<Viretoken> getToken(std::string str)

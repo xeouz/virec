@@ -19,7 +19,7 @@ std::unique_ptr<T> cast_dynamic(std::unique_ptr<ExprAST> expr)
 }
 
 template<typename T>
-std::unique_ptr<T> case_static(std::unique_ptr<ExprAST> expr)
+std::unique_ptr<T> cast_static(std::unique_ptr<ExprAST> expr)
 {
     auto castAST=static_cast<T*>(expr.release());
     if(castAST==nullptr) return nullptr;

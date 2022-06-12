@@ -70,7 +70,7 @@ public:
     ArrayExprAST(std::vector<std::unique_ptr<ExprAST>> Elements)
     :   Elements(std::move(Elements)), ExprAST("arr", ast_array) {}
 
-    std::vector<std::unique_ptr<ExprAST>> getElements() {return std::move(Elements);}
+    std::vector<std::unique_ptr<ExprAST>> const& getElements() const {return Elements;}
 };
 
 }

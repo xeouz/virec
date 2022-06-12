@@ -61,27 +61,29 @@ namespace errors
             result+="\n";
         }
         
-        for(int i=0; i<column+5; ++i) result+=" ";
+        for(int i=0; i<column+3; ++i) result+=" ";
         result+=red_tag;
         for(int i=0; i<column_len; ++i) result+="^";
         result+=reset_tag;
 
-        std::cout << result << std::endl;
-
-        return "";
+        return result;
     } 
 
     template<>
-    void ErrorBuilder::addError<lex_unknown_char>(char _char, char fix)
+    void ErrorBuilder::addError<lex_unknown_char>(const std::string& code, char _char, char fix, std::size_t line, std::size_t column)
     {
         std::string error;
+        error+=constructCodePosition(code, line, column, 1);
+        error+="\n";
+
         error.append(red_tag);
         error.append(this->prefix);
         error.append(" has found an unexpected character.\n");
         error.append(this->prefix);
         error.append(" found an unknown character `");
         error.append(bold_tag);
-        error.append(1, _char);
+        if(_char==' ')  error.append("End-of-file");
+        else    error.append(1, _char);
         error.append(reset_tag);
         error.append(red_tag);
         error.append("`.\n");
@@ -101,12 +103,56 @@ namespace errors
         error.append(reset_tag);
         this->errors.push_back(error);
     }
+    
+    template<>
+    void ErrorBuilder::addError<analyze_requires_type>(
+    const std::string& code, unsigned char islet, const std::string& var_name, std::size_t line, std::size_t column)
+    {
+        std::string error;
+        error+=constructCodePosition(code, line, column, 1);
+        error+="\n";
+
+        error.append(red_tag);
+        error.append(this->prefix);
+        error.append(" has found an incorrect type input.\n");
+        error.append("\nThis is because you have provided no type for the declaration of a let/const variable.");
+        error.append("\nWhen there is a let/const declaration, you must provide either a value or a type that can be used to infer the type of the variable");
+        error.append("\n\n");
+        error.append(this->prefix);
+        error.append(" will show you a correct example of how to do this.\n");
+        error.append(reset_tag);
+        error.append("\n");
+        error.append(green_tag);
+
+        error.append(std::to_string(line+1));
+        error.append(" | ");
+        if(islet)   error.append("let ");
+        else   error.append("const ");
+        
+        error.append(var_name);
+        error.append(bold_tag);
+        error.append(" : type = value;");
+        error.append(reset_tag);
+        error.append(bold_tag);
+
+        error.append("\n\n");
+        error.append(reset_tag);
+        error.append(magenta_tag);
+        error.append("[Tip]: ");
+        error.append("You can provide either a type or a value, if you provide the value ");
+        error.append(this->prefix);
+        error.append(" will automatically infer the variable's type!\n");
+        error.append(reset_tag); 
+
+        errors.push_back(error);
+    }
 
     void ErrorBuilder::showErrors()
     {
         for(auto& error : this->errors)
         {
             std::cout << error << std::endl;
+            std::cout << "----------------------------------------------------" << std::endl;
         }
     }
 

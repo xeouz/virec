@@ -14,6 +14,8 @@ enum errortypes
 
     parse_unexpected_token,
     parse_unexpected_eof,
+
+    analyze_requires_type,
 };
 
 class ErrorBuilder
@@ -34,7 +36,12 @@ public:
     void addError();
 
     template<errortypes X>
-    void addError(char _char, char fix='\0'); // <errortypes::lex_unknown_char>
+    void addError(const std::string& code, char _char, char fix='\0', std::size_t line=0, std::size_t column=0); // <errortypes::lex_unknown_char>
+
+
+
+    template<errortypes X>
+    void addError(const std::string& code, unsigned char islet, const std::string& varname="my_var", std::size_t line=0, std::size_t column=0); // <errortypes::analyzer_requires_type>
 
     void showErrors();
 };

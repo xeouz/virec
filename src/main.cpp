@@ -10,18 +10,18 @@ int main()
 
     //std::cout << code << std::endl;
 
-    auto lexer=std::make_unique<vire::Virelex>(code);
-    auto parser=std::make_unique<vire::Vireparse>(std::move(lexer));
+    auto builder=std::make_unique<vire::errors::ErrorBuilder>("This program");
 
+    auto lexer=std::make_unique<vire::Virelex>(code,0, builder);
+    auto parser=std::make_unique<vire::Vireparse>(std::move(lexer)); 
+  
     parser->getNextToken();
-    auto ast=vire::case_static<vire::VariableDefAST>(std::move(parser->ParseVariableDef()));
+    auto ast=vire::cast_static<vire::VariableDefAST>(std::move(parser->ParseVariableDef()));
 
-    auto analyzer=std::make_unique<vire::VAnalyzer>();
-    analyzer->verifyVarDef(ast);
+    auto analyzer=std::make_unique<vire::VAnalyzer>(builder, code);
+    analyzer->verifyVarDef(std::move(ast));
 
-    auto builder=std::make_unique<vire::errors::ErrorBuilder>();
-    builder->setPrefix("This program");
-    auto f=builder->constructCodePosition(code, 2,5,4);
+    builder->showErrors();
 
     return 0;
 }

@@ -31,27 +31,34 @@ class VariableAssignAST: public ExprAST
 public: 
     VariableAssignAST(std::unique_ptr<Viretoken> Name, std::unique_ptr<ExprAST> Value)
     : Name(Name->value), Value(std::move(Value)), ExprAST("void",ast_varassign) {setToken(std::move(Name));}
+
+    const std::string& getName() const {return Name;}
+    const std::unique_ptr<ExprAST>& getValue() const {return Value;}
 };
 
 class VariableDefAST : public ExprAST
 {
     std::string Name;
     std::unique_ptr<ExprAST> Value;
-    unsigned char isconst, islet, isarr;
+    bool isconst, islet, isarr;
     unsigned int arr_size;
 public:
     VariableDefAST(std::unique_ptr<Viretoken> Name, const std::string& type, std::unique_ptr<ExprAST> Value,
-    unsigned char isconst=0, unsigned char islet=0, unsigned char isarr=0, int arr_size=0)
+    bool isconst=0, bool islet=0, bool isarr=0, int arr_size=0)
     : Name(Name->value),Value(std::move(Value)),ExprAST(type,ast_vardef), 
     isconst(isconst),islet(islet),isarr(isarr),arr_size(arr_size) {setToken(std::move(Name));}
 
     const std::string& getName() const {return Name;}
-    const unsigned char& isConst() const {return isconst;}
-    const unsigned char& isLet() const {return islet;}
-    const unsigned char& isArr() const {return isarr;}
+    const bool& isConst() const {return isconst;}
+    const bool& isLet() const {return islet;}
+    const bool& isArr() const {return isarr;}
     const unsigned int& getArrSize() const {return arr_size;}
 
+    void setArrSize(unsigned int size) {arr_size = size;}
+
     const std::unique_ptr<ExprAST>& getValue() const {return Value;}
+    std::unique_ptr<ExprAST> moveValue() {return std::move(Value);}
+    void setValue(std::unique_ptr<ExprAST> Value) {this->Value=std::move(Value);}
 };
 
 class TypedVarAST : public ExprAST

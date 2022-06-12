@@ -67,6 +67,8 @@ namespace vire
     {
         CurTok.reset();
         CurTok=lexer->getToken();
+
+        if(CurTok==nullptr) CurTok=lexer->getToken();
     }
     void Vireparse::getNextToken(int toktype)
     {
@@ -74,8 +76,7 @@ namespace vire
         {
             LogError("Current token type %s does not match type %s",tokToStr(CurTok->type),tokToStr(toktype));
         }
-        CurTok.reset();
-        CurTok=lexer->getToken();
+        getNextToken();
     }
     std::unique_ptr<Viretoken> Vireparse::copyCurrentToken()
     {
