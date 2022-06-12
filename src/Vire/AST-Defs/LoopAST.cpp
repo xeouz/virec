@@ -23,9 +23,13 @@ public:
     , ExprAST("void",ast_for) 
     {}
 
-    std::unique_ptr<ExprAST> getInit() {return std::move(initExpr);}
-    std::unique_ptr<ExprAST> getCond() {return std::move(condExpr);}
-    std::unique_ptr<ExprAST> getIncr() {return std::move(incrExpr);}
+    const std::unique_ptr<ExprAST>& getInit() const { return initExpr; }
+    const std::unique_ptr<ExprAST>& getCond() const { return condExpr; }
+    const std::unique_ptr<ExprAST>& getIncr() const { return incrExpr; }
+
+    std::unique_ptr<ExprAST> moveInit() {return std::move(initExpr);}
+    std::unique_ptr<ExprAST> moveCond() {return std::move(condExpr);}
+    std::unique_ptr<ExprAST> moveIncr() {return std::move(incrExpr);}
 
     std::vector<std::unique_ptr<ExprAST>> getBody() {return std::move(body);}
 };

@@ -88,7 +88,7 @@ namespace vire
     }
 
     // Verification Functions
-    bool VAnalyzer::verifyVar(std::unique_ptr<VariableExprAST> var)
+    bool VAnalyzer::verifyVar(const std::unique_ptr<VariableExprAST>& var)
     {
         // Check if it is defined
         if(!isVarDefined(var->getName()))
@@ -159,11 +159,11 @@ namespace vire
         // Variable is already defined
         return true;
     }
-    bool VAnalyzer::verifyTypedVar(std::unique_ptr<TypedVarAST> var)
+    bool VAnalyzer::verifyTypedVar(const std::unique_ptr<TypedVarAST>& var)
     {
         return true;
     }
-    bool VAnalyzer::verifyVarAssign(std::unique_ptr<VariableAssignAST> assign)
+    bool VAnalyzer::verifyVarAssign(const std::unique_ptr<VariableAssignAST>& assign)
     {
         if(!isVarDefined(assign->getName()))
         {
@@ -190,6 +190,52 @@ namespace vire
         return true;
     }
 
+    bool VAnalyzer::verifyInt(const std::unique_ptr<IntExprAST>& int_) { return true; }
+    bool VAnalyzer::verifyFloat(const std::unique_ptr<FloatExprAST>& float_) { return true; }
+    bool VAnalyzer::verifyDouble(const std::unique_ptr<DoubleExprAST>& double_) { return true; }
+    bool VAnalyzer::verifyChar(const std::unique_ptr<CharExprAST>& char_) { return true; }
+    bool VAnalyzer::verifyStr(const std::unique_ptr<StrExprAST>& str) { return true; }
+
+    bool VAnalyzer::verifyFor(const std::unique_ptr<ForExprAST>& for_)
+    {
+        const auto& init=for_->getInit();
+        const auto& cond=for_->getCond();
+        const auto& incr=for_->getIncr();
+        if(init->asttype!=ast_var && init->asttype!=ast_varassign && init->asttype!=ast_vardef)
+        {
+            // Init is not a variable definition
+            return false;
+        }
+        if(cond->asttype!=ast_var && cond->asttype!=ast_unop && cond->asttype!=ast_binop)
+        {
+            // Cond is not a boolean expression
+            return false;
+        }
+        if(incr->asttype!=ast_var && init->asttype!=ast_varassign)
+        {
+            // Init is not a step operation
+            return false;
+        }   
+
+        if(!verifyExpr(init))
+        {
+            // Init is not valid
+            return false;
+        }
+        if(!verifyExpr(cond))
+        {
+            // Cond is not valid
+            return false;
+        }
+        if(!verifyExpr(incr))
+        {
+            // Incr is not valid
+            return false;
+        }
+        
+        return true;
+    }
+
 /*
     bool VAnalyzer::verifyExpr(std::unique_ptr<ExprAST> expr)
     {
@@ -209,7 +255,7 @@ namespace vire
         }
     }
 */
-    bool VAnalyzer::verifyArray(std::unique_ptr<ArrayExprAST> array)
+    bool VAnalyzer::verifyArray(const std::unique_ptr<ArrayExprAST>& array)
     {
         //const std::vector<std::unique_ptr<ExprAST>>& values=array->getElements();
         //bool is_valid=true;
