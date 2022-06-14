@@ -1,9 +1,4 @@
 #include "analyzer.hpp"
-
-#include "../AST-Parse/Include.hpp"
-#include "../AST-Defs/Include.hpp"
-#include "../Error-Builder/Include.hpp"
-
 #include <string>
 #include <memory>
 #include <vector>

@@ -1,10 +1,13 @@
 #pragma once
 
+#include "../includes.hpp"
+
 #include <string>
 #include <memory>
 #include <vector>
 
-#include "../Lex/token.cpp"
+#include "../includes.hpp"
+#include __VIRE_LEX_PATH
 
 namespace vire
 {

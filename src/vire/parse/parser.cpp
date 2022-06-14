@@ -1,8 +1,9 @@
-#include "../AST-Defs/Include.hpp"
-#include "../Lex/Include.hpp"
 #include "../Commons.cpp"
 
 #include "parser.hpp"
+#include "../includes.hpp"
+#include __VIRE_AST_PATH
+#include __VIRE_LEX_PATH
 
 #include <memory>
 #include <string>
@@ -464,7 +465,7 @@ namespace vire
         std::vector<std::unique_ptr<VariableDefAST>> Args;
         while(CurTok->type==tok_id)
         {
-            std::unique_ptr<Viretoken> varName=std::move(CurTok);
+            std::unique_ptr<Viretoken> varName=copyCurrentToken();
             getNextToken(tok_id); // consume id
             if(CurTok->type!=tok_colon) 
                 return LogErrorP("Expected ':' for type specifier after arg name");
@@ -594,10 +595,11 @@ namespace vire
             else if(CurTok->type==tok_vardef || CurTok->type==tok_const || CurTok->type==tok_let)
             {
                 auto var=ParseVariableDef();
-                std::unique_ptr<VariableDefAST> varCast(static_cast<VariableDefAST*>(var.release()));
+                auto varCast=cast_static<VariableDefAST>(std::move(var));
                 vars.push_back(std::move(varCast));
                 getNextToken(tok_semicol);
             }
+        
         }
         getNextToken(tok_rbrace);
 

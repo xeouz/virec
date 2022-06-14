@@ -1,8 +1,9 @@
 #pragma once
 
-#include "../AST-Defs/Include.hpp"
-#include "../Lex/Include.hpp"
 #include "../Commons.cpp"
+#include "../includes.hpp"
+#include __VIRE_AST_PATH
+#include __VIRE_LEX_PATH
 
 #include <memory>
 #include <string>

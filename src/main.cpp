@@ -1,7 +1,12 @@
-#include "Vire/AST-Parse/Include.hpp"
-#include "Vire/Proto/Include.hpp"
-#include "Vire/VAnalyzer/Include.hpp"
-#include "Vire/Error-Builder/Include.hpp"
+#include "vire/ast/include.hpp"
+#include "vire/lex/include.hpp"
+#include "vire/parse/include.hpp"
+#include "vire/errors/include.hpp"
+#include "vire/proto/include.hpp"
+#include "vire/v_analyzer/include.hpp"
+
+#include <iostream>
+#include <memory>
 
 int main()
 {
@@ -14,12 +19,8 @@ int main()
 
     auto lexer=std::make_unique<vire::Virelex>(code,0, builder);
     auto parser=std::make_unique<vire::Vireparse>(std::move(lexer)); 
-  
+    
     parser->getNextToken();
-    auto ast=std::move(parser->ParseForExpr());
- 
-    auto analyzer=std::make_unique<vire::VAnalyzer>(builder, code);
-    std::cout << analyzer->verifyExpr(ast) << std::endl;
 
     builder->showErrors();
 

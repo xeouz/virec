@@ -5,7 +5,6 @@
 
 #include "VariableAST.cpp"
 #include "FunctionAST.cpp"
-#include "../Lex/token.cpp"
 
 #include <string>
 #include <vector>

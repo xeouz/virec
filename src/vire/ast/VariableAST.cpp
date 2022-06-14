@@ -1,8 +1,5 @@
 #pragma once
 
-#include "../Lex/token.hpp"
-#include "../Lex/token.cpp"
-
 #include <string>
 #include <memory>
 

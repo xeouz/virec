@@ -2,7 +2,6 @@
 
 #include "ASTType.hpp"
 #include "ExprAST.cpp"
-#include "../Lex/token.cpp"
 
 #include <memory>
 #include <vector>

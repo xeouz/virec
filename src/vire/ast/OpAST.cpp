@@ -4,7 +4,6 @@
 
 #include "ASTType.hpp"
 #include "ExprAST.cpp"
-#include "../Lex/token.cpp"
 
 namespace vire
 {

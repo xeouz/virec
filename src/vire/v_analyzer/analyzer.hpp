@@ -1,9 +1,9 @@
 #pragma once
 
-#include "../AST-Parse/Include.hpp"
-#include "../AST-Defs/Include.hpp"
-
-#include "../Error-Builder/Include.hpp"
+#include "../includes.hpp"
+#include __VIRE_PARSE_PATH
+#include __VIRE_AST_PATH
+#include __VIRE_ERRORS_PATH
 
 namespace vire
 {

@@ -2,7 +2,7 @@
 #include <fstream>
 #include <string>
 
-#include "File.hpp"
+#include "file.hpp"
 
 namespace vire
 {

@@ -8,8 +8,6 @@
 #include <vector>
 #include <memory>
 
-#include "../Lex/token.cpp"
-
 namespace vire
 {
 // IntExprAST - Class for representing ints, eg - 123
