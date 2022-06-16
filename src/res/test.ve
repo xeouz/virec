@@ -1,0 +1,8 @@
+class Main
+{
+    const c = 10;
+    func main1() returns int
+    {
+        const a = 10;
+    }
+}

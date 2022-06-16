@@ -32,10 +32,13 @@ public:
     bool isClassDefined(const std::string& name);
     bool isFuncDefined(const std::string& name);
     bool isFuncDefined(const std::unique_ptr<FunctionBaseAST>& func);
+    bool isStdFunc(const std::string& name);
     unsigned int getFuncArgCount(const std::string& name);
     
     bool addVar(std::unique_ptr<VariableDefAST> var);
-    bool addFunc(std::unique_ptr<FunctionBaseAST> func);
+    bool addProto(std::unique_ptr<PrototypeAST> proto);
+    bool addExtern(std::unique_ptr<ExternAST> extern_);
+    bool addFunc(std::unique_ptr<FunctionAST> func);
     bool addStruct(std::unique_ptr<StructExprAST> struct_);
     bool addUnion(std::unique_ptr<UnionExprAST> union_);
     bool addClass(std::unique_ptr<ClassAST> class_);
@@ -70,9 +73,10 @@ public:
     bool verifyContinue(const std::unique_ptr<ContinueExprAST>& continue_); // verification needed for continue execution statements
 
     bool verifyCall(const std::unique_ptr<CallExprAST>& call);
+    bool verifyPrototype(const std::unique_ptr<PrototypeAST>& proto);
     bool verifyProto(std::unique_ptr<PrototypeAST> proto);
     bool verifyExtern(std::unique_ptr<ExternAST> extern_);
-    bool verifyFunction(std::unique_ptr<FunctionAST> function);
+    bool verifyFunction(std::unique_ptr<FunctionAST> func);
     bool verifyReturn(const std::unique_ptr<ReturnExprAST>& return_);
 
     bool verifyUnop(const std::unique_ptr<UnaryExprAST>& unop);

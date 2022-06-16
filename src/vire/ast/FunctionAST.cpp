@@ -34,6 +34,9 @@ public:
     virtual std::string const& getName() const = 0;
     virtual std::vector<std::unique_ptr<VariableDefAST>> const& getArgs() const = 0;
 
+    virtual bool is_extern() const {return false;}
+    virtual bool is_proto() const {return false;}
+
     virtual ~FunctionBaseAST() {}
 };
 
@@ -52,6 +55,9 @@ public:
     
     std::string const& getType() const {return returnType->value;}
     std::string const& getName() const {return Name->value;}
+    unsigned int getArgCount() const {return Args.size();}
+    bool is_proto() const {return true;}
+    bool is_type_null() const {return returnType==nullptr;}
 
     std::vector<std::unique_ptr<VariableDefAST>> const& getArgs() const {return Args;}
 };
@@ -65,7 +71,9 @@ public:
 
     std::string const& getName() const {return Proto->getName();}
     std::string const& getType() const {return Proto->getType();}
+    const std::unique_ptr<PrototypeAST>& getProto() const {return Proto;}
     std::vector<std::unique_ptr<VariableDefAST>> const& getArgs() const {return Proto->getArgs();}
+    bool is_extern() const {return true;}
 };
 
 // FunctionAST - Class for functions which can be called by the user
@@ -81,7 +89,9 @@ public:
     std::string const& getType() const {return Proto->getType();}
     std::string const& getName() const {return Proto->getName();}
 
+    const std::unique_ptr<PrototypeAST>& getProto() const {return Proto;}
     std::vector<std::unique_ptr<VariableDefAST>> const& getArgs() const {return Proto->getArgs();}
+    std::vector<std::unique_ptr<ExprAST>> const& getBody() const {return Statements;}
 };
 
 class ReturnExprAST : public ExprAST

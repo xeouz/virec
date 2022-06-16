@@ -31,31 +31,8 @@ public:
     : Name(std::move(Name)), Functions(std::move(Functions)), Parent(std::move(Name)), Variables(std::move(Variables))
     {}
 
-    template<typename T>
-    std::vector<std::unique_ptr<T>> getFunctions()
-    {
-        std::vector<std::unique_ptr<T>> retCast;
-
-        for(auto& item: Functions)
-        {
-            auto t=std::unique_ptr<T>(static_cast<T*>(item.get()));
-            retCast.push_back(std::move(t));
-        }
-
-        return std::move(retCast);
-    }
-    std::vector<std::unique_ptr<VariableDefAST>> getVariables()
-    {
-        std::vector<std::unique_ptr<VariableDefAST>> ret;
-
-        for(auto& item:Variables)
-        {
-            std::unique_ptr<VariableDefAST> var(static_cast<VariableDefAST*>(item.get()));
-            ret.push_back(std::move(var));
-        }
-
-        return std::move(ret);
-    }
+    const std::vector<std::unique_ptr<FunctionBaseAST>>& getFunctions() const {return Functions;}
+    const std::vector<std::unique_ptr<VariableDefAST>>& getMembers() const {return Variables;}
 
     std::unique_ptr<VariableDefAST> getVariable(std::string varName)
     {

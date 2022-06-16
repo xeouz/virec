@@ -10,7 +10,7 @@ namespace vire
     {
         if(!variables.empty())
         {
-            for(int i=0; i<variables.size(); i++)
+            for(int i=0; i<variables.size(); ++i)
             {
                 if(variables[i]->getName()==name)
                 {
@@ -24,7 +24,7 @@ namespace vire
     {
         if(!functions.empty())
         {
-            for(int i=0; i<functions.size(); i++)
+            for(int i=0; i<functions.size(); ++i)
             {
                 if(functions[i]->getName()==name)
                 {
@@ -34,11 +34,61 @@ namespace vire
         }
         return false;
     }
+    bool VAnalyzer::isClassDefined(const std::string& name)
+    {
+        if(!classes.empty())
+        {
+            for(int i=0; i<classes.size(); ++i)
+            {
+                if(classes[i]->getName()==name)
+                {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+    bool VAnalyzer::isStdFunc(const std::string& name)
+    {
+        if(name=="echo")
+        {
+            return true;
+        }
+        return false;
+    }
+    
     bool VAnalyzer::addVar(std::unique_ptr<VariableDefAST> var)
     {
         if(!isVarDefined(var->getName()))
         {
             variables.push_back(std::move(var));
+            return true;
+        }
+        return false;
+    }
+    bool VAnalyzer::addProto(std::unique_ptr<PrototypeAST> proto)
+    {
+        if(!isFuncDefined(proto->getName()))
+        {
+            functions.push_back(std::move(proto));
+            return true;
+        }
+        return false;
+    }
+    bool VAnalyzer::addFunc(std::unique_ptr<FunctionAST> func)
+    {
+        if(!isFuncDefined(func->getName()))
+        {
+            functions.push_back(std::move(func));
+            return true;
+        }
+        return false;
+    }
+    bool VAnalyzer::addExtern(std::unique_ptr<ExternAST> extern_)
+    {
+        if(!isFuncDefined(extern_->getName()))
+        {
+            functions.push_back(std::move(extern_));
             return true;
         }
         return false;
@@ -305,7 +355,11 @@ namespace vire
     {
         auto name=call->getName();
 
-        if(!isFuncDefined(name))
+        if(isStdFunc(name))
+        {
+            return true;
+        }
+        else if(!isFuncDefined(name))
         {
             // Function is not defined
             return false;
@@ -373,6 +427,140 @@ namespace vire
             return false;
         }
         
+        return true;
+    }
+
+    bool VAnalyzer::verifyPrototype(const std::unique_ptr<PrototypeAST>& proto)
+    {
+        if(isFuncDefined(proto->getName()))
+        {
+            // Function is already defined
+            return false;
+        }
+        
+        if(proto->is_type_null())
+        {
+            if(proto->getName()!="main")
+            {
+                // Function is not main
+                return false;
+            }
+        }
+        else if(proto->getType()=="auto" || proto->getType()=="any")
+        {
+            // Type is not valid
+            return false;
+        }
+
+        bool is_valid=true;
+        const auto& args=proto->getArgs();
+        for(const auto& arg : args)
+        {
+            if(arg->getType() == "auto" || arg->getType() == "any")
+            {
+                // Type is not valid
+                is_valid=false;
+            }
+
+            if(!verifyVarDef(arg))
+            {
+                // Argument is not valid
+                is_valid=false;
+            }
+        }
+
+        return is_valid;
+    }
+    bool VAnalyzer::verifyProto(std::unique_ptr<PrototypeAST> proto)
+    {
+        if(!verifyPrototype(proto))
+        {
+            // Prototype is not valid
+            return false;
+        }
+
+        addProto(std::move(proto));
+        return true;
+    }
+    bool VAnalyzer::verifyExtern(std::unique_ptr<ExternAST> extern_)
+    {
+        if(!verifyPrototype(extern_->getProto()))
+        {
+            // Prototype is not valid
+            return false;
+        }
+
+        addExtern(std::move(std::move(extern_)));
+        return true;
+    }
+    bool VAnalyzer::verifyFunction(std::unique_ptr<FunctionAST> func)
+    {
+        if(!verifyPrototype(func->getProto()))
+        {
+            // Prototype is not valid
+            return false;
+        }
+
+        if(!verifyBlock(func->getBody()))
+        {
+            // Block is not valid
+            return false;
+        }
+
+        return true;
+    }
+
+    bool VAnalyzer::verifyClass(std::unique_ptr<ClassAST> cls)
+    {
+        if(isClassDefined(cls->getName()))
+        {
+            // Class is already defined
+            return false;
+        }
+        
+        const auto& members=cls->getMembers();
+        const auto& funcs=cls->getFunctions();
+
+        bool is_valid=true;
+        for(const auto& member : members)
+        {
+            if(!verifyVarDef(member))
+            {
+                // Member is not valid
+                return false;
+            }
+        }
+        for(const auto& func : funcs)
+        {
+            if(func->is_extern())
+            {
+                is_valid=false;
+            }
+            else if(func->is_proto())
+            {
+                if(!verifyPrototype((std::unique_ptr<PrototypeAST> const&)func))
+                {
+                    // Prototype is not valid
+                    return false;
+                }
+            }
+            else
+            {
+                const auto& func_cast=(std::unique_ptr<FunctionAST> const&)func;
+
+                if(!verifyPrototype((func_cast->getProto())))
+                {
+                    // Prototype is not valid
+                    return false;
+                }
+                if(!verifyBlock(func_cast->getBody()))
+                {
+                    // Block is not valid
+                    return false;
+                }
+            }
+        }
+
         return true;
     }
 

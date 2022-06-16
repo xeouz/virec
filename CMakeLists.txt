@@ -19,7 +19,7 @@ include(cmake/ErrorBuilder.cmake)
 add_custom_command(
     TARGET VIRELANG PRE_BUILD
     COMMAND $(CMAKE_COMMAND) -E copy_directory
-        $(CMAKE_SOURCE_DIR)/src/resources $<TARGET_FILE_DIR:VIRELANG>/resources
+        $(CMAKE_SOURCE_DIR)/src/res $<TARGET_FILE_DIR:VIRELANG>/res
 )
 
 # Run the output
