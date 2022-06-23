@@ -75,7 +75,7 @@ namespace vire
     {
         if(CurTok->type!=toktype)
         {
-            LogError("Current token type %s does not match type %s",tokToStr(CurTok->type),tokToStr(toktype));
+            LogError("Current token type %s does not match type %s, Current token: `%s`",tokToStr(CurTok->type),tokToStr(toktype),CurTok->value.c_str());
         }
         getNextToken();
     }
@@ -544,6 +544,39 @@ namespace vire
         }
 
         return std::make_unique<ReturnExprAST>(std::move(vals));
+    }
+
+    std::unique_ptr<ExprAST> Vireparse::ParseIfExpr()
+    {
+        getNextToken(tok_if);
+        getNextToken(tok_lparen);
+        auto cond=ParseExpression();
+        getNextToken(tok_rparen);
+        auto mthenStm=ParseBlock();
+
+        std::vector<std::unique_ptr<IfThenExpr>> elseStms;
+        while(CurTok->type==tok_else)
+        {
+            getNextToken(tok_else);
+            if(CurTok->type==tok_if)
+            {
+                getNextToken(tok_if);
+                getNextToken(tok_lparen);
+                auto cond=ParseExpression();
+                getNextToken(tok_rparen);
+                auto thenStm=ParseBlock();
+                elseStms.push_back(std::make_unique<IfThenExpr>(std::move(cond),std::move(thenStm)));
+            }
+            else
+            {
+                auto thenStm=ParseBlock();
+                elseStms.push_back(std::make_unique<IfThenExpr>(nullptr,std::move(thenStm)));
+                break;
+            }
+        }
+
+        auto ifthen=std::make_unique<IfThenExpr>(std::move(cond),std::move(mthenStm));
+        return std::make_unique<IfExprAST>(std::move(ifthen),std::move(elseStms));
     }
 
     std::unique_ptr<ClassAST> Vireparse::ParseClass()

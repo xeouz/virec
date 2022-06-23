@@ -22,9 +22,9 @@ int main()
     auto analyzer=std::make_unique<vire::VAnalyzer>(builder, code);
 
     parser->getNextToken();
-    auto ast=parser->ParseClass();
+    auto ast=cast_static<vire::IfExprAST>(parser->ParseIfExpr());
 
-    std::cout << analyzer->verifyClass(std::move(ast)) << std::endl;
+    std::cout << analyzer->verifyIf(std::move(ast)) << std::endl;
 
     builder->showErrors();
 

@@ -37,6 +37,7 @@ enum asttype
     ast_continue,
 
     ast_if,
+    ast_ifelse,
 
     ast_new,
     ast_delete,

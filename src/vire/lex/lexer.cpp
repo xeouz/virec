@@ -186,10 +186,17 @@ public:
             auto id_str=gatherId();
             int toktype=0;
             std::unique_ptr<Viretoken> tok;
-
             if(id_str=="func")
             {
                 toktype=tok_func;
+            }
+            else if(id_str=="if")
+            {
+                toktype=tok_if;
+            }
+            else if(id_str=="else")
+            {
+                toktype=tok_else;
             }
             else if(id_str=="var")
             {
@@ -280,7 +287,7 @@ public:
                 toktype=tok_id;
             }
 
-            tok=nomove_makeToken(id_str.c_str(),toktype);
+            tok=nomove_makeToken(id_str,toktype);
             return std::move(tok);
         }
 

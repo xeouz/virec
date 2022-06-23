@@ -79,6 +79,8 @@ public:
     std::unique_ptr<FunctionAST> ParseFunction();
     std::unique_ptr<ExprAST> ParseReturn();
 
+    std::unique_ptr<ExprAST> ParseIfExpr();
+
     std::unique_ptr<ClassAST> ParseClass();
     std::unique_ptr<ExprAST> ParseNewExpr();
     std::unique_ptr<ExprAST> ParseDeleteExpr();

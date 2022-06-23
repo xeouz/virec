@@ -1,8 +1,4 @@
-class Main
+if(1)
 {
-    const c = 10;
-    func main1() returns int
-    {
-        const a = 10;
-    }
+    let a=10;
 }

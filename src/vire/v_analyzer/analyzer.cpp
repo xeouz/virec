@@ -261,7 +261,7 @@ namespace vire
         return true;
     }
 
-    bool VAnalyzer::verifyInt(const std::unique_ptr<IntExprAST>& int_) { return int_->getValue()==10?1:0; }
+    bool VAnalyzer::verifyInt(const std::unique_ptr<IntExprAST>& int_) { return true; }
     bool VAnalyzer::verifyFloat(const std::unique_ptr<FloatExprAST>& float_) { return true; }
     bool VAnalyzer::verifyDouble(const std::unique_ptr<DoubleExprAST>& double_) { return true; }
     bool VAnalyzer::verifyChar(const std::unique_ptr<CharExprAST>& char_) { return true; }
@@ -504,6 +504,32 @@ namespace vire
         if(!verifyBlock(func->getBody()))
         {
             // Block is not valid
+            return false;
+        }
+
+        return true;
+    }
+
+    bool VAnalyzer::verifyIf(std::unique_ptr<IfExprAST> const& if_)
+    {
+        const auto& cond=if_->getCondition();
+        const auto& then_block=if_->getThenBlock();
+
+        if(cond->asttype!=ast_var && cond->asttype!=ast_int && cond->asttype!=ast_unop && cond->asttype!=ast_binop)
+        {
+            // Cond is not a boolean expression
+            return false;
+        }
+
+        if(!verifyExpr(cond))
+        {
+            // Cond is not valid
+            return false;
+        }
+        
+        if(!verifyBlock(then_block))
+        {
+            // Then block is not valid
             return false;
         }
 
