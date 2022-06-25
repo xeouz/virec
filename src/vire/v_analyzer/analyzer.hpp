@@ -11,12 +11,8 @@ namespace vire
 class VAnalyzer
 {
     // Symbol Tables
-    std::vector<std::unique_ptr<FunctionBaseAST>> functions;
-    std::vector<std::unique_ptr<StructExprAST>> structs;
-    std::vector<std::unique_ptr<UnionExprAST>> unions;
-    std::vector<std::unique_ptr<ClassAST>> classes;
-
-    std::unique_ptr<FunctionAST> const& current_function;
+    std::unique_ptr<CodeAST>* current_code;
+    std::unique_ptr<FunctionAST>* current_function;
 
     // Error Builder
     const std::unique_ptr<errors::ErrorBuilder>& builder;
@@ -25,7 +21,7 @@ class VAnalyzer
     std::string code;
 public:
     VAnalyzer(const std::unique_ptr<errors::ErrorBuilder>& builder=nullptr, const std::string& code="")
-    : builder(builder), code(code), current_function(nullptr) {}
+    : builder(builder), code(code), current_function(0), current_code(0) {}
 
     bool isVarDefined(const std::string& name);
     bool isStructDefined(const std::string& name);
@@ -75,25 +71,26 @@ public:
 
     bool verifyCall(const std::unique_ptr<CallExprAST>& call);
     bool verifyPrototype(const std::unique_ptr<PrototypeAST>& proto);
-    bool verifyProto(std::unique_ptr<PrototypeAST> proto);
-    bool verifyExtern(std::unique_ptr<ExternAST> extern_);
-    bool verifyFunction(std::unique_ptr<FunctionAST> func);
+    bool verifyProto(const std::unique_ptr<PrototypeAST>& proto);
+    bool verifyExtern(const std::unique_ptr<ExternAST>& extern_);
+    bool verifyFunction(const std::unique_ptr<FunctionAST>& func);
     bool verifyReturn(const std::unique_ptr<ReturnExprAST>& return_);
 
     bool verifyUnop(const std::unique_ptr<UnaryExprAST>& unop);
     bool verifyBinop(const std::unique_ptr<BinaryExprAST>& binop);
 
-    bool verifyClass(std::unique_ptr<ClassAST> class_);
+    bool verifyClass(const std::unique_ptr<ClassAST>& class_);
     bool verifyNew(const std::unique_ptr<NewExprAST>& new_);
     bool verifyDelete(const std::unique_ptr<DeleteExprAST>& delete_);
 
-    bool verifyUnion(std::unique_ptr<UnionExprAST> union_);
-    bool verifyStruct(std::unique_ptr<StructExprAST> struct_);
+    bool verifyUnionStructBody(std::vector<std::unique_ptr<ExprAST>> const& body);
+    bool verifyUnion(const std::unique_ptr<UnionExprAST>& union_);
+    bool verifyStruct(const std::unique_ptr<StructExprAST>& struct_);
 
     bool verifyIfThen(const std::unique_ptr<IfThenExpr>& if_);
     bool verifyIf(const std::unique_ptr<IfExprAST>& if_);
 
-    bool verifyUnsafe(const std::unique_ptr<UnsafeAST>& unsafe);
+    bool verifyUnsafe(const std::unique_ptr<UnsafeExprAST>& unsafe);
     bool verifyReference(const std::unique_ptr<ReferenceExprAST>& reference);
 
     bool verifyBlock(std::vector<std::unique_ptr<ExprAST>> const& block);

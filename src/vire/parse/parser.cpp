@@ -747,7 +747,7 @@ namespace vire
         getNextToken(tok_unsafe);
         
         auto block=ParseBlock();
-        return std::make_unique<UnsafeAST>(std::move(block));
+        return std::make_unique<UnsafeExprAST>(std::move(block));
     }
     std::unique_ptr<ExprAST> Vireparse::ParseReference()
     {

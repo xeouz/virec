@@ -9,14 +9,14 @@
 namespace vire
 {
 
-class UnsafeAST : public ExprAST
+class UnsafeExprAST : public ExprAST
 {
     std::vector<std::unique_ptr<ExprAST>> body;
 public:
-    UnsafeAST(std::vector<std::unique_ptr<ExprAST>> body) : body(std::move(body)), ExprAST("",ast_unsafe)
+    UnsafeExprAST(std::vector<std::unique_ptr<ExprAST>> body) : body(std::move(body)), ExprAST("",ast_unsafe)
     {}
 
-    std::vector<std::unique_ptr<ExprAST>> getBody() {return std::move(body);}
+    std::vector<std::unique_ptr<ExprAST>> const& getBody() {return body;}
 };
 
 class ReferenceExprAST : public ExprAST
@@ -26,7 +26,7 @@ public:
     ReferenceExprAST(std::unique_ptr<ExprAST> var) : var(std::move(var)), ExprAST("",ast_reference)
     {}
 
-    std::unique_ptr<ExprAST> getVar() {return std::move(var);}
+    std::unique_ptr<ExprAST> const& getVar() {return var;}
 };
 
 }
