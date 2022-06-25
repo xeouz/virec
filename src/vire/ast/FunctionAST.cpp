@@ -81,6 +81,7 @@ class FunctionAST : public FunctionBaseAST
 {
     std::unique_ptr<PrototypeAST> Proto;
     std::vector<std::unique_ptr<ExprAST>> Statements;
+    std::vector<std::unique_ptr<VariableDefAST>> Locals;
 public:
     int asttype;
     FunctionAST(std::unique_ptr<PrototypeAST> Proto, std::vector<std::unique_ptr<ExprAST>> Statements)
@@ -92,6 +93,9 @@ public:
     const std::unique_ptr<PrototypeAST>& getProto() const {return Proto;}
     std::vector<std::unique_ptr<VariableDefAST>> const& getArgs() const {return Proto->getArgs();}
     std::vector<std::unique_ptr<ExprAST>> const& getBody() const {return Statements;}
+    std::vector<std::unique_ptr<VariableDefAST>> const& getLocals() const {return Locals;}
+    void addLocal(std::unique_ptr<VariableDefAST> Local) {Locals.push_back(std::move(Local));}
+
 };
 
 class ReturnExprAST : public ExprAST

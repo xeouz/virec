@@ -11,11 +11,12 @@ namespace vire
 class VAnalyzer
 {
     // Symbol Tables
-    std::vector<std::unique_ptr<VariableDefAST>> variables;
     std::vector<std::unique_ptr<FunctionBaseAST>> functions;
     std::vector<std::unique_ptr<StructExprAST>> structs;
     std::vector<std::unique_ptr<UnionExprAST>> unions;
     std::vector<std::unique_ptr<ClassAST>> classes;
+
+    std::unique_ptr<FunctionAST> const& current_function;
 
     // Error Builder
     const std::unique_ptr<errors::ErrorBuilder>& builder;
@@ -24,7 +25,7 @@ class VAnalyzer
     std::string code;
 public:
     VAnalyzer(const std::unique_ptr<errors::ErrorBuilder>& builder=nullptr, const std::string& code="")
-    : builder(builder), code(code) {}
+    : builder(builder), code(code), current_function(nullptr) {}
 
     bool isVarDefined(const std::string& name);
     bool isStructDefined(const std::string& name);
@@ -89,6 +90,7 @@ public:
     bool verifyUnion(std::unique_ptr<UnionExprAST> union_);
     bool verifyStruct(std::unique_ptr<StructExprAST> struct_);
 
+    bool verifyIfThen(const std::unique_ptr<IfThenExpr>& if_);
     bool verifyIf(const std::unique_ptr<IfExprAST>& if_);
 
     bool verifyUnsafe(const std::unique_ptr<UnsafeAST>& unsafe);

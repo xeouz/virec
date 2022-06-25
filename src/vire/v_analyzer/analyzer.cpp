@@ -8,6 +8,7 @@ namespace vire
 {
     bool VAnalyzer::isVarDefined(const std::string& name)
     {
+        const auto& variables=current_function->getLocals();
         if(!variables.empty())
         {
             for(int i=0; i<variables.size(); ++i)
@@ -61,7 +62,7 @@ namespace vire
     {
         if(!isVarDefined(var->getName()))
         {
-            variables.push_back(std::move(var));
+            current_function->addLocal(std::move(var));
             return true;
         }
         return false;
@@ -109,6 +110,7 @@ namespace vire
 
     const std::unique_ptr<VariableDefAST>& VAnalyzer::getVar(const std::string& name)
     {
+        const auto& variables=current_function->getLocals();
         if(!variables.empty())
         {
             for(int i=0; i<variables.size(); i++)
@@ -510,26 +512,62 @@ namespace vire
         return true;
     }
 
-    bool VAnalyzer::verifyIf(std::unique_ptr<IfExprAST> const& if_)
+    bool VAnalyzer::verifyIfThen(const std::unique_ptr<IfThenExpr>& if_then)
     {
-        const auto& cond=if_->getCondition();
-        const auto& then_block=if_->getThenBlock();
-
-        if(cond->asttype!=ast_var && cond->asttype!=ast_int && cond->asttype!=ast_unop && cond->asttype!=ast_binop)
+        const auto& cond=if_then->getCondition();
+        const auto& then_block=if_then->getThenBlock();
+        
+        if(cond->asttype!=ast_var && cond->asttype!=ast_unop && cond->asttype!=ast_binop)
         {
             // Cond is not a boolean expression
             return false;
         }
-
         if(!verifyExpr(cond))
         {
             // Cond is not valid
             return false;
         }
-        
         if(!verifyBlock(then_block))
         {
             // Then block is not valid
+            return false;
+        }
+        return true;
+    }
+    bool VAnalyzer::verifyIf(const std::unique_ptr<IfExprAST>& if_)
+    {
+        const auto& cond=if_->getCondition();
+        const auto& then_block=if_->getThenBlock();
+        
+        if(cond->asttype!=ast_var && cond->asttype!=ast_unop && cond->asttype!=ast_binop)
+        {
+            // Cond is not a boolean expression
+            return false;
+        }
+        if(!verifyExpr(cond))
+        {
+            // Cond is not valid
+            return false;
+        }
+        if(!verifyBlock(then_block))
+        {
+            // Then block is not valid
+            return false;
+        }
+
+        const auto& elif_ladder=if_->getElifLadder();
+        unsigned int elif_ladder_size=elif_ladder.size();
+        for(unsigned int i=0; i<elif_ladder_size-1; ++i)
+        {
+            if(!verifyIfThen(elif_ladder[i]))
+            {
+                // Elif is not valid
+                return false;
+            }
+        }
+        if(!verifyBlock(elif_ladder[elif_ladder_size]->getThenBlock()))
+        {
+            // Else block is not valid
             return false;
         }
 
