@@ -21,12 +21,27 @@ int main()
     auto parser=std::make_unique<vire::Vireparse>(std::move(lexer)); 
     auto analyzer=std::make_unique<vire::VAnalyzer>(builder, code);
 
-    parser->getNextToken();
-    auto ast=cast_static<vire::IfExprAST>(parser->ParseIfExpr());
+    auto ast=parser->ParseCode();
 
-    std::cout << analyzer->verifyIf(std::move(ast)) << std::endl;
+    if(!ast)
+    {
+        std::cout << "Error: Parsing failed" << std::endl;
+        return 1;
+    }
+    else
+    {
+        std::cout << "Parsing successful" << std::endl;
+    }
 
-    builder->showErrors();
+    bool success=analyzer->verifyCode(std::move(ast));
+    if(success)
+    {
+        std::cout << "Verification successful" << std::endl;
+    }
+    else
+    {
+        std::cout << "Verification failed" << std::endl;
+    }
 
     return 0;
 }

@@ -11,7 +11,7 @@ namespace vire
 class VAnalyzer
 {
     // Symbol Tables
-    std::unique_ptr<CodeAST>* current_code;
+    std::unique_ptr<CodeAST> current_code;
     std::unique_ptr<FunctionAST>* current_function;
 
     // Error Builder
@@ -21,7 +21,7 @@ class VAnalyzer
     std::string code;
 public:
     VAnalyzer(const std::unique_ptr<errors::ErrorBuilder>& builder=nullptr, const std::string& code="")
-    : builder(builder), code(code), current_function(0), current_code(0) {}
+    : builder(builder), code(code), current_function(0) {}
 
     bool isVarDefined(const std::string& name);
     bool isStructDefined(const std::string& name);

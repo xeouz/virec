@@ -95,7 +95,7 @@ public:
     std::vector<std::unique_ptr<ExprAST>> const& getBody() const {return Statements;}
     std::vector<std::unique_ptr<VariableDefAST>> const& getLocals() const {return Locals;}
     void addLocal(std::unique_ptr<VariableDefAST> Local) {Locals.push_back(std::move(Local));}
-
+    void insertStatement(std::unique_ptr<ExprAST> Statement) {Statements.insert(Statements.begin(), std::move(Statement));}
 };
 
 class ReturnExprAST : public ExprAST

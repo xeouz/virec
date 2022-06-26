@@ -23,7 +23,7 @@ namespace vire
     }
     bool VAnalyzer::isFuncDefined(const std::string& name)
     {
-        const auto& functions=(*current_code)->getFunctions();
+        const auto& functions=current_code->getFunctions();
         if(!functions.empty())
         {
             for(int i=0; i<functions.size(); ++i)
@@ -38,7 +38,7 @@ namespace vire
     }
     bool VAnalyzer::isClassDefined(const std::string& name)
     {
-        const auto& classes=(*current_code)->getClasses();
+        const auto& classes=current_code->getClasses();
         if(!classes.empty())
         {
             for(int i=0; i<classes.size(); ++i)
@@ -73,7 +73,7 @@ namespace vire
     {
         if(!isFuncDefined(proto->getName()))
         {
-            (*current_code)->addFunction(std::move(proto));
+            current_code->addFunction(std::move(proto));
             return true;
         }
         return false;
@@ -82,7 +82,7 @@ namespace vire
     {
         if(!isFuncDefined(func->getName()))
         {
-            (*current_code)->addFunction(std::move(func));
+            current_code->addFunction(std::move(func));
             return true;
         }
         return false;
@@ -91,7 +91,7 @@ namespace vire
     {
         if(!isFuncDefined(extern_->getName()))
         {
-            (*current_code)->addFunction(std::move(extern_));
+            current_code->addFunction(std::move(extern_));
             return true;
         }
         return false;
@@ -99,7 +99,7 @@ namespace vire
 
     const std::unique_ptr<FunctionBaseAST>& VAnalyzer::getFunc(const std::string& name)
     {
-        const auto& functions=(*current_code)->getFunctions();
+        const auto& functions=current_code->getFunctions();
         for(int i=0; i<functions.size(); i++)
         {
             if(functions[i]->getName()==name)
@@ -442,7 +442,7 @@ namespace vire
             // Function is already defined
             return false;
         }
-        
+
         if(proto->is_type_null())
         {
             if(proto->getName()!="main")
@@ -722,14 +722,15 @@ namespace vire
 
     bool VAnalyzer::verifyCode(std::unique_ptr<CodeAST> code)
     {
-        current_code=&code;
+        current_code=std::move(code);
 
-        auto classes=code->moveClasses();
-        auto funcs=code->moveFunctions();
-        auto union_structs=code->moveUnionStructs();
-        auto pre_stms=code->movePreExecutionStatements();
+        auto classes=current_code->moveClasses();
+        auto funcs=current_code->moveFunctions();
+        auto union_structs=current_code->moveUnionStructs();
+        auto pre_stms=current_code->movePreExecutionStatements();
 
         bool has_main=false;
+        unsigned int main_func_indx=0;
         for(const auto& cls : classes)
         {
             if(!verifyClass(cls))
@@ -738,11 +739,16 @@ namespace vire
                 return false;
             }
         }
-        for(const auto& func : funcs)
+        for(unsigned int it=0; it<funcs.size(); ++it)
         {
+            const auto& func=funcs[it];
             if(func->is_extern())
             {
-                // Extern function is valid
+                if(!verifyExtern((std::unique_ptr<ExternAST> const&)func))
+                {
+                    // Extern is not valid
+                    return false;
+                }
             }
             else if(func->is_proto())
             {
@@ -752,15 +758,15 @@ namespace vire
                     return false;
                 }
             }
-            else
             {
                 const auto& func_cast=(std::unique_ptr<FunctionAST> const&)func;
 
-                if(!verifyPrototype((func_cast->getProto())))
+                if(!verifyPrototype(func_cast->getProto()))
                 {
                     // Prototype is not valid
                     return false;
                 }
+
                 if(!verifyBlock(func_cast->getBody()))
                 {
                     // Block is not valid
@@ -770,6 +776,7 @@ namespace vire
                 if(func_cast->getName()=="main")
                 {
                     has_main=true;
+                    main_func_indx=it;
                 }
             }
         }
@@ -796,21 +803,14 @@ namespace vire
         if(!has_main)
         {
             code->addFunction(std::make_unique<FunctionAST>(
-                std::make_unique<PrototypeAST>(std::make_unique<Viretoken>("main",tok_id), std::make_unique<std::vector<std::unique_ptr<VariableDefAST>>>()), 
-                std::make_unique<std::vector<std::unique_ptr<ExprAST>>>()
+                std::make_unique<PrototypeAST>(std::make_unique<Viretoken>("main",tok_id), std::vector<std::unique_ptr<VariableDefAST>>()), 
+                std::vector<std::unique_ptr<ExprAST>>()
                 )
             );
+            main_func_indx=funcs.size();
         }
         
-        std::unique_ptr<FunctionAST>* main_func=nullptr;
-        for(auto& func : funcs)
-        {
-            if(func->getName()=="main")
-            {
-                main_func=&((std::unique_ptr<FunctionAST>&)func);
-                break;
-            }
-        }
+        const auto& main_func=(std::unique_ptr<FunctionAST> const&)funcs[main_func_indx];
         for(unsigned int it=0; it<pre_stms.size(); ++it)
         {
             auto expr=std::move(pre_stms[it]);
@@ -819,8 +819,10 @@ namespace vire
                 // Pre-execution statement is not valid
                 return false;
             }
+
+            main_func->insertStatement(std::move(expr));
         }
-        
+
         return true;
     }
 
