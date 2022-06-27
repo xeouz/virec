@@ -1,19 +1,36 @@
 # Configuration setup
 cmake_minimum_required(VERSION 3.16.3)
 
+project(VIRELANG VERSION 3.5.1)
+
+find_package(ZLIB REQUIRED)
+find_package(LLVM REQUIRED CONFIG)
+message(STATUS "Found LLVM: ${LLVM_VERSION}")
+message(STATUS "Using LLVMConfig.cmake in ${LLVM_DIR}")
+
+# Compile Flags
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED true)
 
-project(VIRELANG VERSION 3.5.1)
+# LLVM
+include_directories(${LLVM_INCLUDE_DIRS})
+separate_arguments(LLVM_DEFINITIONS_LIST NATIVE_COMMAND ${LLVM_DEFINITIONS})
+add_definitions(${LLVM_DEFINITIONS_LIST})
 
 # Add main executable
 add_executable(VIRELANG src/main.cpp)
 
-# Compiling Parser lib
-include(cmake/Parser.cmake)
-include(cmake/Proto.cmake)
-include(cmake/VAnalyzer.cmake)
-include(cmake/ErrorBuilder.cmake)
+# LLVM Libraries
+llvm_map_components_to_libnames(llvm_libs support core irreader)
+target_link_libraries(VIRELANG PRIVATE ${llvm_libs})
+
+set(VIRE_SRC_PATH "${CMAKE_CURRENT_SOURCE_DIR}/src/vire")
+
+# Compiling Parser, Proto, Analyzer, ErrorBuilder libs
+include(${VIRE_SRC_PATH}/parse/Parser.cmake)
+include(${VIRE_SRC_PATH}/proto/Proto.cmake)
+include(${VIRE_SRC_PATH}/v_analyzer/VAnalyzer.cmake)
+include(${VIRE_SRC_PATH}/errors/ErrorBuilder.cmake)
 
 # Copy the resources to the build directory
 add_custom_command(

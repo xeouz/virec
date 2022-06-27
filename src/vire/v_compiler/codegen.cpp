@@ -1,6 +1,4 @@
-#pragma once
-
-#include "vcompiler.hpp"
+#include "codegen.hpp"
 
 namespace vire
 {
