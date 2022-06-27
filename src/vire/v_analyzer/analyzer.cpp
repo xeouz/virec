@@ -371,22 +371,30 @@ namespace vire
         }
 
         const auto& args=call->getArgs();
-        
-        if(args.size() != getFuncArgCount(name))
+        const auto& func_args=getFunc(name)->getArgs();
+
+        if(args.size() != func_args.size())
         {
             // Argument count mismatch
             return false;
         }
 
-        for(auto& arg: args)
+        for(unsigned int i=0; i<args.size(); ++i)
         {
+            const auto& arg=args[i];
             if(!verifyExpr(arg))
             {
                 // Argument is not valid
                 return false;
             }
+
+            if(func_args[i]->getType() != getType(arg))
+            {
+                // Argument type mismatch
+                return false;
+            }
         }
-    
+
         return true;
     }
 
