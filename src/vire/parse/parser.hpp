@@ -1,9 +1,9 @@
 #pragma once
 
-#include "../Commons.cpp"
 #include "../includes.hpp"
 #include __VIRE_AST_PATH
 #include __VIRE_LEX_PATH
+#include __VIRE_CONFIG_PATH
 
 #include <memory>
 #include <string>
@@ -16,26 +16,27 @@ namespace vire
 class Vireparse
 {
     std::unique_ptr<Virelex> lexer;
-    std::unique_ptr<Commons> config;
+    std::unique_ptr<Config> config;
 public:
     std::unique_ptr<Viretoken> CurTok;
+    std::string current_func_name;
 
     Vireparse(Virelex* lexer) 
     : lexer(lexer), CurTok() {
-        config=std::make_unique<Commons>();
+        config=std::make_unique<Config>();
         config->installDefaultBinops();
     }
     Vireparse(std::unique_ptr<Virelex> lexer) 
     : lexer(std::move(lexer)), CurTok(std::make_unique<Viretoken>("",tok_eof)) {
-        config=std::make_unique<Commons>();
+        config=std::make_unique<Config>();
         config->installDefaultBinops();
     }
     
-    Vireparse(Virelex* lexer, Commons* config)
+    Vireparse(Virelex* lexer, Config* config)
     : lexer(lexer), config(config), CurTok(std::make_unique<Viretoken>("",tok_eof)) {}
-    Vireparse(std::unique_ptr<Virelex> lexer, Commons* config)
+    Vireparse(std::unique_ptr<Virelex> lexer, Config* config)
     : lexer(std::move(lexer)), config(config), CurTok(std::make_unique<Viretoken>("",tok_eof)) {}
-    Vireparse(std::unique_ptr<Virelex> lexer, std::unique_ptr<Commons> config)
+    Vireparse(std::unique_ptr<Virelex> lexer, std::unique_ptr<Config> config)
     : lexer(std::move(lexer)), config(std::move(config)), CurTok(std::make_unique<Viretoken>("",tok_eof)) {}
 
     std::unique_ptr<ExprAST> LogError(const char* str,...);

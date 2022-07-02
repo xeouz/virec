@@ -17,9 +17,15 @@ int main()
     auto ast=parser->ParseCode();
     bool success=analyzer->verifyCode(std::move(ast));
 
+    std::cout << "Success: " << success << std::endl;
+
     // Analysis and Frontend are done.
     // Now we can use the AST to generate the code.
-
+    auto compiler=std::make_unique<vire::VCompiler>(std::move(analyzer));
+    compiler->compileExtern("echo");
+    std::cout << "\n";
+    compiler->compileFunction("main");
+    std::cout << "\n";
 
     return 0;
 }

@@ -5,12 +5,13 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "C++ Launch (GDB)",
+            "name": "Debug",
             "type": "cppdbg",
             "request": "launch",
             "cwd": "${workspaceRoot}",
 
-            "program": "${workspaceFolder}/build/VIRELANG"
+            "program": "${workspaceFolder}/build/VIRELANG",
+            "preLaunchTask": "build"
         }
     ]
 }

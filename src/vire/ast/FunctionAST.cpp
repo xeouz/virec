@@ -30,6 +30,7 @@ public:
 class FunctionBaseAST
 {
 public:
+    FunctionBaseAST() {}
     virtual std::string const& getType() const = 0;
     virtual std::string const& getName() const = 0;
     virtual std::vector<std::unique_ptr<VariableDefAST>> const& getArgs() const = 0;
@@ -106,6 +107,7 @@ public:
     ReturnExprAST(std::vector<std::unique_ptr<ExprAST>> Values) : Values(std::move(Values)), ExprAST("",ast_return)
     {}
 
+    void setName(std::string name) {func_name = name;}
     const std::string& getName() const {return func_name;}
     std::vector<std::unique_ptr<ExprAST>> const& getValues() const {return Values;}
 };

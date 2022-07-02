@@ -1,6 +1,7 @@
-echo("Hello World");
+extern echo(x:int) returns int;
 
-func main()
+func main(a:int) returns int
 {
-    echo("Bonjour");
+    echo(a);
+    return a+10;
 }

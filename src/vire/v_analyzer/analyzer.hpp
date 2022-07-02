@@ -12,18 +12,19 @@ class VAnalyzer
 {
     // Symbol Tables
     std::unique_ptr<CodeAST> current_code;
-    std::unique_ptr<FunctionAST>* current_function;
+    std::unique_ptr<FunctionBaseAST>* current_function;
 
     // Error Builder
     const std::unique_ptr<errors::ErrorBuilder>& builder;
 
     // Source Code
     std::string code;
+
 public:
     VAnalyzer(const std::unique_ptr<errors::ErrorBuilder>& builder=nullptr, const std::string& code="")
     : builder(builder), code(code), current_function(0) {}
 
-    bool isVarDefined(const std::string& name);
+    bool isVarDefined(const std::string& name, bool check_globally_only=false);
     bool isStructDefined(const std::string& name);
     bool isUnionDefined(const std::string& name);
     bool isClassDefined(const std::string& name);
@@ -47,12 +48,16 @@ public:
     std::string getType(const std::unique_ptr<ArrayExprAST>& arr);
 
     const std::unique_ptr<FunctionBaseAST>& getFunc(const std::string& name);
+    const std::string& getFuncReturnType(const std::string& name);
+
+    const std::unique_ptr<CodeAST>& getCode();
 
     // Verification functions
     // Return Empty "" String if valid
+    std::unique_ptr<ReturnExprAST> const& getReturnStatement(std::vector<std::unique_ptr<ExprAST>> const& block);
 
     bool verifyVar(const std::unique_ptr<VariableExprAST>& var);
-    bool verifyVarDef(const std::unique_ptr<VariableDefAST>& var);
+    bool verifyVarDef(const std::unique_ptr<VariableDefAST>& var, bool check_globally_only=false);
     bool verifyTypedVar(const std::unique_ptr<TypedVarAST>& var);
     bool verifyVarAssign(const std::unique_ptr<VariableAssignAST>& var);
 

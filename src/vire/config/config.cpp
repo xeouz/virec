@@ -8,7 +8,7 @@
 
 namespace vire
 {
-class Commons
+class Config
 {
 public:
     std::map<std::string, int> BinopPrecendence; // used by parser

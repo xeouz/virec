@@ -7,3 +7,4 @@
 #define __VIRE_PROTO_PATH "../proto/include.hpp"
 #define __VIRE_VANALYZER_PATH "../v_analyzer/include.hpp"
 #define __VIRE_VCOMPILER_PATH "../v_compiler/include.hpp"
+#define __VIRE_CONFIG_PATH "../config/include.hpp"

@@ -1,5 +1,3 @@
-#include "../Commons.cpp"
-
 #include "parser.hpp"
 #include "../includes.hpp"
 #include __VIRE_AST_PATH
@@ -95,6 +93,9 @@ namespace vire
                 return LogErrorVP("Expected '}' found end of file");
             auto stm=ParsePrimary();
             if(!stm) continue;
+
+            if(stm->asttype==ast_return) 
+            { ((std::unique_ptr<ReturnExprAST> const&)stm)->setName(current_func_name); }
 
             if(stm->asttype!=ast_for 
             && stm->asttype!=ast_while 
@@ -480,7 +481,7 @@ namespace vire
 
             std::string typeName(CurTok->value);
             getNextToken(); // consume typename
-            auto var=std::make_unique<VariableDefAST>(std::move(varName),typeName,nullptr,isconst);
+            auto var=std::make_unique<VariableDefAST>(std::move(varName),typeName,nullptr,isconst,!isconst);
             Args.push_back(std::move(var));
 
             if(CurTok->type!=tok_comma)
@@ -500,7 +501,7 @@ namespace vire
             getNextToken(tok_id);
         }
         else
-            returnType=nullptr;
+            returnType=std::make_unique<Viretoken>("any",tok_id);
 
         return std::make_unique<PrototypeAST>(std::move(fnName),std::move(Args),std::move(returnType));
     }
@@ -522,6 +523,8 @@ namespace vire
 
         auto proto=ParsePrototype();
         if(!proto)  return nullptr;
+
+        current_func_name=proto->getName();
     
         auto Stms=ParseBlock();
 
@@ -780,11 +783,13 @@ namespace vire
             else if(CurTok->type==tok_proto)
             {
                 auto proto_ast=ParseProto();
+                getNextToken(tok_semicol);
                 Functions.push_back(std::move(proto_ast));
             }
             else if(CurTok->type==tok_extern)
             {
                 auto extern_ast=ParseExtern();
+                getNextToken(tok_semicol);
                 Functions.push_back(std::move(extern_ast));
             }
             else if(CurTok->type==tok_struct)
