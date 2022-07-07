@@ -84,6 +84,9 @@ enum token
     tok_catch=-57,
 
     tok_dot=-58,
+
+    tok_nequal=-59,
+    tok_not=-60,
 };
 
 static const char* tokToStr(int tok);

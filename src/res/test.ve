@@ -1,7 +1,11 @@
-extern echo(x:int) returns int;
-
-func main(a:int) returns int
+func main() returns int
 {
-    echo(a);
-    return a+10;
+    let a = 10;
+    
+    if(a==10)
+    {
+        a=20;
+    }
+
+    return a;
 }

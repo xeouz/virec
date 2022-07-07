@@ -12,18 +12,25 @@ int main()
  
     auto lexer=std::make_unique<vire::Virelex>(code,0, builder);
     auto parser=std::make_unique<vire::Vireparse>(std::move(lexer)); 
-    auto analyzer=std::make_unique<vire::VAnalyzer>(builder, code);
+    auto analyzer=std::make_unique<vire::VAnalyzer>(builder.get(), code);
 
     auto ast=parser->ParseCode();
+
+    std::cout << "Parsed Code" << std::endl;
+
     bool success=analyzer->verifyCode(std::move(ast));
 
-    std::cout << "Success: " << success << std::endl;
+    std::cout << "Analyzing Success: " << success << std::endl;
+
+    if(!success)
+    {
+        return 1;
+    }
 
     // Analysis and Frontend are done.
     // Now we can use the AST to generate the code.
     auto compiler=std::make_unique<vire::VCompiler>(std::move(analyzer));
-    compiler->compileExtern("echo");
-    std::cout << "\n";
+    
     compiler->compileFunction("main");
     std::cout << "\n";
 

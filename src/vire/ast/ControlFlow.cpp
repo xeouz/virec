@@ -18,7 +18,7 @@ public:
     : Condition(std::move(Condition)), ThenBlock(std::move(ThenBlock)), ExprAST("",ast_if)
     {}
 
-    const std::unique_ptr<ExprAST>& getCondition() {return Condition;}
+    ExprAST* const getCondition() {return Condition.get();}
     std::vector<std::unique_ptr<ExprAST>> const& getThenBlock() {return ThenBlock;}
 };
 
@@ -32,9 +32,9 @@ public:
     : IfThen(std::move(IfThen)), ElifLadder(std::move(ElifLadder)), ExprAST("",ast_ifelse)
     {}
 
-    const std::unique_ptr<ExprAST>& getCondition() {return IfThen->getCondition();}
+    ExprAST* const getCondition() {return IfThen->getCondition();}
     std::vector<std::unique_ptr<ExprAST>> const& getThenBlock() {return IfThen->getThenBlock();}
-    const std::unique_ptr<IfThenExpr>& getIfThen() {return IfThen;}
+    IfThenExpr* const getIfThen() {return IfThen.get();}
     std::vector<std::unique_ptr<IfThenExpr>> const& getElifLadder() {return ElifLadder;}
 };
 

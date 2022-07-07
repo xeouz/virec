@@ -26,7 +26,7 @@ public:
     ReferenceExprAST(std::unique_ptr<ExprAST> var) : var(std::move(var)), ExprAST("",ast_reference)
     {}
 
-    std::unique_ptr<ExprAST> const& getVar() {return var;}
+    ExprAST* const getVar() { return var.get(); }
 };
 
 }

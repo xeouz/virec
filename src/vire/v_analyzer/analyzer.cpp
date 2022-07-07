@@ -8,44 +8,34 @@ namespace vire
 {
     bool VAnalyzer::isVarDefined(const std::string& name, bool check_globally_only)
     {
-        if(check_globally_only)
+        for(const auto& expr :codeast->getPreExecutionStatements())
         {
-            for(const auto& expr :current_code->getPreExecutionStatements())
+            if(expr->asttype==ast_vardef)
             {
-                if(expr->asttype==ast_vardef)
-                {
-                    if(((std::unique_ptr<VariableDefAST>const&)expr)->getName()==name)
-                    {
-                        return true;
-                    }
-                }
-            }
-            return false;
-        }
-
-        for(auto const& var: (*current_function)->getArgs())
-        {
-            if(var->getName() == name)
-            {
-                return true;
-            }
-        }
-        const auto& variables=((std::unique_ptr<FunctionAST>const&)(*current_function))->getLocals();
-        if(!variables.empty())
-        {
-            for(int i=0; i<variables.size(); ++i)
-            {
-                if(variables[i]->getName()==name)
+                if(((std::unique_ptr<VariableDefAST>const&)expr)->getName()==name)
                 {
                     return true;
                 }
             }
         }
-        return false;
+
+        if(check_globally_only) return false;
+
+        return (*current_function)->isVarDefined(name);
+    }
+
+    bool VAnalyzer::addVar(VariableDefAST* const& var)
+    {
+        if(isVarDefined(var->getName()))
+        {
+            return false;
+        }
+        ((std::unique_ptr<FunctionAST>const&)(*current_function))->addVar(var);
+        return true;
     }
     bool VAnalyzer::isFuncDefined(const std::string& name)
     {
-        const auto& functions=current_code->getFunctions();
+        const auto& functions=codeast->getFunctions();
         if(!functions.empty())
         {
             for(int i=0; i<functions.size(); ++i)
@@ -60,7 +50,7 @@ namespace vire
     }
     bool VAnalyzer::isClassDefined(const std::string& name)
     {
-        const auto& classes=current_code->getClasses();
+        const auto& classes=codeast->getClasses();
         if(!classes.empty())
         {
             for(int i=0; i<classes.size(); ++i)
@@ -81,21 +71,12 @@ namespace vire
         }
         return false;
     }
-    
-    bool VAnalyzer::addVar(std::unique_ptr<VariableDefAST> var)
-    {
-        if(!isVarDefined(var->getName()))
-        {
-            ((std::unique_ptr<FunctionAST>const&)(*current_function))->addLocal(std::move(var));
-            return true;
-        }
-        return false;
-    }
+
     bool VAnalyzer::addProto(std::unique_ptr<PrototypeAST> proto)
     {
         if(!isFuncDefined(proto->getName()))
         {
-            current_code->addFunction(std::move(proto));
+            codeast->addFunction(std::move(proto));
             return true;
         }
         return false;
@@ -104,7 +85,7 @@ namespace vire
     {
         if(!isFuncDefined(func->getName()))
         {
-            current_code->addFunction(std::move(func));
+            codeast->addFunction(std::move(func));
             return true;
         }
         return false;
@@ -113,63 +94,44 @@ namespace vire
     {
         if(!isFuncDefined(extern_->getName()))
         {
-            current_code->addFunction(std::move(extern_));
+            codeast->addFunction(std::move(extern_));
             return true;
         }
         return false;
     }
 
-    const std::unique_ptr<FunctionBaseAST>& VAnalyzer::getFunc(const std::string& name)
+    FunctionBaseAST* const VAnalyzer::getFunc(std::string const& name)
     {
-        const auto& functions=current_code->getFunctions();
+        const auto& functions=codeast->getFunctions();
         for(int i=0; i<functions.size(); i++)
         {
             if(functions[i]->getName()==name)
             {
-                return functions[i];
+                return functions[i].get();
             }
         }
 
-        return functions[0];
+        return nullptr;
     }
-    const std::string& VAnalyzer::getFuncReturnType(const std::string& name)
+    std::string const& VAnalyzer::getFuncReturnType(const std::string& name)
     {
         const auto& tmpfunc=getFunc(name);
-        if(!tmpfunc)    return tmpfunc->getType();
+        if(tmpfunc)    return tmpfunc->getType();
 
         return (*current_function)->getType();
     }
-    unsigned int VAnalyzer::getFuncArgCount(const std::string& name) {return getFunc(name)->getArgs().size();}
 
-    const std::unique_ptr<CodeAST>& VAnalyzer::getCode()
+    CodeAST* const VAnalyzer::getCode()
     {
-        return current_code;
+        return codeast.get();
     }
 
-    const std::unique_ptr<VariableDefAST>& VAnalyzer::getVar(const std::string& name)
+    VariableDefAST* const VAnalyzer::getVar(const std::string& name)
     {
-        for(auto const& var: (*current_function)->getArgs())
-        {
-            if(var->getName() == name)
-            {
-                return var;
-            }
-        }
-        const auto& variables=((std::unique_ptr<FunctionAST>const&)(*current_function))->getLocals();
-        if(!variables.empty())
-        {
-            for(int i=0; i<variables.size(); i++)
-            {
-                if(variables[i]->getName()==name)
-                {
-                    return variables[i];
-                }
-            }
-        }
-        return variables[0]; // never reach this case, we are assured that the variable is defined, im a bad programmer
+        return (*current_function)->getVar(name);
     }
- 
-    std::string VAnalyzer::getType(const std::unique_ptr<ExprAST>& expr)
+
+    std::string VAnalyzer::getType(ExprAST* const& expr)
     {
         switch (expr->asttype)
         {
@@ -179,28 +141,20 @@ namespace vire
             case ast_str: return "str";
             case ast_char: return "char";
 
-            case ast_binop: return getType(((std::unique_ptr<BinaryExprAST>const&)expr)->getLHS());
+            case ast_binop: return getType(((BinaryExprAST*const&)expr)->getLHS());
 
-            case ast_var: return getType((const std::unique_ptr<VariableExprAST>&)expr);
+            case ast_var: return getVar(((VariableExprAST*const&)expr)->getName())->getType();
 
             default: return "";
         }
     }
-    std::string VAnalyzer::getType(const std::unique_ptr<VariableExprAST>& var)
-    {
-        if(isVarDefined(var->getName()))
-        {
-            return getVar(var->getName())->getType();
-        }
-        return "";
-    }
-    std::string VAnalyzer::getType(const std::unique_ptr<ArrayExprAST>& array)
+    std::string VAnalyzer::getType(ArrayExprAST* const& array)
     {
         const auto& vec = array->getElements();
-        std::string type=getType(vec[0]);
+        std::string type=getType(vec[0].get());
         for(int i=0; i<vec.size(); ++i)
         {
-            std::string newType=getType(vec[i]);
+            std::string newType=getType(vec[i].get());
             if(type!=newType)
             {
                 return "any";
@@ -211,18 +165,19 @@ namespace vire
     }
 
     // Helper functions
-    std::unique_ptr<ReturnExprAST> const& getReturnStatement(std::vector<std::unique_ptr<ExprAST>> const& block)
+    ReturnExprAST* const getReturnStatement(std::vector<std::unique_ptr<ExprAST>> const& block)
     {
         for(auto const& expr : block)
         {
-            if(expr->asttype==ast_return) { return (std::unique_ptr<ReturnExprAST> const&)expr; }
+            if(expr->asttype==ast_return) 
+            { return ((std::unique_ptr<ReturnExprAST> const&)expr).get(); }
         }
 
-        return (std::unique_ptr<ReturnExprAST> const&)block[0];
+        return nullptr;
     }
 
     // Verification Functions
-    bool VAnalyzer::verifyVar(const std::unique_ptr<VariableExprAST>& var)
+    bool VAnalyzer::verifyVar(VariableExprAST* const& var)
     {
         // Check if it is defined
         if(!isVarDefined(var->getName()))
@@ -232,11 +187,12 @@ namespace vire
         }
         return true;
     }
-    bool VAnalyzer::verifyVarDef(const std::unique_ptr<VariableDefAST>& var, bool check_globally_only)
+    bool VAnalyzer::verifyVarDef(VariableDefAST* const& var, bool check_globally_only)
     {
         if(!isVarDefined(var->getName(),check_globally_only))
         {
             bool isvar=!(var->isLet() || var->isConst());
+
             if(!isvar)
             {
                 if(var->getValue() == nullptr && var->getType() == "auto")
@@ -276,7 +232,7 @@ namespace vire
             if(is_array)
             {
                 auto arr=cast_static<ArrayExprAST>(var->moveValue());
-                value_type=getType(arr);
+                value_type=getType(arr.get());
                 var->setValue(std::move(arr));
                 if(is_auto) type=value_type;
             }
@@ -293,18 +249,20 @@ namespace vire
             }
 
             type=value_type;
+
             var->setType(type);
 
+            addVar(var);
             return true;
         }
         // Variable is already defined
         return false;
     }
-    bool VAnalyzer::verifyTypedVar(const std::unique_ptr<TypedVarAST>& var)
+    bool VAnalyzer::verifyTypedVar(TypedVarAST* const& var)
     {
         return true;
     }
-    bool VAnalyzer::verifyVarAssign(const std::unique_ptr<VariableAssignAST>& assign)
+    bool VAnalyzer::verifyVarAssign(VariableAssignAST* const& assign)
     {
         if(!isVarDefined(assign->getName()))
         {
@@ -312,7 +270,7 @@ namespace vire
             return false;
         }
 
-        const std::unique_ptr<VariableDefAST>& var=getVar(assign->getName());
+        auto const& var=getVar(assign->getName());
         if(var->isConst())
         {
             // Var is const
@@ -331,18 +289,18 @@ namespace vire
         return true;
     }
 
-    bool VAnalyzer::verifyInt(const std::unique_ptr<IntExprAST>& int_) { return true; }
-    bool VAnalyzer::verifyFloat(const std::unique_ptr<FloatExprAST>& float_) { return true; }
-    bool VAnalyzer::verifyDouble(const std::unique_ptr<DoubleExprAST>& double_) { return true; }
-    bool VAnalyzer::verifyChar(const std::unique_ptr<CharExprAST>& char_) { return true; }
-    bool VAnalyzer::verifyStr(const std::unique_ptr<StrExprAST>& str) { return true; }
-    bool VAnalyzer::verifyArray(const std::unique_ptr<ArrayExprAST>& array)
+    bool VAnalyzer::verifyInt(IntExprAST* const& int_) { return true; }
+    bool VAnalyzer::verifyFloat(FloatExprAST* const& float_) { return true; }
+    bool VAnalyzer::verifyDouble(DoubleExprAST* const& double_) { return true; }
+    bool VAnalyzer::verifyChar(CharExprAST* const& char_) { return true; }
+    bool VAnalyzer::verifyStr(StrExprAST* const& str) { return true; }
+    bool VAnalyzer::verifyArray(ArrayExprAST* const& array)
     {
         const auto& elems=array->getElements();
 
         for(const auto& elem : elems)
         {
-            if(!verifyExpr(elem))
+            if(!verifyExpr(elem.get()))
             {
                 // Element is not valid
                 return false;
@@ -351,7 +309,7 @@ namespace vire
         return true;
     }
 
-    bool VAnalyzer::verifyFor(const std::unique_ptr<ForExprAST>& for_)
+    bool VAnalyzer::verifyFor(ForExprAST* const& for_)
     { 
         const auto& init=for_->getInit();
         const auto& cond=for_->getCond();
@@ -396,7 +354,7 @@ namespace vire
         
         return true;
     }
-    bool VAnalyzer::verifyWhile(const std::unique_ptr<WhileExprAST>& while_)
+    bool VAnalyzer::verifyWhile(WhileExprAST* const& while_)
     {
         const auto& cond=while_->getCond();
 
@@ -418,10 +376,10 @@ namespace vire
         }
         return true;
     }
-    bool VAnalyzer::verifyBreak(const std::unique_ptr<BreakExprAST>& break_) { return true; }
-    bool VAnalyzer::verifyContinue(const std::unique_ptr<ContinueExprAST>& continue_) { return true; }    
+    bool VAnalyzer::verifyBreak(BreakExprAST* const& break_) { return true; }
+    bool VAnalyzer::verifyContinue(ContinueExprAST* const& continue_) { return true; }    
 
-    bool VAnalyzer::verifyCall(const std::unique_ptr<CallExprAST>& call)
+    bool VAnalyzer::verifyCall(CallExprAST* const& call)
     {
         bool is_valid=true;
         auto name=call->getName();
@@ -449,13 +407,13 @@ namespace vire
         {
             const auto& arg=args[i];
 
-            if(!verifyExpr(arg))
+            if(!verifyExpr(arg.get()))
             {
                 // Argument is not valid
                 is_valid=false;
             }
 
-            if(func_args[i]->getType() != getType(arg))
+            if(func_args[i]->getType() != getType(arg.get()))
             {
                 // Argument type mismatch
                 is_valid=false;
@@ -465,11 +423,12 @@ namespace vire
         return is_valid;
     }
 
-    bool VAnalyzer::verifyReturn(const std::unique_ptr<ReturnExprAST>& ret)
-    {;
+    bool VAnalyzer::verifyReturn(ReturnExprAST* const& ret)
+    {
         const auto& ret_type=getFuncReturnType(ret->getName());
-        if(ret_type!=getType(ret->getValues()[0]))
+        if(ret_type!=getType(ret->getValue()))
         {
+            std::cout << "Return type mismatch, expected " << ret_type << " got " << getType(ret->getValue()) << std::endl;
             // Type mismatch
             return false;
         }
@@ -477,7 +436,7 @@ namespace vire
         return true;
     }
 
-    bool VAnalyzer::verifyBinop(const std::unique_ptr<BinaryExprAST>& binop)
+    bool VAnalyzer::verifyBinop(BinaryExprAST* const& binop)
     {
         const auto& left=binop->getLHS();
         const auto& right=binop->getRHS();
@@ -495,7 +454,7 @@ namespace vire
         
         return true;
     }
-    bool VAnalyzer::verifyUnop(const std::unique_ptr<UnaryExprAST>& unop)
+    bool VAnalyzer::verifyUnop(UnaryExprAST* const& unop)
     {
         const auto& expr=unop->getExpr();
 
@@ -508,7 +467,7 @@ namespace vire
         return true;
     }
 
-    bool VAnalyzer::verifyPrototype(const std::unique_ptr<PrototypeAST>& proto)
+    bool VAnalyzer::verifyPrototype(PrototypeAST* const& proto)
     {
         bool is_valid=true;
 
@@ -525,6 +484,7 @@ namespace vire
         }
         
         const auto& args=proto->getArgs();
+        
         for(const auto& arg : args)
         {   
             if(arg->getType() == "auto" || arg->getType() == "any")
@@ -533,7 +493,7 @@ namespace vire
                 is_valid=false;
             }
 
-            if(!verifyVarDef(arg,true))
+            if(!verifyVarDef(arg.get(),true))
             {
                 std::cout << "Argument is not valid" << std::endl;
                 // Argument is not valid
@@ -543,7 +503,7 @@ namespace vire
         
         return is_valid;
     }
-    bool VAnalyzer::verifyProto(const std::unique_ptr<PrototypeAST>& proto)
+    bool VAnalyzer::verifyProto(PrototypeAST* const& proto)
     {
         if(!verifyPrototype(proto))
         {
@@ -553,7 +513,7 @@ namespace vire
 
         return true;
     }
-    bool VAnalyzer::verifyExtern(const std::unique_ptr<ExternAST>& extern_)
+    bool VAnalyzer::verifyExtern(ExternAST* const& extern_)
     {
         if(!verifyPrototype(extern_->getProto()))
         {
@@ -563,7 +523,7 @@ namespace vire
 
         return true;
     }
-    bool VAnalyzer::verifyFunction(const std::unique_ptr<FunctionAST>& func)
+    bool VAnalyzer::verifyFunction(FunctionAST* const& func)
     {
         bool is_valid=true;
 
@@ -588,7 +548,7 @@ namespace vire
         {
             if(expr->asttype==ast_typedvar)
             {
-                if(!verifyTypedVar((const std::unique_ptr<TypedVarAST>&)expr))
+                if(!verifyTypedVar(((std::unique_ptr<TypedVarAST> const&)expr).get()))
                 {
                     // TypedVar is not valid
                     return false;
@@ -596,7 +556,7 @@ namespace vire
             }
             else if(expr->asttype==ast_struct)
             {
-                if(!verifyStruct((const std::unique_ptr<StructExprAST>&)expr))
+                if(!verifyStruct(((std::unique_ptr<StructExprAST> const&)expr).get()))
                 {
                     // Struct is not valid
                     return false;
@@ -604,7 +564,7 @@ namespace vire
             }
             else if(expr->asttype==ast_union)
             {
-                if(!verifyUnion((const std::unique_ptr<UnionExprAST>&)expr))
+                if(!verifyUnion(((std::unique_ptr<UnionExprAST> const&)expr).get()))
                 {
                     // Union is not valid
                     return false;
@@ -614,7 +574,7 @@ namespace vire
 
         return true;
     }
-    bool VAnalyzer::verifyUnion(const std::unique_ptr<UnionExprAST>& union_)
+    bool VAnalyzer::verifyUnion(UnionExprAST* const& union_)
     {
         const auto& members=union_->getMembers();
         
@@ -626,7 +586,7 @@ namespace vire
 
         return true;
     }
-    bool VAnalyzer::verifyStruct(const std::unique_ptr<StructExprAST>& struct_)
+    bool VAnalyzer::verifyStruct(StructExprAST* const& struct_)
     {
         const auto& members=struct_->getMembers();
         
@@ -639,69 +599,65 @@ namespace vire
         return true;
     }
 
-    bool VAnalyzer::verifyIfThen(const std::unique_ptr<IfThenExpr>& if_then)
+    bool VAnalyzer::verifyIfThen(IfThenExpr* const& if_then)
     {
+        bool is_valid=true;
         const auto& cond=if_then->getCondition();
         const auto& then_block=if_then->getThenBlock();
         
         if(cond->asttype!=ast_var && cond->asttype!=ast_unop && cond->asttype!=ast_binop)
         {
             // Cond is not a boolean expression
-            return false;
+            is_valid=false;
         }
         if(!verifyExpr(cond))
         {
             // Cond is not valid
-            return false;
+            is_valid=false;
         }
         if(!verifyBlock(then_block))
         {
             // Then block is not valid
-            return false;
+            is_valid=false;
         }
-        return true;
-    }
-    bool VAnalyzer::verifyIf(const std::unique_ptr<IfExprAST>& if_)
-    {
-        const auto& cond=if_->getCondition();
-        const auto& then_block=if_->getThenBlock();
         
-        if(cond->asttype!=ast_var && cond->asttype!=ast_unop && cond->asttype!=ast_binop)
+        std::cout << "IfThenExpr is " << (is_valid?"valid":"invalid") << std::endl;
+        return is_valid;
+    }
+    bool VAnalyzer::verifyIf(IfExprAST* const& if_)
+    {
+        std::cout << "Verifying IfExprAST" << std::endl;
+        bool is_valid=true;
+        
+        if(!verifyIfThen(if_->getIfThen()))
         {
-            // Cond is not a boolean expression
-            return false;
+            // IfThen is not valid
+            is_valid=false;
         }
-        if(!verifyExpr(cond))
+        for(const auto& else_if : if_->getElifLadder())
         {
-            // Cond is not valid
-            return false;
-        }
-        if(!verifyBlock(then_block))
-        {
-            // Then block is not valid
-            return false;
-        }
-
-        const auto& elif_ladder=if_->getElifLadder();
-        unsigned int elif_ladder_size=elif_ladder.size();
-        for(unsigned int i=0; i<elif_ladder_size-1; ++i)
-        {
-            if(!verifyIfThen(elif_ladder[i]))
+            if(else_if->asttype!=ast_if)
             {
-                // Elif is not valid
-                return false;
+                if(!verifyIfThen(((std::unique_ptr<IfThenExpr> const&)else_if).get()))
+                {
+                    // ElseIf is not valid
+                    is_valid=false;
+                }
+            }
+            else
+            {
+                if(!verifyBlock(else_if->getThenBlock()))
+                {
+                    // ElseIf block is not valid
+                    is_valid=false;
+                }
             }
         }
-        if(!verifyBlock(elif_ladder[elif_ladder_size]->getThenBlock()))
-        {
-            // Else block is not valid
-            return false;
-        }
 
-        return true;
+        return is_valid;
     }
 
-    bool VAnalyzer::verifyUnsafe(const std::unique_ptr<UnsafeExprAST>& unsafe)
+    bool VAnalyzer::verifyUnsafe(UnsafeExprAST* const& unsafe)
     {
         const auto& block=unsafe->getBody();
         if(!verifyBlock(block))
@@ -711,7 +667,7 @@ namespace vire
         }
         return true;
     }
-    bool VAnalyzer::verifyReference(const std::unique_ptr<ReferenceExprAST>& reference)
+    bool VAnalyzer::verifyReference(ReferenceExprAST* const& reference)
     {
         const auto& expr=reference->getVar();
         if(!verifyExpr(expr))
@@ -722,7 +678,7 @@ namespace vire
         return true;
     }
 
-    bool VAnalyzer::verifyClass(const std::unique_ptr<ClassAST>& cls)
+    bool VAnalyzer::verifyClass(ClassAST* const& cls)
     {
         if(isClassDefined(cls->getName()))
         {
@@ -734,15 +690,15 @@ namespace vire
         const auto& funcs=cls->getFunctions();
 
         bool is_valid=true;
-        for(const auto& member : members)
+        for(auto const& member : members)
         {
-            if(!verifyVarDef(member))
+            if(!verifyVarDef((VariableDefAST*const&)member))
             {
                 // Member is not valid
                 return false;
             }
         }
-        for(const auto& func : funcs)
+        for(auto const& func : funcs)
         {
             if(func->is_extern())
             {
@@ -750,7 +706,7 @@ namespace vire
             }
             else if(func->is_proto())
             {
-                if(!verifyPrototype((std::unique_ptr<PrototypeAST> const&)func))
+                if(!verifyPrototype((PrototypeAST*const&)func))
                 {
                     // Prototype is not valid
                     return false;
@@ -758,7 +714,7 @@ namespace vire
             }
             else
             {
-                const auto& func_cast=(std::unique_ptr<FunctionAST> const&)func;
+                const auto& func_cast=(FunctionAST*const&)func;
 
                 if(!verifyPrototype((func_cast->getProto())))
                 {
@@ -780,7 +736,7 @@ namespace vire
     {
         for(const auto& expr : block)
         {
-            if(!verifyExpr(expr))
+            if(!verifyExpr(expr.get()))
             {
                 // Expr is not valid
                 return false;
@@ -792,18 +748,18 @@ namespace vire
     bool VAnalyzer::verifyCode(std::unique_ptr<CodeAST> code)
     {
         bool is_valid=true;
-        current_code=std::move(code);
+        codeast=std::move(code);
 
-        auto classes=current_code->moveClasses();
-        auto funcs=current_code->moveFunctions();
-        auto union_structs=current_code->moveUnionStructs();
-        auto pre_stms=current_code->movePreExecutionStatements();
+        auto classes=codeast->moveClasses();
+        auto funcs=codeast->moveFunctions();
+        auto union_structs=codeast->moveUnionStructs();
+        auto pre_stms=codeast->movePreExecutionStatements();
 
         bool has_main=false;
         unsigned int main_func_indx=0;
         for(const auto& cls : classes)
         {
-            if(!verifyClass(cls))
+            if(!verifyClass(cls.get()))
             {
                 // Class is not valid
                 return false;
@@ -812,10 +768,11 @@ namespace vire
         for(unsigned int it=0; it<funcs.size(); ++it)
         {
             const auto& func=funcs[it];
+
             current_function=&((std::unique_ptr<FunctionBaseAST>&)func);
             if(func->is_extern())
             {
-                if(!verifyExtern((std::unique_ptr<ExternAST> const&)func))
+                if(!verifyExtern(((std::unique_ptr<ExternAST> const&)func).get()))
                 {
                     // Extern is not valid
                     is_valid=false;
@@ -823,7 +780,7 @@ namespace vire
             }
             else if(func->is_proto())
             {
-                if(!verifyPrototype((std::unique_ptr<PrototypeAST> const&)func))
+                if(!verifyPrototype(((std::unique_ptr<PrototypeAST> const&)func).get()))
                 {
                     // Prototype is not valid
                     is_valid=false;
@@ -831,27 +788,27 @@ namespace vire
             }
             else
             {
-                auto& func_cast=(std::unique_ptr<FunctionAST>&)func;
-                if(!verifyFunction(func_cast))
+                auto const& casted_func=((std::unique_ptr<FunctionAST> const&)func).get();
+                if(!verifyFunction(casted_func))
                 {
                     // Function is not valid
                     is_valid=false;
                 }
 
-                if(func_cast->getName()=="main")
+                if(casted_func->getName()=="main")
                 {
                     has_main=true;
                     main_func_indx=it;
                 }
             }
-            
+
             addFunc(cast_static<FunctionAST>(std::move(funcs[it])));
         }
         for(const auto& union_struct : union_structs)
         {
             if(union_struct->asttype==ast_union)
             {
-                if(!verifyUnion((std::unique_ptr<UnionExprAST> const&)union_struct))
+                if(!verifyUnion(((std::unique_ptr<UnionExprAST> const&)union_struct).get()))
                 {
                     // Union is not valid
                     is_valid=false;
@@ -859,7 +816,7 @@ namespace vire
             }
             else
             {
-                if(!verifyStruct((std::unique_ptr<StructExprAST> const&)union_struct))
+                if(!verifyStruct(((std::unique_ptr<StructExprAST> const&)union_struct).get()))
                 {
                     // Struct is not valid
                     is_valid=false;
@@ -881,7 +838,7 @@ namespace vire
         for(unsigned int it=0; it<pre_stms.size(); ++it)
         {
             auto expr=std::move(pre_stms[it]);
-            if(!verifyExpr((std::unique_ptr<ExprAST> const&)expr))
+            if(!verifyExpr(((std::unique_ptr<ExprAST> const&)expr).get()))
             {
                 // Pre-execution statement is not valid
                 is_valid=false;
@@ -893,33 +850,33 @@ namespace vire
         return is_valid;
     }
 
-    bool VAnalyzer::verifyExpr(const std::unique_ptr<ExprAST>& expr)
+    bool VAnalyzer::verifyExpr(ExprAST* const& expr)
     {
         switch(expr->asttype)
         {
-            case ast_int: return verifyInt((const std::unique_ptr<IntExprAST>&)expr);
-            case ast_float: return verifyFloat((const std::unique_ptr<FloatExprAST>&)expr);
-            case ast_double: return verifyDouble((const std::unique_ptr<DoubleExprAST>&)expr);
-            case ast_str: return verifyStr((const std::unique_ptr<StrExprAST>&)expr);
-            case ast_char: return verifyChar((const std::unique_ptr<CharExprAST>&)expr);
+            case ast_int: return verifyInt(((std::unique_ptr<IntExprAST> const&)expr).get());
+            case ast_float: return verifyFloat(((std::unique_ptr<FloatExprAST> const&)expr).get());
+            case ast_double: return verifyDouble(((std::unique_ptr<DoubleExprAST> const&)expr).get());
+            case ast_str: return verifyStr(((std::unique_ptr<StrExprAST> const&)expr).get());
+            case ast_char: return verifyChar(((std::unique_ptr<CharExprAST> const&)expr).get());
 
-            case ast_binop: return verifyBinop((const std::unique_ptr<BinaryExprAST>&)expr);
-            case ast_unop: return verifyUnop((const std::unique_ptr<UnaryExprAST>&)expr);
+            case ast_binop: return verifyBinop(((std::unique_ptr<BinaryExprAST> const&)expr).get());
+            case ast_unop: return verifyUnop(((std::unique_ptr<UnaryExprAST> const&)expr).get());
 
-            case ast_var: return verifyVar((const std::unique_ptr<VariableExprAST>&)expr);
-            case ast_vardef: return verifyVarDef((const std::unique_ptr<VariableDefAST>&)expr);
-            case ast_typedvar: return verifyTypedVar((const std::unique_ptr<TypedVarAST>&)expr);
-            case ast_varassign: return verifyVarAssign((const std::unique_ptr<VariableAssignAST>&)expr);
+            case ast_var: return verifyVar(((std::unique_ptr<VariableExprAST> const&)expr).get());
+            case ast_vardef: return verifyVarDef(((std::unique_ptr<VariableDefAST> const&)expr).get());
+            case ast_typedvar: return verifyTypedVar(((std::unique_ptr<TypedVarAST> const&)expr).get());
+            case ast_varassign: return verifyVarAssign(((std::unique_ptr<VariableAssignAST>&)expr).get());
 
-            case ast_call: return verifyCall((const std::unique_ptr<CallExprAST>&)expr);
+            case ast_call: return verifyCall(((std::unique_ptr<CallExprAST> const&)expr).get());
 
-            case ast_for: return verifyFor((const std::unique_ptr<ForExprAST>&)expr);
-            case ast_while: return verifyWhile((const std::unique_ptr<WhileExprAST>&)expr);
-            case ast_array: return verifyArray((const std::unique_ptr<ArrayExprAST>&)expr);
+            case ast_for: return verifyFor(((std::unique_ptr<ForExprAST> const&)expr).get());
+            case ast_while: return verifyWhile(((std::unique_ptr<WhileExprAST> const&)expr).get());
+            case ast_array: return verifyArray(((std::unique_ptr<ArrayExprAST> const&)expr).get());
 
-            case ast_break: return verifyBreak((const std::unique_ptr<BreakExprAST>&)expr);
-            case ast_continue: return verifyContinue((const std::unique_ptr<ContinueExprAST>&)expr);
-            case ast_return: return verifyReturn((const std::unique_ptr<ReturnExprAST>&)expr);
+            case ast_break: return verifyBreak(((std::unique_ptr<BreakExprAST> const&)expr).get());
+            case ast_continue: return verifyContinue(((std::unique_ptr<ContinueExprAST> const&)expr).get());
+            case ast_return: return verifyReturn(((std::unique_ptr<ReturnExprAST> const&)expr).get());
 
             default: return false;
         }

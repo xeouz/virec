@@ -28,39 +28,45 @@ class VCompiler
     std::unique_ptr<VAnalyzer> analyzer;
 
     // LLVM
-    llvm::LLVMContext ctx;
-    llvm::IRBuilder<> builder;
+    llvm::LLVMContext CTX;
+    llvm::IRBuilder<> Builder;
     std::unique_ptr<llvm::Module> Module;
 
     std::map<llvm::StringRef, llvm::Value*> namedValues;
+    llvm::Function* currentFunction;
 public:
     VCompiler(std::unique_ptr<VAnalyzer> analyzer) 
-    : analyzer(std::move(analyzer)), builder(llvm::IRBuilder<>(ctx))
+    : analyzer(std::move(analyzer)), Builder(llvm::IRBuilder<>(CTX))
     {
-        Module = std::make_unique<llvm::Module>("vire", ctx);
+        Module = std::make_unique<llvm::Module>("vire", CTX);
     }
     
     llvm::Type* getLLVMType(const std::string& type);
 
-    llvm::Value* compileExpr(const std::unique_ptr<ExprAST>& expr);
+    llvm::Value* compileExpr(ExprAST* const& expr);
 
-    llvm::Value* compileNumExpr(const std::unique_ptr<IntExprAST>& expr);
-    llvm::Value* compileNumExpr(const std::unique_ptr<FloatExprAST>& expr);
-    llvm::Value* compileNumExpr(const std::unique_ptr<DoubleExprAST>& expr);
-    llvm::Value* compileCharExpr(const std::unique_ptr<CharExprAST>& expr);
-    llvm::Value* compileStrExpr(const std::unique_ptr<StrExprAST>& expr);
+    llvm::Value* compileNumExpr(IntExprAST* const& expr);
+    llvm::Value* compileNumExpr(FloatExprAST* const& expr);
+    llvm::Value* compileNumExpr(DoubleExprAST* const& expr);
+    llvm::Value* compileCharExpr(CharExprAST* const& expr);
+    llvm::Value* compileStrExpr(StrExprAST* const& expr);
 
-    llvm::Value* compileBinopExpr(const std::unique_ptr<BinaryExprAST>& expr);
+    llvm::Value* compileBinopExpr(BinaryExprAST* const& expr);
 
-    llvm::Value* compileVariableExpr(const std::unique_ptr<VariableExprAST>& expr);
-    llvm::Value* compileVariableDef(const std::unique_ptr<VariableDefAST>& var);
+    llvm::AllocaInst* createEntryBlockAlloca(llvm::Function* function, std::string const& varname, llvm::Type* type);
+    llvm::Value* compileVariableExpr(VariableExprAST* const& expr);
+    llvm::Value* compileVariableDef(VariableDefAST* const& var);
+    llvm::Value* compileVariableAssign(VariableAssignAST* const& var);
 
     std::vector<llvm::Value*> compileBlock(std::vector<std::unique_ptr<ExprAST>> const& block);
 
-    llvm::Value* compileCallExpr(const std::unique_ptr<CallExprAST>& expr);
-    llvm::Value* compileReturnExpr(const std::unique_ptr<ReturnExprAST>& expr);
-    llvm::Function* compilePrototype(const std::string& Name);
-    llvm::Function* compileExtern(const std::string& Name);
-    llvm::Function* compileFunction(const std::string& Name);
+    llvm::Value* compileIfThen(IfThenExpr* const& ifthen);
+    llvm::Value* compileIfElse(IfExprAST* const& ifelse);
+
+    llvm::Value* compileCallExpr(CallExprAST* const& expr);
+    llvm::Value* compileReturnExpr(ReturnExprAST* const& expr);
+    llvm::Function* compilePrototype(std::string const& Name);
+    llvm::Function* compileExtern(std::string const& Name);
+    llvm::Function* compileFunction(std::string const& Name);
 };
 } // namespace vire

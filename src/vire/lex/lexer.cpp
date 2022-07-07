@@ -347,6 +347,10 @@ public:
                 if(peek=='=')   return makeToken(">=",tok_moreeq,1);
                 return makeToken(">",tok_morethan);
             }
+            case '!':{
+                if(peek=='=')   return makeToken("!=",tok_nequal,1);
+                return makeToken("!",tok_not);
+            }
 
             case '.': return makeToken(".",tok_dot);
 

@@ -16,8 +16,8 @@ public:
     VariableExprAST(std::unique_ptr<Viretoken> Name) : Name(Name->value), ExprAST("",ast_var) 
     {setToken(std::move(Name));} 
 
-    const std::string& getName() const {return Name;}
-    const std::unique_ptr<Viretoken>& getToken() const {return token;}
+    std::string const& getName() const {return Name;}
+    Viretoken* const getToken() const {return token.get();}
     std::unique_ptr<Viretoken> moveToken() {return std::move(token);}
 };
 
@@ -29,8 +29,8 @@ public:
     VariableAssignAST(std::unique_ptr<Viretoken> Name, std::unique_ptr<ExprAST> Value)
     : Name(Name->value), Value(std::move(Value)), ExprAST("void",ast_varassign) {setToken(std::move(Name));}
 
-    const std::string& getName() const {return Name;}
-    const std::unique_ptr<ExprAST>& getValue() const {return Value;}
+    std::string const& getName() const {return Name;}
+    ExprAST* const getValue() const {return Value.get();}
 };
 
 class VariableDefAST : public ExprAST
@@ -45,7 +45,7 @@ public:
     : Name(Name->value),Value(std::move(Value)),ExprAST(type,ast_vardef), 
     isconst(isconst),islet(islet),isarr(isarr),arr_size(arr_size) {setToken(std::move(Name));}
 
-    const std::string& getName() const {return Name;}
+    std::string const& getName() const {return Name;}
     const bool& isConst() const {return isconst;}
     const bool& isLet() const {return islet;}
     const bool& isArr() const {return isarr;}
@@ -53,7 +53,7 @@ public:
 
     void setArrSize(unsigned int size) {arr_size = size;}
 
-    const std::unique_ptr<ExprAST>& getValue() const {return Value;}
+    ExprAST* const getValue() const {return Value.get();}
     std::unique_ptr<ExprAST> moveValue() {return std::move(Value);}
     void setValue(std::unique_ptr<ExprAST> Value) {this->Value=std::move(Value);}
 };
@@ -66,7 +66,7 @@ public:
     : Name(std::move(Name)), ExprAST(Type->value,ast_typedvar)
     {setToken(std::move(Type));}
 
-    const std::string& getName() const {return Name->value;}
+    std::string const& getName() const {return Name->value;}
 };
 
 }

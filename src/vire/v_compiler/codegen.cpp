@@ -6,23 +6,23 @@ namespace vire
     {
         if (type == "int")
         {
-            return llvm::Type::getInt32Ty(ctx);
+            return llvm::Type::getInt32Ty(CTX);
         }
         else if (type == "float")
         {
-            return llvm::Type::getFloatTy(ctx);
+            return llvm::Type::getFloatTy(CTX);
         }
         else if (type == "double")
         {
-            return llvm::Type::getDoubleTy(ctx);
+            return llvm::Type::getDoubleTy(CTX);
         }
         else if (type == "char")
         {
-            return llvm::Type::getInt8Ty(ctx);
+            return llvm::Type::getInt8Ty(CTX);
         }
         else if (type == "str")
         {
-            return llvm::Type::getInt8PtrTy(ctx);
+            return llvm::Type::getInt8PtrTy(CTX);
         }
         else
         {
@@ -30,63 +30,98 @@ namespace vire
         }
     }
 
-    llvm::Value* VCompiler::compileExpr(const std::unique_ptr<ExprAST>& expr)
+    llvm::Value* VCompiler::compileExpr(ExprAST* const& expr)
     {
         switch(expr->asttype)
         {
             case ast_int:
-                return compileNumExpr((std::unique_ptr<IntExprAST> const&)expr);
+                return compileNumExpr((IntExprAST* const&)expr);
             case ast_float:
-                return compileNumExpr((std::unique_ptr<FloatExprAST> const&)expr);
+                return compileNumExpr((FloatExprAST* const&)expr);
             case ast_double:
-                return compileNumExpr((std::unique_ptr<DoubleExprAST> const&)expr);
+                return compileNumExpr((DoubleExprAST* const&)expr);
             case ast_char:
-                return compileCharExpr((std::unique_ptr<CharExprAST> const&)expr);
+                return compileCharExpr((CharExprAST* const&)expr);
 
             case ast_var:
-                return compileVariableExpr((std::unique_ptr<VariableExprAST> const&)expr);
+                return compileVariableExpr((VariableExprAST* const&)expr);
+            case ast_vardef:
+                return compileVariableDef((VariableDefAST* const&)expr);
+            case ast_varassign:
+                return compileVariableAssign((VariableAssignAST* const&)expr);
 
             case ast_binop:
-                return compileBinopExpr((std::unique_ptr<BinaryExprAST> const&)expr);
+                return compileBinopExpr((BinaryExprAST* const&)expr);
 
             case ast_call:
-                return compileCallExpr((std::unique_ptr<CallExprAST> const&)expr);
+                return compileCallExpr((CallExprAST* const&)expr);
+
+            case ast_if:
+                return compileIfThen((IfThenExpr* const&)expr);
 
             case ast_return:
-                return compileReturnExpr((std::unique_ptr<ReturnExprAST> const&)expr);
+                return compileReturnExpr((ReturnExprAST* const&)expr);
             default:
                 return nullptr;
         }
     }
 
-    llvm::Value* VCompiler::compileNumExpr(const std::unique_ptr<IntExprAST>& expr)
+    llvm::Value* VCompiler::compileNumExpr(IntExprAST* const& expr)
     {
         
-        return llvm::ConstantInt::get(ctx, llvm::APInt(32, expr->getValue(), true));
+        return llvm::ConstantInt::get(CTX, llvm::APInt(32, expr->getValue(), true));
     }
-    llvm::Value* VCompiler::compileNumExpr(const std::unique_ptr<FloatExprAST>& expr)
+    llvm::Value* VCompiler::compileNumExpr(FloatExprAST* const& expr)
     {
-        return llvm::ConstantFP::get(ctx, llvm::APFloat(expr->getValue()));
+        return llvm::ConstantFP::get(CTX, llvm::APFloat(expr->getValue()));
     }
-    llvm::Value* VCompiler::compileNumExpr(const std::unique_ptr<DoubleExprAST>& expr)
+    llvm::Value* VCompiler::compileNumExpr(DoubleExprAST* const& expr)
     {
-        return llvm::ConstantFP::get(ctx, llvm::APFloat(expr->getValue()));
+        return llvm::ConstantFP::get(CTX, llvm::APFloat(expr->getValue()));
     }
-    llvm::Value* VCompiler::compileCharExpr(const std::unique_ptr<CharExprAST>& expr)
+    llvm::Value* VCompiler::compileCharExpr(CharExprAST* const& expr)
     {
-        return llvm::ConstantInt::get(ctx, llvm::APInt(8, expr->getValue(), true));
+        return llvm::ConstantInt::get(CTX, llvm::APInt(8, expr->getValue(), true));
     }
-    llvm::Value* VCompiler::compileStrExpr(const std::unique_ptr<StrExprAST>& expr)
+    llvm::Value* VCompiler::compileStrExpr(StrExprAST* const& expr)
     {
-        return builder.CreateGlobalString(expr->getValue(), "str");
+        return Builder.CreateGlobalString(expr->getValue(), "str");
     }
 
-    llvm::Value* VCompiler::compileVariableExpr(const std::unique_ptr<VariableExprAST>& expr)
+    llvm::Value* VCompiler::compileVariableExpr(VariableExprAST* const& expr)
     {
-        return namedValues[expr->getName()];
+        llvm::Value* val=namedValues[expr->getName()];
+        return Builder.CreateLoad(val->getType(), val, expr->getName());
+    }
+    llvm::Value* VCompiler::compileVariableDef(VariableDefAST* const& def)
+    {
+        auto* var_type=getLLVMType(def->getType());
+        auto* current_blk=Builder.GetInsertBlock();
+        
+        auto* alloca=Builder.CreateAlloca(var_type, nullptr, def->getName());
+
+        auto const& value=def->getValue();
+        if(value)
+        {
+            auto* val=compileExpr(value);
+            Builder.CreateStore(val, alloca);
+        }
+
+        namedValues[def->getName()]=alloca;
+
+        return alloca;
+    }
+    llvm::Value* VCompiler::compileVariableAssign(VariableAssignAST* const& assign)
+    {
+        auto* var=namedValues[assign->getName()];
+        auto* val=compileExpr(assign->getValue());
+
+        Builder.CreateStore(val, var);
+
+        return val;
     }
 
-    llvm::Value* VCompiler::compileBinopExpr(const std::unique_ptr<BinaryExprAST>& expr)
+    llvm::Value* VCompiler::compileBinopExpr(BinaryExprAST* const& expr)
     {
         auto lhs = compileExpr(expr->getLHS());
         auto rhs = compileExpr(expr->getRHS());
@@ -97,18 +132,22 @@ namespace vire
         switch(expr->getOp()->type)
         {
             case tok_plus:
-                return builder.CreateAdd(lhs, rhs, "addtmp");
+                return Builder.CreateAdd(lhs, rhs, "addtmp");
             case tok_minus:
-                return builder.CreateSub(lhs, rhs, "subtmp");
+                return Builder.CreateSub(lhs, rhs, "subtmp");
             case tok_mul:
-                return builder.CreateMul(lhs, rhs, "multmp");
+                return Builder.CreateMul(lhs, rhs, "multmp");
             case tok_div:
-                return builder.CreateSDiv(lhs, rhs, "divtmp");
+                return Builder.CreateSDiv(lhs, rhs, "divtmp");
             
             case tok_lessthan:
-                return builder.CreateICmpSLT(lhs, rhs, "cmptmp");
+                return Builder.CreateICmpSLT(lhs, rhs, "cmptmp");
             case tok_morethan:
-                return builder.CreateICmpSGT(lhs, rhs, "cmptmp");
+                return Builder.CreateICmpSGT(lhs, rhs, "cmptmp");
+            case tok_dequal:
+                return Builder.CreateICmpEQ(lhs, rhs, "cmptmp");
+            case tok_nequal:
+                return Builder.CreateICmpNE(lhs, rhs, "cmptmp");
             
             default:
                 std::cout << "Unhandled binary operator" << std::endl;
@@ -121,29 +160,42 @@ namespace vire
         std::vector<llvm::Value*> values;
         for(const auto& expr : block)
         {
-            values.push_back(compileExpr(expr));
+            values.push_back(compileExpr(expr.get()));
         }
 
         return values;
     }
 
-    llvm::Value* VCompiler::compileCallExpr(const std::unique_ptr<CallExprAST>& expr)
+    llvm::Value* VCompiler::compileIfThen(IfThenExpr* const& ifthen)
+    {
+        auto* cond=compileExpr(ifthen->getCondition());
+        auto* cmp=Builder.CreateICmpNE(cond, llvm::ConstantInt::get(CTX, llvm::APInt(1, 0, true)), "ifcond");
+        
+        auto* iftrue=llvm::BasicBlock::Create(CTX, "iftrue", currentFunction);
+        auto* ifcont=llvm::BasicBlock::Create(CTX, "ifcont", currentFunction);
+        compileBlock(ifthen->getThenBlock());
+
+        return Builder.CreateCondBr(cmp, iftrue, ifcont);
+    }
+
+    llvm::Value* VCompiler::compileCallExpr(CallExprAST* const& expr)
     {
         auto func=Module->getFunction(expr->getName());
 
         std::vector<llvm::Value*> args;
         for(auto& arg : expr->getArgs())
         {
-            args.push_back(compileExpr(arg));
+            args.push_back(compileExpr(arg.get()));
         }
 
-        return builder.CreateCall(func, args, "calltmp");
+        return Builder.CreateCall(func, args, "calltmp");
     }
-    llvm::Value* VCompiler::compileReturnExpr(const std::unique_ptr<ReturnExprAST>& expr)
+    llvm::Value* VCompiler::compileReturnExpr(ReturnExprAST* const& expr)
     {
-        auto ret=builder.CreateRet(compileExpr(expr->getValues()[0]));
-        builder.CreateUnreachable();
-        return ret;
+        auto* expr_val=compileExpr(expr->getValue());
+        auto* value=Builder.CreateStore(expr_val,namedValues["retval"]);
+
+        return value;
     }
     llvm::Function* VCompiler::compilePrototype(const std::string& Name)
     {
@@ -173,6 +225,8 @@ namespace vire
     llvm::Function* VCompiler::compileExtern(const std::string& Name)
     {
         llvm::Function* func=compilePrototype(Name);
+
+        // Remove in release
         std::cout << "Compiled extern " << Name << std::endl;
         func->print(llvm::errs());
         return func;
@@ -183,8 +237,8 @@ namespace vire
         if(!function)
             function=compilePrototype(Name);
 
-        llvm::BasicBlock* bb=llvm::BasicBlock::Create(ctx, "entry", function);
-        builder.SetInsertPoint(bb);
+        llvm::BasicBlock* bb=llvm::BasicBlock::Create(CTX, "entry", function);
+        Builder.SetInsertPoint(bb);
 
         namedValues.clear();
         for(auto& arg: function->args())
@@ -192,14 +246,19 @@ namespace vire
             namedValues[arg.getName()]=&arg;
         }
 
-        auto const& func=(std::unique_ptr<FunctionAST> const&)analyzer->getFunc(Name);
-        for(const auto& stm : func->getBody())
-        {
-            compileExpr(stm);
-        }
-        
+        auto const& func=(FunctionAST*)analyzer->getFunc(Name);
+
+        // Create return value
+        auto ret_type=getLLVMType(func->getType());
+        auto ret_val=Builder.CreateAlloca(ret_type, nullptr, "retval");
+        namedValues["retval"]=ret_val;
+        currentFunction=function;
+        compileBlock(func->getBody());
+        Builder.CreateRet(Builder.CreateLoad(ret_type, ret_val, "ret"));
+
         llvm::verifyFunction(*function);
         
+        // Remove in release
         std::cout << "Compiled function " << Name << std::endl;
         function->print(llvm::errs());
 

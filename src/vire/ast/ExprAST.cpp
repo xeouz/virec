@@ -23,7 +23,7 @@ public:
 
     virtual ~ExprAST() {}
     virtual std::string getType() const {return type;}
-    virtual void setType(const std::string& newtype) {type=newtype;}
+    virtual void setType(std::string const& newtype) {type=newtype;}
 
     virtual const std::size_t& getLine()    const {return token->line;}
     virtual const std::size_t& getCharpos() const {return token->charpos;} 

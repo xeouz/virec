@@ -23,16 +23,16 @@ public:
     , ExprAST("void",ast_for) 
     {}
 
-    const std::unique_ptr<ExprAST>& getInit() const { return initExpr; }
-    const std::unique_ptr<ExprAST>& getCond() const { return condExpr; }
-    const std::unique_ptr<ExprAST>& getIncr() const { return incrExpr; }
+    ExprAST* const getInit() const { return initExpr.get(); }
+    ExprAST* const getCond() const { return condExpr.get(); }
+    ExprAST* const getIncr() const { return incrExpr.get(); }
 
-    std::unique_ptr<ExprAST> moveInit() {return std::move(initExpr);}
-    std::unique_ptr<ExprAST> moveCond() {return std::move(condExpr);}
-    std::unique_ptr<ExprAST> moveIncr() {return std::move(incrExpr);}
+    std::unique_ptr<ExprAST> moveInit() { return std::move(initExpr); }
+    std::unique_ptr<ExprAST> moveCond() { return std::move(condExpr); }
+    std::unique_ptr<ExprAST> moveIncr() { return std::move(incrExpr); }
 
     std::vector<std::unique_ptr<ExprAST>> const& getBody() { return body; }
-    std::vector<std::unique_ptr<ExprAST>> moveBody() {return std::move(body);}
+    std::vector<std::unique_ptr<ExprAST>> moveBody() { return std::move(body); }
 };
 
 class WhileExprAST : public ExprAST
@@ -44,7 +44,7 @@ public:
     : condExpr(std::move(cond)), body(std::move(Stms)), ExprAST("void",ast_while) 
     {}
 
-    std::unique_ptr<ExprAST> getCond() {return std::move(condExpr);}
+    ExprAST* const getCond() { return condExpr.get(); }
     
     std::vector<std::unique_ptr<ExprAST>> const& getBody() { return body; }
     std::vector<std::unique_ptr<ExprAST>> moveBody() {return std::move(body);}
@@ -52,24 +52,28 @@ public:
 
 class BreakExprAST : public ExprAST
 {
-    std::unique_ptr<ExprAST> after_break;
+    std::unique_ptr<ExprAST> AfterBreak;
 public:
     char is_after;
     BreakExprAST() : ExprAST("",ast_break), is_after(0) {}
-    BreakExprAST(std::unique_ptr<ExprAST> after_break) 
-    : after_break(std::move(after_break)), ExprAST("",ast_break), is_after(1)
+    BreakExprAST(std::unique_ptr<ExprAST> AfterBreak) 
+    : AfterBreak(std::move(AfterBreak)), ExprAST("",ast_break), is_after(1)
     {}
+
+    ExprAST* const getAfterBreak() { return AfterBreak.get(); }
 };
 
 class ContinueExprAST : public ExprAST
 {
-    std::unique_ptr<ExprAST> after_cont;
+    std::unique_ptr<ExprAST> AfterCont;
 public:
     char is_after;
     ContinueExprAST() : ExprAST("",ast_continue), is_after(0) {}
-    ContinueExprAST(std::unique_ptr<ExprAST> after_cont)
-    : after_cont(std::move(after_cont)), ExprAST("",ast_continue), is_after(1)
+    ContinueExprAST(std::unique_ptr<ExprAST> AfterCont)
+    : AfterCont(std::move(AfterCont)), ExprAST("",ast_continue), is_after(1)
     {}
+
+    ExprAST* const getAfterCont() { return AfterCont.get(); }
 };
 
 }

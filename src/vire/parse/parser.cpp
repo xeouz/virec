@@ -99,7 +99,9 @@ namespace vire
 
             if(stm->asttype!=ast_for 
             && stm->asttype!=ast_while 
-            && stm->asttype!=ast_unsafe)
+            && stm->asttype!=ast_unsafe
+            && stm->asttype!=ast_if
+            && stm->asttype!=ast_ifelse)
                 getNextToken(tok_semicol);
 
             Stms.push_back(std::move(stm));
@@ -133,6 +135,8 @@ namespace vire
 
             case tok_for: return ParseForExpr();
             case tok_while: return ParseWhileExpr();
+
+            case tok_if: return ParseIfExpr();
 
             case tok_return: return ParseReturn();
             case tok_break: return ParseBreakContinue();
@@ -534,19 +538,7 @@ namespace vire
     {
         getNextToken(tok_return);
 
-        std::vector<std::unique_ptr<ExprAST>> vals;
-        while(CurTok->type!=tok_semicol)
-        {
-            if(CurTok->type==tok_eof)   return LogError("Expected ';' found end of file");
-            auto value=ParseExpression();
-            vals.push_back(std::move(value));
-            if(CurTok->type==tok_comma)
-                getNextToken(tok_comma);
-            else
-                break;
-        }
-
-        return std::make_unique<ReturnExprAST>(std::move(vals));
+        return std::make_unique<ReturnExprAST>(ParseExpression());
     }
 
     std::unique_ptr<ExprAST> Vireparse::ParseIfExpr()
@@ -809,7 +801,7 @@ namespace vire
                 getNextToken(tok_semicol);
             }
         }
-
+        
         return std::make_unique<CodeAST>(std::move(PreExecutionStatements),std::move(Functions),std::move(Classes),std::move(StructUnionDefs));
     }
 }
