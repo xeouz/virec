@@ -72,32 +72,14 @@ namespace vire
         return false;
     }
 
-    bool VAnalyzer::addProto(std::unique_ptr<PrototypeAST> proto)
+    bool VAnalyzer::addFunc(std::unique_ptr<FunctionBaseAST> func)
     {
-        if(!isFuncDefined(proto->getName()))
+        if(isFuncDefined(func->getName()))
         {
-            codeast->addFunction(std::move(proto));
-            return true;
+            return false;
         }
-        return false;
-    }
-    bool VAnalyzer::addFunc(std::unique_ptr<FunctionAST> func)
-    {
-        if(!isFuncDefined(func->getName()))
-        {
-            codeast->addFunction(std::move(func));
-            return true;
-        }
-        return false;
-    }
-    bool VAnalyzer::addExtern(std::unique_ptr<ExternAST> extern_)
-    {
-        if(!isFuncDefined(extern_->getName()))
-        {
-            codeast->addFunction(std::move(extern_));
-            return true;
-        }
-        return false;
+        codeast->addFunction(std::move(func));
+        return true;
     }
 
     FunctionBaseAST* const VAnalyzer::getFunc(std::string const& name)
@@ -621,12 +603,10 @@ namespace vire
             is_valid=false;
         }
         
-        std::cout << "IfThenExpr is " << (is_valid?"valid":"invalid") << std::endl;
         return is_valid;
     }
     bool VAnalyzer::verifyIf(IfExprAST* const& if_)
     {
-        std::cout << "Verifying IfExprAST" << std::endl;
         bool is_valid=true;
         
         if(!verifyIfThen(if_->getIfThen()))
@@ -802,7 +782,7 @@ namespace vire
                 }
             }
 
-            addFunc(cast_static<FunctionAST>(std::move(funcs[it])));
+            addFunc(std::move(funcs[it]));
         }
         for(const auto& union_struct : union_structs)
         {
@@ -823,7 +803,7 @@ namespace vire
                 }
             }
         } 
-        
+
         if(!has_main)
         {
             code->addFunction(std::make_unique<FunctionAST>(
@@ -877,6 +857,8 @@ namespace vire
             case ast_break: return verifyBreak(((std::unique_ptr<BreakExprAST> const&)expr).get());
             case ast_continue: return verifyContinue(((std::unique_ptr<ContinueExprAST> const&)expr).get());
             case ast_return: return verifyReturn(((std::unique_ptr<ReturnExprAST> const&)expr).get());
+
+            case ast_ifelse: return verifyIf(((std::unique_ptr<IfExprAST> const&)expr).get());
 
             default: return false;
         }

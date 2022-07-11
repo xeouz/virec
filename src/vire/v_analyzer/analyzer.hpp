@@ -20,26 +20,25 @@ class VAnalyzer
     // Source Code
     std::string code;
 
+    // Functions
+    bool addVar(VariableDefAST* const& var);
+    bool addFunc(std::unique_ptr<FunctionBaseAST> func);
+    bool addStruct(std::unique_ptr<StructExprAST> struct_);
+    bool addUnion(std::unique_ptr<UnionExprAST> union_);
+    bool addClass(std::unique_ptr<ClassAST> class_);
+    bool isVarDefined(std::string const& name, bool check_globally_only=false);
+
+    VariableDefAST* const getVar(std::string const& name);
 public:
     VAnalyzer(errors::ErrorBuilder* const& builder, std::string const& code="")
     : builder(builder), code(code), current_function(0) {}
 
-    bool isVarDefined(std::string const& name, bool check_globally_only=false);
     bool isStructDefined(std::string const& name);
     bool isUnionDefined(std::string const& name);
     bool isClassDefined(std::string const& name);
     bool isFuncDefined(std::string const& name);
     bool isStdFunc(std::string const& name);
     unsigned int getFuncArgCount(std::string const& name);
-    
-    bool addVar(VariableDefAST* const& var);
-    bool addProto(std::unique_ptr<PrototypeAST> proto);
-    bool addExtern(std::unique_ptr<ExternAST> extern_);
-    bool addFunc(std::unique_ptr<FunctionAST> func);
-    bool addStruct(std::unique_ptr<StructExprAST> struct_);
-    bool addUnion(std::unique_ptr<UnionExprAST> union_);
-    bool addClass(std::unique_ptr<ClassAST> class_);
-    VariableDefAST* const getVar(std::string const& name);
 
     std::string getType(ExprAST* const& expr);
     std::string getType(VariableExprAST* const& var);

@@ -32,8 +32,9 @@ class VCompiler
     llvm::IRBuilder<> Builder;
     std::unique_ptr<llvm::Module> Module;
 
-    std::map<llvm::StringRef, llvm::Value*> namedValues;
+    std::map<llvm::StringRef, llvm::AllocaInst*> namedValues;
     llvm::Function* currentFunction;
+    llvm::BasicBlock* currentFunctionEndBB;
 public:
     VCompiler(std::unique_ptr<VAnalyzer> analyzer) 
     : analyzer(std::move(analyzer)), Builder(llvm::IRBuilder<>(CTX))

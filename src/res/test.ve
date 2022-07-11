@@ -1,11 +1,11 @@
-func main() returns int
+func main(a:int) returns int
 {
-    let a = 10;
-    
     if(a==10)
     {
-        a=20;
+        return 100;
     }
-
-    return a;
+    else
+    {
+        return 100;
+    }
 }

@@ -56,8 +56,8 @@ namespace vire
             case ast_call:
                 return compileCallExpr((CallExprAST* const&)expr);
 
-            case ast_if:
-                return compileIfThen((IfThenExpr* const&)expr);
+            case ast_ifelse:
+                return compileIfElse((IfExprAST* const&)expr);
 
             case ast_return:
                 return compileReturnExpr((ReturnExprAST* const&)expr);
@@ -90,8 +90,9 @@ namespace vire
 
     llvm::Value* VCompiler::compileVariableExpr(VariableExprAST* const& expr)
     {
-        llvm::Value* val=namedValues[expr->getName()];
-        return Builder.CreateLoad(val->getType(), val, expr->getName());
+        llvm::AllocaInst* val=namedValues[expr->getName()];
+        llvm::Type* ty=val->getAllocatedType();
+        return Builder.CreateLoad(ty, val, expr->getName());
     }
     llvm::Value* VCompiler::compileVariableDef(VariableDefAST* const& def)
     {
@@ -169,13 +170,36 @@ namespace vire
     llvm::Value* VCompiler::compileIfThen(IfThenExpr* const& ifthen)
     {
         auto* cond=compileExpr(ifthen->getCondition());
-        auto* cmp=Builder.CreateICmpNE(cond, llvm::ConstantInt::get(CTX, llvm::APInt(1, 0, true)), "ifcond");
         
-        auto* iftrue=llvm::BasicBlock::Create(CTX, "iftrue", currentFunction);
-        auto* ifcont=llvm::BasicBlock::Create(CTX, "ifcont", currentFunction);
-        compileBlock(ifthen->getThenBlock());
+        auto* iftrue=llvm::BasicBlock::Create(CTX, "ift", currentFunction);
+        auto* ifcont=llvm::BasicBlock::Create(CTX, "ifc", currentFunction);
+        auto* br=Builder.CreateCondBr(cond, iftrue, ifcont);
 
-        return Builder.CreateCondBr(cmp, iftrue, ifcont);
+        Builder.SetInsertPoint(iftrue);
+        compileBlock(ifthen->getThenBlock());
+        Builder.CreateBr(ifcont);
+        Builder.SetInsertPoint(ifcont);
+
+        return br;
+    }
+    llvm::Value* VCompiler::compileIfElse(IfExprAST* const& ifelse)
+    {
+        auto* ifthen=compileIfThen(ifelse->getIfThen());
+
+        for(const auto& elseif : ifelse->getElifLadder())
+        {
+            if(elseif->getCondition() != nullptr)
+            {
+                compileIfThen(elseif.get());
+            }
+            else
+            {
+                compileBlock(elseif->getThenBlock());
+                break;
+            }
+        }
+
+        return ifthen;
     }
 
     llvm::Value* VCompiler::compileCallExpr(CallExprAST* const& expr)
@@ -194,6 +218,7 @@ namespace vire
     {
         auto* expr_val=compileExpr(expr->getValue());
         auto* value=Builder.CreateStore(expr_val,namedValues["retval"]);
+        Builder.CreateBr(currentFunctionEndBB);
 
         return value;
     }
@@ -238,12 +263,15 @@ namespace vire
             function=compilePrototype(Name);
 
         llvm::BasicBlock* bb=llvm::BasicBlock::Create(CTX, "entry", function);
+        currentFunctionEndBB=llvm::BasicBlock::Create(CTX, "end", function);
         Builder.SetInsertPoint(bb);
 
         namedValues.clear();
         for(auto& arg: function->args())
         {
-            namedValues[arg.getName()]=&arg;
+            auto* alloca=Builder.CreateAlloca(arg.getType(), nullptr, arg.getName());
+            Builder.CreateStore(&arg, alloca);
+            namedValues[arg.getName()]=alloca;
         }
 
         auto const& func=(FunctionAST*)analyzer->getFunc(Name);
@@ -252,9 +280,17 @@ namespace vire
         auto ret_type=getLLVMType(func->getType());
         auto ret_val=Builder.CreateAlloca(ret_type, nullptr, "retval");
         namedValues["retval"]=ret_val;
+
+        // Compile the block
         currentFunction=function;
         compileBlock(func->getBody());
+
+        // Create the return instruction
+        Builder.SetInsertPoint(currentFunctionEndBB);
         Builder.CreateRet(Builder.CreateLoad(ret_type, ret_val, "ret"));
+        auto& bbend=function->getBasicBlockList().back();
+        currentFunctionEndBB->moveAfter(&bbend); // Move the end block after the 
+                                                 // last block of the function
 
         llvm::verifyFunction(*function);
         
