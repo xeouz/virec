@@ -69,4 +69,18 @@ public:
     std::string const& getName() const {return Name->value;}
 };
 
+class VariableIncrDecrAST : public ExprAST
+{
+    std::string Name;
+    bool isincr, ispre;
+public:
+    VariableIncrDecrAST(std::unique_ptr<Viretoken> Name, bool isincr, bool ispre)
+    : Name(Name->value), ExprAST("void",ast_varincrdecr), isincr(isincr), ispre(ispre)
+    {setToken(std::move(Name));}
+    
+    std::string const& getName() const {return Name;}
+    bool isIncr() const {return isincr;}
+    bool isPre() const {return ispre;}
+};
+
 }

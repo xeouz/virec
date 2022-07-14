@@ -170,7 +170,15 @@ namespace vire
         if(CurTok->type != tok_lparen) // if it is not a function call
         {
             if(CurTok->type == tok_equal)
+            {
                 return ParseVariableAssign(std::move(IdName));
+            }
+            else if(CurTok->type == tok_incr || CurTok->type==tok_decr)
+            {
+                auto var=std::make_unique<VariableIncrDecrAST>(std::move(IdName),CurTok->type==tok_incr,false);
+                getNextToken();
+                return std::move(var);
+            }
             else
             {    
                 auto var=std::make_unique<VariableExprAST>(std::move(IdName));
@@ -390,7 +398,7 @@ namespace vire
 
         return std::make_unique<VariableAssignAST>(std::move(varName), std::move(value));
     }
-    std::unique_ptr<TypedVarAST> Vireparse::ParseTypedVar()
+    std::unique_ptr<ExprAST> Vireparse::ParseTypedVar()
     {
         auto typeName=copyCurrentToken();
         getNextToken(tok_id);

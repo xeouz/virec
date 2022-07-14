@@ -3,7 +3,7 @@
 #include "../includes.hpp"
 
 #include "ExprAST.cpp"
-#include "TypesAST.cpp"
+#include "LiteralAST.cpp"
 #include "OpAST.cpp"
 #include "VariableAST.cpp"
 #include "FunctionAST.cpp"

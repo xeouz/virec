@@ -29,10 +29,12 @@ int main()
 
     // Analysis and Frontend are done.
     // Now we can use the AST to generate the code.
+    
     std::cout << "Generating Code" << std::endl; 
     auto compiler=std::make_unique<vire::VCompiler>(std::move(analyzer));
     
     auto* f=compiler->compileFunction("main");
+    
     std::cout << "\n";
 
     return 0;

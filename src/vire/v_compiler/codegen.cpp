@@ -43,6 +43,8 @@ namespace vire
             case ast_char:
                 return compileCharExpr((CharExprAST* const&)expr);
 
+            case ast_varincrdecr:
+                return compileIncrDecr((VariableIncrDecrAST* const&)expr);
             case ast_var:
                 return compileVariableExpr((VariableExprAST* const&)expr);
             case ast_vardef:
@@ -58,6 +60,8 @@ namespace vire
 
             case ast_ifelse:
                 return compileIfElse((IfExprAST* const&)expr);
+            case ast_for:
+                return compileForExpr((ForExprAST* const&)expr);
 
             case ast_return:
                 return compileReturnExpr((ReturnExprAST* const&)expr);
@@ -88,6 +92,27 @@ namespace vire
         return Builder.CreateGlobalString(expr->getValue(), "str");
     }
 
+    llvm::Value* VCompiler::compileIncrDecr(VariableIncrDecrAST* const& expr)
+    {
+        llvm::AllocaInst* val=namedValues[expr->getName()];
+        llvm::Type* valtype=val->getAllocatedType();
+        llvm::LoadInst* load=Builder.CreateLoad(valtype,val,expr->getName());
+
+        // Currently only pre increment and decrement is supported.
+        llvm::StoreInst* store;
+        if(expr->isIncr())
+        {
+            store=Builder.CreateStore
+            (Builder.CreateAdd(load, llvm::ConstantInt::get(valtype, 1)), val);
+        }
+        else
+        {
+            store=Builder.CreateStore
+            (Builder.CreateSub(load, llvm::ConstantInt::get(valtype, 1)), val);
+        }
+
+        return load;
+    }
     llvm::Value* VCompiler::compileVariableExpr(VariableExprAST* const& expr)
     {
         llvm::AllocaInst* val=namedValues[expr->getName()];
@@ -202,6 +227,28 @@ namespace vire
         return ifthen;
     }
 
+    llvm::Value* VCompiler::compileForExpr(ForExprAST* const& forexpr)
+    {
+        auto* init=compileExpr(forexpr->getInit());
+        auto* cond=compileExpr(forexpr->getCond());
+        auto* incr=compileExpr(forexpr->getIncr());
+
+        auto* forbool=llvm::BasicBlock::Create(CTX, "forb", currentFunction);
+        auto* forloop=llvm::BasicBlock::Create(CTX, "forl", currentFunction);
+        auto* forcont=llvm::BasicBlock::Create(CTX, "forc", currentFunction);
+
+        Builder.CreateBr(forbool);
+        Builder.SetInsertPoint(forbool);
+        auto* br=Builder.CreateCondBr(cond, forloop, forcont);
+
+        Builder.SetInsertPoint(forloop);
+        compileBlock(forexpr->getBody());
+        Builder.CreateBr(forbool);
+
+        Builder.SetInsertPoint(forcont);
+        return br;
+    }
+
     llvm::Value* VCompiler::compileCallExpr(CallExprAST* const& expr)
     {
         auto func=Module->getFunction(expr->getName());
@@ -284,6 +331,7 @@ namespace vire
         // Compile the block
         currentFunction=function;
         compileBlock(func->getBody());
+        Builder.CreateBr(currentFunctionEndBB);
 
         // Create the return instruction
         Builder.SetInsertPoint(currentFunctionEndBB);

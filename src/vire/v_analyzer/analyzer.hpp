@@ -12,7 +12,8 @@ class VAnalyzer
 {
     // Symbol Tables
     std::unique_ptr<CodeAST> codeast;
-    std::unique_ptr<FunctionBaseAST>* current_function;
+
+    FunctionAST* current_func;
 
     // Error Builder
     errors::ErrorBuilder* const& builder;
@@ -20,18 +21,20 @@ class VAnalyzer
     // Source Code
     std::string code;
 
+    // Scope Stack
+    std::map<std::string, VariableDefAST*> scope;
+
     // Functions
-    bool addVar(VariableDefAST* const& var);
-    bool addFunc(std::unique_ptr<FunctionBaseAST> func);
-    bool addStruct(std::unique_ptr<StructExprAST> struct_);
-    bool addUnion(std::unique_ptr<UnionExprAST> union_);
-    bool addClass(std::unique_ptr<ClassAST> class_);
+    void addVar(VariableDefAST* const& var);
+    void removeVar(VariableDefAST* const& var);
+    void addFunction(std::unique_ptr<FunctionBaseAST> func);
+    void addClass(std::unique_ptr<ClassAST> class_);
     bool isVarDefined(std::string const& name, bool check_globally_only=false);
 
     VariableDefAST* const getVar(std::string const& name);
 public:
     VAnalyzer(errors::ErrorBuilder* const& builder, std::string const& code="")
-    : builder(builder), code(code), current_function(0) {}
+    : builder(builder), code(code) {}
 
     bool isStructDefined(std::string const& name);
     bool isUnionDefined(std::string const& name);
@@ -46,7 +49,7 @@ public:
     std::string getType(ArrayExprAST* const& arr);
 
     FunctionBaseAST* const getFunc(const std::string& name);
-    std::string const& getFuncReturnType(const std::string& name);
+    std::string const& getFuncReturnType(const std::string& name="");
 
     CodeAST* const getCode();
 
@@ -55,6 +58,7 @@ public:
     ReturnExprAST* const getReturnStatement(std::vector<std::unique_ptr<ExprAST>> const& block);
 
     bool verifyVar(VariableExprAST* const& var);
+    bool verifyIncrDecr(VariableIncrDecrAST* const& var);
     bool verifyVarDef(VariableDefAST* const& var, bool check_globally_only=false);
     bool verifyTypedVar(TypedVarAST* const& var);
     bool verifyVarAssign(VariableAssignAST* const& var);

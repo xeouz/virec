@@ -55,6 +55,8 @@ public:
     llvm::Value* compileBinopExpr(BinaryExprAST* const& expr);
 
     llvm::AllocaInst* createEntryBlockAlloca(llvm::Function* function, std::string const& varname, llvm::Type* type);
+    
+    llvm::Value* compileIncrDecr(VariableIncrDecrAST* const& expr);
     llvm::Value* compileVariableExpr(VariableExprAST* const& expr);
     llvm::Value* compileVariableDef(VariableDefAST* const& var);
     llvm::Value* compileVariableAssign(VariableAssignAST* const& var);
@@ -63,6 +65,8 @@ public:
 
     llvm::Value* compileIfThen(IfThenExpr* const& ifthen);
     llvm::Value* compileIfElse(IfExprAST* const& ifelse);
+
+    llvm::Value* compileForExpr(ForExprAST* const& forexpr);
 
     llvm::Value* compileCallExpr(CallExprAST* const& expr);
     llvm::Value* compileReturnExpr(ReturnExprAST* const& expr);

@@ -21,18 +21,9 @@ namespace vire
 
         if(check_globally_only) return false;
 
-        return (*current_function)->isVarDefined(name);
+        return scope.count(name)==true;
     }
 
-    bool VAnalyzer::addVar(VariableDefAST* const& var)
-    {
-        if(isVarDefined(var->getName()))
-        {
-            return false;
-        }
-        ((std::unique_ptr<FunctionAST>const&)(*current_function))->addVar(var);
-        return true;
-    }
     bool VAnalyzer::isFuncDefined(const std::string& name)
     {
         const auto& functions=codeast->getFunctions();
@@ -72,14 +63,17 @@ namespace vire
         return false;
     }
 
-    bool VAnalyzer::addFunc(std::unique_ptr<FunctionBaseAST> func)
+    void VAnalyzer::addVar(VariableDefAST* const& var)
     {
-        if(isFuncDefined(func->getName()))
-        {
-            return false;
-        }
+        scope.insert(std::make_pair(var->getName(), var));
+    }
+    void VAnalyzer::removeVar(VariableDefAST* const& var)
+    {
+        scope.erase(var->getName());
+    }
+    void VAnalyzer::addFunction(std::unique_ptr<FunctionBaseAST> func)
+    {
         codeast->addFunction(std::move(func));
-        return true;
     }
 
     FunctionBaseAST* const VAnalyzer::getFunc(std::string const& name)
@@ -97,10 +91,8 @@ namespace vire
     }
     std::string const& VAnalyzer::getFuncReturnType(const std::string& name)
     {
-        const auto& tmpfunc=getFunc(name);
-        if(tmpfunc)    return tmpfunc->getType();
-
-        return (*current_function)->getType();
+        if(name=="")    return current_func->getType();
+        else            return getFunc(name)->getType();
     }
 
     CodeAST* const VAnalyzer::getCode()
@@ -110,7 +102,7 @@ namespace vire
 
     VariableDefAST* const VAnalyzer::getVar(const std::string& name)
     {
-        return (*current_function)->getVar(name);
+        return scope.at(name);
     }
 
     std::string VAnalyzer::getType(ExprAST* const& expr)
@@ -125,6 +117,7 @@ namespace vire
 
             case ast_binop: return getType(((BinaryExprAST*const&)expr)->getLHS());
 
+            case ast_varincrdecr: return getVar(((VariableExprAST*const&)expr)->getName())->getType();
             case ast_var: return getVar(((VariableExprAST*const&)expr)->getName())->getType();
 
             default: return "";
@@ -167,6 +160,17 @@ namespace vire
             // Var is not defined
             return false;
         }
+        return true;
+    }
+    bool VAnalyzer::verifyIncrDecr(VariableIncrDecrAST* const& var)
+    {
+        // Check if it is defined
+        if(!isVarDefined(var->getName()))
+        {
+            // Var is not defined
+            return false;
+        }
+        
         return true;
     }
     bool VAnalyzer::verifyVarDef(VariableDefAST* const& var, bool check_globally_only)
@@ -233,10 +237,9 @@ namespace vire
             type=value_type;
 
             var->setType(type);
-
-            addVar(var);
             return true;
         }
+        std::cout << "Variable already defined" << std::endl;
         // Variable is already defined
         return false;
     }
@@ -261,13 +264,14 @@ namespace vire
         }
 
         auto assign_type=getType(assign->getValue());
+
         if(var->getType() != assign_type)
         {
             // Type mismatch
             std::cout << "Type mismatch in assignment, types are: " << var->getType() << " and " << assign_type << std::endl;
             return false;
         }
-
+        
         return true;
     }
 
@@ -407,7 +411,7 @@ namespace vire
 
     bool VAnalyzer::verifyReturn(ReturnExprAST* const& ret)
     {
-        const auto& ret_type=getFuncReturnType(ret->getName());
+        const auto& ret_type=getFuncReturnType();
         if(ret_type!=getType(ret->getValue()))
         {
             std::cout << "Return type mismatch, expected " << ret_type << " got " << getType(ret->getValue()) << std::endl;
@@ -602,13 +606,13 @@ namespace vire
             // Then block is not valid
             is_valid=false;
         }
-        
+
         return is_valid;
     }
     bool VAnalyzer::verifyIf(IfExprAST* const& if_)
     {
         bool is_valid=true;
-        
+
         if(!verifyIfThen(if_->getIfThen()))
         {
             // IfThen is not valid
@@ -633,7 +637,7 @@ namespace vire
                 }
             }
         }
-
+        
         return is_valid;
     }
 
@@ -714,14 +718,27 @@ namespace vire
 
     bool VAnalyzer::verifyBlock(std::vector<std::unique_ptr<ExprAST>> const& block)
     {
-        for(const auto& expr : block)
+        std::vector<VariableDefAST*> refcnt;
+        for(auto const& expr : block)
         {
-            if(!verifyExpr(expr.get()))
+            auto* ptr=expr.get();
+            if(!verifyExpr(ptr))
             {
                 // Expr is not valid
                 return false;
             }
+
+            if(expr->asttype==ast_vardef)
+            {
+                addVar((VariableDefAST*)ptr);
+                refcnt.push_back((VariableDefAST*)ptr);
+            }
         }
+        for(auto const& var : refcnt)
+        {
+            removeVar(var);
+        }
+        
         return true;
     }
 
@@ -748,8 +765,6 @@ namespace vire
         for(unsigned int it=0; it<funcs.size(); ++it)
         {
             const auto& func=funcs[it];
-
-            current_function=&((std::unique_ptr<FunctionBaseAST>&)func);
             if(func->is_extern())
             {
                 if(!verifyExtern(((std::unique_ptr<ExternAST> const&)func).get()))
@@ -768,7 +783,8 @@ namespace vire
             }
             else
             {
-                auto const& casted_func=((std::unique_ptr<FunctionAST> const&)func).get();
+                auto const& casted_func=((std::unique_ptr<FunctionAST>const&)func).get();
+                current_func=casted_func;
                 if(!verifyFunction(casted_func))
                 {
                     // Function is not valid
@@ -782,7 +798,7 @@ namespace vire
                 }
             }
 
-            addFunc(std::move(funcs[it]));
+            addFunction(std::move(funcs[it]));
         }
         for(const auto& union_struct : union_structs)
         {
@@ -843,6 +859,7 @@ namespace vire
             case ast_binop: return verifyBinop(((std::unique_ptr<BinaryExprAST> const&)expr).get());
             case ast_unop: return verifyUnop(((std::unique_ptr<UnaryExprAST> const&)expr).get());
 
+            case ast_varincrdecr: return verifyIncrDecr(((std::unique_ptr<VariableIncrDecrAST> const&)expr).get());
             case ast_var: return verifyVar(((std::unique_ptr<VariableExprAST> const&)expr).get());
             case ast_vardef: return verifyVarDef(((std::unique_ptr<VariableDefAST> const&)expr).get());
             case ast_typedvar: return verifyTypedVar(((std::unique_ptr<TypedVarAST> const&)expr).get());

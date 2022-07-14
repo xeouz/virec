@@ -50,5 +50,7 @@ enum asttype
     ast_class_access,
 
     ast_array,
+
+    ast_varincrdecr,
 };
 }
