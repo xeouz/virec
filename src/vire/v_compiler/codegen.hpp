@@ -37,6 +37,7 @@ class VCompiler
     llvm::Function* currentFunction;
     llvm::BasicBlock* currentFunctionEndBB;
     llvm::BasicBlock* currentLoopEndBB;
+    llvm::BasicBlock* currentLoopBodyBB;
 public:
     VCompiler(std::unique_ptr<VAnalyzer> analyzer) 
     : analyzer(std::move(analyzer)), Builder(llvm::IRBuilder<>(CTX))
@@ -73,6 +74,7 @@ public:
     llvm::Value* compileForExpr(ForExprAST* const& forexpr);
     llvm::Value* compileWhileExpr(WhileExprAST* const& whileexpr);
     llvm::Value* compileBreakExpr(BreakExprAST* const& breakexpr);
+    llvm::Value* compileContinueExpr(ContinueExprAST* const& continueexpr);
 
     llvm::Value* compileCallExpr(CallExprAST* const& expr);
     llvm::Value* compileReturnExpr(ReturnExprAST* const& expr);

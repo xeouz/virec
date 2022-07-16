@@ -3,7 +3,7 @@ func main() returns int
     let a=10;
     while(a<20)
     {
-        a++;
+        break a++;
     }
 
     return a;

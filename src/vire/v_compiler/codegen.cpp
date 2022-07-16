@@ -253,6 +253,7 @@ namespace vire
         auto* forloop=llvm::BasicBlock::Create(CTX, "forl", currentFunction);
         auto* forcont=llvm::BasicBlock::Create(CTX, "forc", currentFunction);
         currentLoopEndBB=forcont;
+        currentLoopBodyBB=forloop;
 
         Builder.CreateBr(forbool);
         Builder.SetInsertPoint(forbool);
@@ -273,6 +274,7 @@ namespace vire
         auto whileloop=llvm::BasicBlock::Create(CTX, "whilel", currentFunction);
         auto whilecont=llvm::BasicBlock::Create(CTX, "whilec", currentFunction);
         currentLoopEndBB=whilecont;
+        currentLoopBodyBB=whileloop;
 
         Builder.CreateBr(whilebool);
         Builder.SetInsertPoint(whilebool);
@@ -292,6 +294,12 @@ namespace vire
         compileExpr(breakexpr->getAfterBreak());
 
         return Builder.CreateBr(currentLoopEndBB);
+    }
+    llvm::Value* VCompiler::compileContinueExpr(ContinueExprAST* const& continueexpr)
+    {
+        compileExpr(continueexpr->getAfterCont());
+
+        return Builder.CreateBr(currentLoopBodyBB);
     }
 
     llvm::Value* VCompiler::compileCallExpr(CallExprAST* const& expr)

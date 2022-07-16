@@ -438,12 +438,12 @@ namespace vire
     }
     std::unique_ptr<ExprAST> Vireparse::ParseBreakContinue()
     {
-        char is_break=1;
+        bool is_break=1;
         if(CurTok->type==tok_continue) is_break=0;
 
         getNextToken();
 
-        char has_stm=0;
+        bool has_stm=0;
         std::unique_ptr<ExprAST> stm;
         if(CurTok->type!=tok_semicol)
         {
