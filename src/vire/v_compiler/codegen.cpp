@@ -60,8 +60,11 @@ namespace vire
 
             case ast_ifelse:
                 return compileIfElse((IfExprAST* const&)expr);
+            
             case ast_for:
                 return compileForExpr((ForExprAST* const&)expr);
+            case ast_while:
+                return compileWhileExpr((WhileExprAST* const&)expr);
 
             case ast_return:
                 return compileReturnExpr((ReturnExprAST* const&)expr);
@@ -248,6 +251,25 @@ namespace vire
         Builder.SetInsertPoint(forcont);
         return br;
     }
+    llvm::Value* VCompiler::compileWhileExpr(WhileExprAST* const& whileexpr)
+    {
+        auto whilebool=llvm::BasicBlock::Create(CTX, "whileb", currentFunction);
+        auto whileloop=llvm::BasicBlock::Create(CTX, "whilel", currentFunction);
+        auto whilecont=llvm::BasicBlock::Create(CTX, "whilec", currentFunction);
+
+        Builder.CreateBr(whilebool);
+        Builder.SetInsertPoint(whilebool);
+        auto* cond=compileExpr(whileexpr->getCond());
+        auto* br=Builder.CreateCondBr(cond, whileloop, whilecont);
+
+        Builder.SetInsertPoint(whileloop);
+        compileBlock(whileexpr->getBody());
+        Builder.CreateBr(whilebool);
+
+        Builder.SetInsertPoint(whilecont);
+
+        return br;
+    }
 
     llvm::Value* VCompiler::compileCallExpr(CallExprAST* const& expr)
     {
@@ -331,7 +353,8 @@ namespace vire
         // Compile the block
         currentFunction=function;
         compileBlock(func->getBody());
-        Builder.CreateBr(currentFunctionEndBB);
+        if(!Builder.GetInsertBlock()->getTerminator())
+            Builder.CreateBr(currentFunctionEndBB);
 
         // Create the return instruction
         Builder.SetInsertPoint(currentFunctionEndBB);

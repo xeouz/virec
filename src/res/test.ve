@@ -1,9 +1,9 @@
 func main() returns int
 {
     let a=10;
-    for(a; a<30; a++)
+    while(a<20)
     {
-        a=200;
+        a++;
     }
 
     return a;

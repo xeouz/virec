@@ -67,6 +67,7 @@ public:
     llvm::Value* compileIfElse(IfExprAST* const& ifelse);
 
     llvm::Value* compileForExpr(ForExprAST* const& forexpr);
+    llvm::Value* compileWhileExpr(WhileExprAST* const& whileexpr);
 
     llvm::Value* compileCallExpr(CallExprAST* const& expr);
     llvm::Value* compileReturnExpr(ReturnExprAST* const& expr);
