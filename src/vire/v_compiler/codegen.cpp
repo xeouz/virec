@@ -30,8 +30,21 @@ namespace vire
         }
     }
 
+    llvm::BranchInst* VCompiler::createBrIfNoTerminator(llvm::BasicBlock* block)
+    {
+        if (Builder.GetInsertBlock()->getTerminator() == nullptr)
+        {
+            return Builder.CreateBr(block);
+        }
+        else
+        {
+            return nullptr;
+        }
+    }
+
     llvm::Value* VCompiler::compileExpr(ExprAST* const& expr)
     {
+        if(!expr)   { return nullptr; }
         switch(expr->asttype)
         {
             case ast_int:
@@ -65,6 +78,8 @@ namespace vire
                 return compileForExpr((ForExprAST* const&)expr);
             case ast_while:
                 return compileWhileExpr((WhileExprAST* const&)expr);
+            case ast_break:
+                return compileBreakExpr((BreakExprAST* const&)expr);
 
             case ast_return:
                 return compileReturnExpr((ReturnExprAST* const&)expr);
@@ -205,7 +220,7 @@ namespace vire
 
         Builder.SetInsertPoint(iftrue);
         compileBlock(ifthen->getThenBlock());
-        Builder.CreateBr(ifcont);
+        createBrIfNoTerminator(ifcont);
         Builder.SetInsertPoint(ifcont);
 
         return br;
@@ -237,6 +252,7 @@ namespace vire
         auto* forbool=llvm::BasicBlock::Create(CTX, "forb", currentFunction);
         auto* forloop=llvm::BasicBlock::Create(CTX, "forl", currentFunction);
         auto* forcont=llvm::BasicBlock::Create(CTX, "forc", currentFunction);
+        currentLoopEndBB=forcont;
 
         Builder.CreateBr(forbool);
         Builder.SetInsertPoint(forbool);
@@ -246,7 +262,7 @@ namespace vire
 
         Builder.SetInsertPoint(forloop);
         compileBlock(forexpr->getBody());
-        Builder.CreateBr(forbool);
+        createBrIfNoTerminator(forbool);
 
         Builder.SetInsertPoint(forcont);
         return br;
@@ -256,6 +272,7 @@ namespace vire
         auto whilebool=llvm::BasicBlock::Create(CTX, "whileb", currentFunction);
         auto whileloop=llvm::BasicBlock::Create(CTX, "whilel", currentFunction);
         auto whilecont=llvm::BasicBlock::Create(CTX, "whilec", currentFunction);
+        currentLoopEndBB=whilecont;
 
         Builder.CreateBr(whilebool);
         Builder.SetInsertPoint(whilebool);
@@ -264,11 +281,17 @@ namespace vire
 
         Builder.SetInsertPoint(whileloop);
         compileBlock(whileexpr->getBody());
-        Builder.CreateBr(whilebool);
+        createBrIfNoTerminator(whilebool);
 
         Builder.SetInsertPoint(whilecont);
 
         return br;
+    }
+    llvm::Value* VCompiler::compileBreakExpr(BreakExprAST* const& breakexpr)
+    {
+        compileExpr(breakexpr->getAfterBreak());
+
+        return Builder.CreateBr(currentLoopEndBB);
     }
 
     llvm::Value* VCompiler::compileCallExpr(CallExprAST* const& expr)
@@ -353,8 +376,7 @@ namespace vire
         // Compile the block
         currentFunction=function;
         compileBlock(func->getBody());
-        if(!Builder.GetInsertBlock()->getTerminator())
-            Builder.CreateBr(currentFunctionEndBB);
+        createBrIfNoTerminator(currentFunctionEndBB);
 
         // Create the return instruction
         Builder.SetInsertPoint(currentFunctionEndBB);
