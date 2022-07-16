@@ -3,7 +3,7 @@ func main() returns int
     let a=10;
     for(a; a<30; a++)
     {
-
+        a=200;
     }
 
     return a;

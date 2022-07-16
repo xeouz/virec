@@ -230,8 +230,6 @@ namespace vire
     llvm::Value* VCompiler::compileForExpr(ForExprAST* const& forexpr)
     {
         auto* init=compileExpr(forexpr->getInit());
-        auto* cond=compileExpr(forexpr->getCond());
-        auto* incr=compileExpr(forexpr->getIncr());
 
         auto* forbool=llvm::BasicBlock::Create(CTX, "forb", currentFunction);
         auto* forloop=llvm::BasicBlock::Create(CTX, "forl", currentFunction);
@@ -239,6 +237,8 @@ namespace vire
 
         Builder.CreateBr(forbool);
         Builder.SetInsertPoint(forbool);
+        auto* cond=compileExpr(forexpr->getCond());
+        auto* incr=compileExpr(forexpr->getIncr());
         auto* br=Builder.CreateCondBr(cond, forloop, forcont);
 
         Builder.SetInsertPoint(forloop);

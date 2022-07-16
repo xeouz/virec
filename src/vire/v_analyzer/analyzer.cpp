@@ -297,39 +297,41 @@ namespace vire
 
     bool VAnalyzer::verifyFor(ForExprAST* const& for_)
     { 
+        bool is_valid=true;
         const auto& init=for_->getInit();
         const auto& cond=for_->getCond();
         const auto& incr=for_->getIncr();
+        
         if(!(init->asttype==ast_var || init->asttype==ast_varassign || init->asttype==ast_vardef))
         {
             // Init is not a variable definition
-            return false;
+            is_valid=false;
         }
         if(!(cond->asttype==ast_var || cond->asttype==ast_unop || cond->asttype==ast_binop))
         {
             // Cond is not a boolean expression
-            return false;
+            is_valid=false;
         }
-        if(!(incr->asttype==ast_var || incr->asttype==ast_varassign))
+        if(!(incr->asttype==ast_var || incr->asttype==ast_varassign || incr->asttype==ast_varincrdecr))
         {
             // Incr is not a step operation
-            return false;
+            is_valid=false;
         }   
-
+        
         if(!verifyExpr(init))
         {
             // Init is not valid
-            return false;
+            is_valid=false;
         }
         if(!verifyExpr(cond))
         {
             // Cond is not valid
-            return false;
+            is_valid=false;
         }
         if(!verifyExpr(incr))
         {
             // Incr is not valid
-            return false;
+            is_valid=false;
         }
 
         if(!verifyBlock(for_->getBody()))
@@ -338,7 +340,7 @@ namespace vire
             return false;
         }
         
-        return true;
+        return is_valid;
     }
     bool VAnalyzer::verifyWhile(WhileExprAST* const& while_)
     {
