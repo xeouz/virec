@@ -54,7 +54,7 @@ public:
     CodeAST* const getCode();
 
     // Verification functions
-    // Return Empty "" String if valid
+
     ReturnExprAST* const getReturnStatement(std::vector<std::unique_ptr<ExprAST>> const& block);
 
     bool verifyVar(VariableExprAST* const& var);
@@ -63,7 +63,7 @@ public:
     bool verifyTypedVar(TypedVarAST* const& var);
     bool verifyVarAssign(VariableAssignAST* const& var);
 
-    // Constant verification due to overflows and invalid escape sequences
+    // Constant/Literal verification due to overflows and invalid escape sequences
     bool verifyInt(IntExprAST* const& int_); 
     bool verifyFloat(FloatExprAST* const& float_);
     bool verifyDouble(DoubleExprAST* const& double_);
@@ -71,11 +71,13 @@ public:
     bool verifyStr(StrExprAST* const& str);
     bool verifyArray(ArrayExprAST* const& array);
     
+    // Loop verifications
     bool verifyFor(ForExprAST* const& for_);
     bool verifyWhile(WhileExprAST* const& while_);
     bool verifyBreak(BreakExprAST* const& break_); // verification needed for break execution statement
     bool verifyContinue(ContinueExprAST* const& continue_); // verification needed for continue execution statements
-
+    
+    // Function verifications
     bool verifyCall(CallExprAST* const& call);
     bool verifyPrototype(PrototypeAST* const& proto);
     bool verifyProto(PrototypeAST* const& proto);
@@ -83,27 +85,35 @@ public:
     bool verifyFunction(FunctionAST* const& func);
     bool verifyReturn(ReturnExprAST* const& return_);
 
+    // Operator verifications
     bool verifyUnop(UnaryExprAST* const& unop);
     bool verifyBinop(BinaryExprAST* const& binop);
 
+    // Class verifications
     bool verifyClass(ClassAST* const& class_);
     bool verifyNew(NewExprAST* const& new_);
     bool verifyDelete(DeleteExprAST const& delete_);
 
+    // Struct/Union verifications
     bool verifyUnionStructBody(std::vector<std::unique_ptr<ExprAST>> const& body);
     bool verifyUnion(UnionExprAST* const& union_);
     bool verifyStruct(StructExprAST* const& struct_);
 
+    // If-Else verifications
     bool verifyIfThen(IfThenExpr* const& if_);
     bool verifyIf(IfExprAST* const& if_);
 
+    // Memory-related verifications
     bool verifyUnsafe(UnsafeExprAST* const& unsafe);
     bool verifyReference(ReferenceExprAST* const& reference);
 
+    // Block verifications
     bool verifyBlock(std::vector<std::unique_ptr<ExprAST>> const& block);
 
+    // Entry point for verification
     bool verifyCode(std::unique_ptr<CodeAST> code);
 
+    // Helper functions
     bool verifyExpr(ExprAST* const& expr);
 
     std::vector<std::string> getErrors();

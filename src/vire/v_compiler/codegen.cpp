@@ -80,6 +80,8 @@ namespace vire
                 return compileWhileExpr((WhileExprAST* const&)expr);
             case ast_break:
                 return compileBreakExpr((BreakExprAST* const&)expr);
+            case ast_continue:
+                return compileContinueExpr((ContinueExprAST* const&)expr);
 
             case ast_return:
                 return compileReturnExpr((ReturnExprAST* const&)expr);
