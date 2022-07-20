@@ -169,6 +169,7 @@ namespace vire
 
         if(CurTok->type != tok_lparen) // if it is not a function call
         {
+            IdName->value="_"+IdName->value;
             if(CurTok->type == tok_equal)
             {
                 return ParseVariableAssign(std::move(IdName));
@@ -352,7 +353,8 @@ namespace vire
         else
             getNextToken(); // consume `let` / `const`
 
-        auto varName=copyCurrentToken();    
+        auto varName=copyCurrentToken();
+        varName->value="_"+varName->value;
         getNextToken(tok_id);
 
         unsigned char isarr=0;

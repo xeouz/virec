@@ -87,12 +87,11 @@ namespace vire
             }
         }
 
-        return nullptr;
+        return current_func;
     }
     std::string const& VAnalyzer::getFuncReturnType(const std::string& name)
     {
-        if(name=="")    return current_func->getType();
-        else            return getFunc(name)->getType();
+        return getFunc(name)->getType();
     }
 
     CodeAST* const VAnalyzer::getCode()
@@ -119,6 +118,8 @@ namespace vire
 
             case ast_varincrdecr: return getVar(((VariableExprAST*const&)expr)->getName())->getType();
             case ast_var: return getVar(((VariableExprAST*const&)expr)->getName())->getType();
+
+            case ast_call: return getFuncReturnType(((CallExprAST*const&)expr)->getName());
 
             default: return "";
         }
@@ -339,6 +340,7 @@ namespace vire
             // Block is not valid
             return false;
         }
+        
         
         return is_valid;
     }

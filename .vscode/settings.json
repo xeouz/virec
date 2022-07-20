@@ -76,6 +76,9 @@
         "thread": "cpp",
         "variant": "cpp",
         "chrono": "cpp",
-        "cinttypes": "cpp"
+        "cinttypes": "cpp",
+        "shared_mutex": "cpp",
+        "stack": "cpp",
+        "unordered_set": "cpp"
     }
 }

@@ -36,6 +36,8 @@ public:
     VAnalyzer(errors::ErrorBuilder* const& builder, std::string const& code="")
     : builder(builder), code(code) {}
 
+    errors::ErrorBuilder* const getErrorBuilder() const { return builder; }
+
     bool isStructDefined(std::string const& name);
     bool isUnionDefined(std::string const& name);
     bool isClassDefined(std::string const& name);

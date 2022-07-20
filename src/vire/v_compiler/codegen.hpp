@@ -16,6 +16,14 @@
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Type.h"
 #include "llvm/IR/Verifier.h"
+#include "llvm/Support/raw_ostream.h"
+#include "llvm/Support/Host.h"
+#include "llvm/IR/LegacyPassManager.h"
+#include "llvm/MC/TargetRegistry.h"
+#include "llvm/Support/TargetSelect.h"
+#include "llvm/Target/TargetMachine.h"
+#include "llvm/Support/FileSystem.h"
+#include "llvm/Target/TargetOptions.h"
 
 #include <memory>
 #include <map>
@@ -39,10 +47,10 @@ class VCompiler
     llvm::BasicBlock* currentLoopEndBB;
     llvm::BasicBlock* currentLoopBodyBB;
 public:
-    VCompiler(std::unique_ptr<VAnalyzer> analyzer) 
+    VCompiler(std::unique_ptr<VAnalyzer> analyzer, std::string const& name="vire")
     : analyzer(std::move(analyzer)), Builder(llvm::IRBuilder<>(CTX))
     {
-        Module = std::make_unique<llvm::Module>("vire", CTX);
+        Module = std::make_unique<llvm::Module>(name, CTX);
     }
     
     llvm::Type* getLLVMType(const std::string& type);
@@ -81,5 +89,10 @@ public:
     llvm::Function* compilePrototype(std::string const& Name);
     llvm::Function* compileExtern(std::string const& Name);
     llvm::Function* compileFunction(std::string const& Name);
+
+    llvm::Module* getModule();
+    std::string getCompiledOutput();
+    
+    void compileToObjectFile(std::string const& filename);
 };
 } // namespace vire

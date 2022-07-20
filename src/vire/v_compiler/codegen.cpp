@@ -396,12 +396,59 @@ namespace vire
                                                  // last block of the function
 
         llvm::verifyFunction(*function);
-        
-        // Remove in release
-        std::cout << "Compiled function " << Name << std::endl;
-        function->print(llvm::errs());
 
         return function;
     }
 
+    llvm::Module* VCompiler::getModule()
+    {
+        return Module.get();
+    }
+    std::string VCompiler::getCompiledOutput()
+    {
+        std::string code;
+        llvm::raw_string_ostream os(code);
+        Module->print(os, nullptr);
+        return code;
+    }
+
+    void VCompiler::compileToObjectFile(const std::string& filename)
+    {
+        std::string target_triple=llvm::sys::getDefaultTargetTriple();
+
+        llvm::InitializeAllTargetInfos();
+        llvm::InitializeAllTargets();
+        llvm::InitializeAllTargetMCs();
+        llvm::InitializeAllAsmParsers();
+        llvm::InitializeAllAsmPrinters();    
+
+        std::string error;
+        auto target=llvm::TargetRegistry::lookupTarget(target_triple, error);
+        if(!target)
+        {
+            llvm::errs() << "Target not found:\n" << error;
+            return;
+        }
+
+        auto cpu=llvm::sys::getHostCPUName();
+        auto features="";
+
+        llvm::TargetOptions opt;
+        auto rm=llvm::Optional<llvm::Reloc::Model>();
+        auto target_machine=target->createTargetMachine(target_triple, cpu, features, opt, rm);
+
+        Module->setDataLayout(target_machine->createDataLayout());
+        Module->setTargetTriple(target_triple);
+
+        llvm::legacy::PassManager pass_manager;
+        std::error_code ec;
+        llvm::raw_fd_ostream os(filename, ec, llvm::sys::fs::OF_None);
+
+        llvm::legacy::PassManager pass;
+        auto file_type=llvm::CGFT_ObjectFile;
+        target_machine->addPassesToEmitFile(pass, os, nullptr, file_type);
+
+        pass.run(*Module);
+        os.flush();
+    }
 }

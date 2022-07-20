@@ -21,7 +21,10 @@ add_definitions(${LLVM_DEFINITIONS_LIST})
 add_executable(VIRELANG src/main.cpp)
 
 # LLVM Libraries
-llvm_map_components_to_libnames(llvm_libs support core irreader)
+foreach(target ${LLVM_TARGETS_TO_BUILD})
+    list(APPEND targets "LLVM${target}CodeGen")
+endforeach()
+llvm_map_components_to_libnames(llvm_libs ${LLVM_TARGETS_TO_BUILD} support core irreader)
 target_link_libraries(VIRELANG PRIVATE ${llvm_libs})
 
 set(VIRE_SRC_PATH "${CMAKE_CURRENT_SOURCE_DIR}/src/vire")
@@ -34,7 +37,7 @@ include(${VIRE_SRC_PATH}/errors/ErrorBuilder.cmake)
 
 # Copy the resources to the build directory
 add_custom_command(
-    TARGET VIRELANG PRE_BUILD
+    TARGET VIRELANG POST_BUILD
     COMMAND $(CMAKE_COMMAND) -E copy_directory
         $(CMAKE_SOURCE_DIR)/src/res $<TARGET_FILE_DIR:VIRELANG>/res
 )
