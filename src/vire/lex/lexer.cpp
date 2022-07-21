@@ -9,8 +9,7 @@
 #include "token.hpp"
 #include "token.cpp"
 
-#include "../includes.hpp"
-#include __VIRE_ERRORS_PATH
+#include "vire/errors/include.hpp"
 
 namespace vire
 {

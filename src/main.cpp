@@ -30,6 +30,7 @@ int main()
     // Analysis and Frontend are done.
     // Now we can use the AST to generate the code.
     
+    /*
     std::cout << "Generating Code" << std::endl; 
     auto compiler=std::make_unique<vire::VCompiler>(std::move(analyzer), "test");
     compiler->compileExtern("putd");
@@ -39,7 +40,8 @@ int main()
     std::cout << compiler->getCompiledOutput() << std::endl;
     compiler->compileToObjectFile("test.o");
     std::cout << "---\n" << std::endl;
-    
+    */
+   
     std::cout << "\n";
 
     return 0;

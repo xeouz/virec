@@ -1,7 +1,4 @@
 #include "parser.hpp"
-#include "../includes.hpp"
-#include __VIRE_AST_PATH
-#include __VIRE_LEX_PATH
 
 #include <memory>
 #include <string>

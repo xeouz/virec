@@ -1,13 +1,10 @@
 #pragma once
 
-#include "../includes.hpp"
-
 #include <string>
 #include <memory>
 #include <vector>
 
-#include "../includes.hpp"
-#include __VIRE_LEX_PATH
+#include "vire/lex/include.hpp"
 
 namespace vire
 {

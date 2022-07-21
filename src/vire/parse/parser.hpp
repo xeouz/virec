@@ -1,9 +1,8 @@
 #pragma once
 
-#include "../includes.hpp"
-#include __VIRE_AST_PATH
-#include __VIRE_LEX_PATH
-#include __VIRE_CONFIG_PATH
+#include "vire/ast/include.hpp"
+#include "vire/lex/include.hpp"
+#include "vire/config/include.hpp"
 
 #include <memory>
 #include <string>

@@ -1,9 +1,8 @@
 #pragma once
 
-#include "../includes.hpp"
-#include __VIRE_PARSE_PATH
-#include __VIRE_AST_PATH
-#include __VIRE_ERRORS_PATH
+#include "vire/parse/include.hpp"
+#include "vire/ast/include.hpp"
+#include "vire/errors/include.hpp"
 
 namespace vire
 {
