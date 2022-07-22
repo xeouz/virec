@@ -1,55 +1,124 @@
 #pragma once
 
-#include "type.hpp"
+#include <unordered_map>
+#include <string>
 
 namespace vire
 {
 namespace types
 {
+// Enum for the different types of Type-AST nodes
+enum class TypeNames
+{
+    Void,
+    Char,
+    Int,
+    Float,
+    Double,
+    Bool,
+    Array,
+    Custom,
+};
 
-// Class for `char`
-Char::Char()
+// Type Map
+inline std::unordered_map<std::string, TypeNames> type_map=
 {
-    this->type = TypeNames::Char;
-}
+    {"void", TypeNames::Void},
+    {"char", TypeNames::Char},
+    {"int", TypeNames::Int},
+    {"float", TypeNames::Float},
+    {"double", TypeNames::Double},
+    {"bool", TypeNames::Bool},
+};
 
-// Class for `int`
-Int::Int()
+// Classes
+class Base
 {
-    this->type = TypeNames::Int;
-}
+protected:
+    TypeNames type;
+    
+public:
+    virtual ~Base() = default;
 
-// Class for `float`
-Float::Float()
-{
-    this->type = TypeNames::Float;
-}
+    virtual TypeNames getType() const
+    { return type; }
 
-// Class for `double`
-Double::Double()
-{
-    this->type = TypeNames::Double;
-}
+    virtual bool isSame(const Base& other) const
+    { return (getType() == other.getType()); }
+};
 
-// Class for `bool`
-Bool::Bool()
+class Void : public Base
 {
-    this->type = TypeNames::Bool;
-}
+public:
+    Void()
+    {
+        type = TypeNames::Void;
+    }
+};
 
-// Class for arrays
-Array::Array(Base* child)
+class Char : public Base
 {
-    this->type = TypeNames::Array;
-    this->child = child;
-}
-TypeNames Array::getChildType() const
+public:
+    Char()
+    {
+        type = TypeNames::Char;
+    }
+};
+
+class Int : public Base
 {
-    return child->getType();
-}
+public:
+    Int()
+    {
+        type = TypeNames::Int;
+    }
+};
+
+class Float : public Base
+{
+public:
+    Float()
+    {
+        type = TypeNames::Float;
+    }
+};
+
+class Double : public Base
+{
+public:
+    Double()
+    {
+        type = TypeNames::Double;
+    }
+};
+
+class Bool : public Base
+{
+public:
+    Bool()
+    {
+        type = TypeNames::Bool;
+    }
+};
+
+class Array : public Base
+{
+    Base* child;
+public:
+    Array(Base* b)
+    {
+        type = TypeNames::Array;
+        child = b;
+    }
+
+    TypeNames getChildType() const
+    {
+        return child->getType();
+    }
+};
 
 // Functions
-TypeNames getTypeFromMap(std::string typestr)
+inline TypeNames getTypeFromMap(std::string typestr)
 {
     if(type_map.contains(typestr))
     {
@@ -60,7 +129,7 @@ TypeNames getTypeFromMap(std::string typestr)
         return TypeNames::Custom;
     }
 }
-Base* construct(std::string typestr)
+inline Base* construct(std::string typestr)
 {
     TypeNames type=getTypeFromMap(typestr);
     switch(type)

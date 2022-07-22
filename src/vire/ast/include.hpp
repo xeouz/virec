@@ -15,5 +15,4 @@
 #include "parse/HelperFunctions.cpp"
 #include "parse/ASTType.hpp"
 
-#include "types/type.hpp"
 #include "types/type.cpp"

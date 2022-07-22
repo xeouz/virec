@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "vire/lex/include.hpp"
+#include "vire/ast/types/type.cpp"
 
 namespace vire
 {
@@ -16,12 +17,15 @@ protected:
 public:
     int asttype;
     ExprAST(const std::string& type, int asttype, std::unique_ptr<Viretoken> token=nullptr)
-    : type(types::construct(type)), asttype(asttype), token(std::move(token)) {}
+    : asttype(asttype), token(std::move(token)) 
+    {
+        std::unique_ptr<types::Base> t(types::construct(type));
+        this->type = std::move(t);
+    }
 
     virtual ~ExprAST() {}
     virtual types::Base* getType() const {return type.get();}
-    virtual void setType(std::string const& newtype) 
-    { type.reset(); type=std::make_unique<types::Base>(types::construct(newtype)); }
+    virtual void setType(std::string const& newtype) { type.reset(types::construct(newtype)); }
 
     virtual const std::size_t& getLine()    const {return token->line;}
     virtual const std::size_t& getCharpos() const {return token->charpos;} 
