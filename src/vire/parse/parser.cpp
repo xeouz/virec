@@ -1,13 +1,7 @@
 #include "parser.hpp"
 
-#include <memory>
-#include <string>
-#include <vector>
-#include <cstdarg>
-
 namespace vire
 {
-
     std::unique_ptr<ExprAST> Vireparse::LogError(const char* str,...)
     {
         std::va_list args;
@@ -397,7 +391,7 @@ namespace vire
 
         return std::make_unique<VariableAssignAST>(std::move(varName), std::move(value));
     }
-    std::unique_ptr<ExprAST> Vireparse::ParseTypedVar()
+    std::unique_ptr<ExprAST> Vireparse::ParsePrimitiveVarDef()
     {
         auto typeName=copyCurrentToken();
         getNextToken(tok_id);
@@ -679,7 +673,7 @@ namespace vire
         return std::make_unique<ClassAccessAST>(std::move(parent),std::move(child));
     }
 
-    std::vector<std::unique_ptr<ExprAST>> Vireparse::ParseNativeBody()
+    std::vector<std::unique_ptr<ExprAST>> Vireparse::ParsePrimitiveBody()
     {
         getNextToken(tok_lbrace);
         std::vector<std::unique_ptr<ExprAST>> members;
@@ -689,14 +683,19 @@ namespace vire
 
             std::unique_ptr<ExprAST> member;
             if(CurTok->type==tok_union)
+            {
                 member=ParseUnion();
+            }
             else if(CurTok->type==tok_struct)
+            {
                 member=ParseStruct();
+            }
             else
             {
-                member=ParseTypedVar();
+                member=ParsePrimitiveVarDef();
                 getNextToken(tok_semicol);
             }
+            
             members.push_back(std::move(member));
         }
         getNextToken(tok_rbrace);
@@ -716,7 +715,7 @@ namespace vire
             getNextToken();
         }
 
-        auto body=ParseNativeBody();
+        auto body=ParsePrimitiveBody();
 
         if(is_anonymous)
             return std::make_unique<UnionExprAST>(std::move(body));
@@ -736,7 +735,7 @@ namespace vire
             getNextToken();
         }
 
-        auto body=ParseNativeBody();
+        auto body=ParsePrimitiveBody();
 
         if(is_anonymous)
             return std::make_unique<StructExprAST>(std::move(body));

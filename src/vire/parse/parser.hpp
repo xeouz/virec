@@ -66,7 +66,7 @@ public:
 
     std::unique_ptr<ExprAST> ParseVariableDef();
     std::unique_ptr<ExprAST> ParseVariableAssign(std::unique_ptr<Viretoken> varName);
-    std::unique_ptr<ExprAST> ParseTypedVar();
+    std::unique_ptr<ExprAST> ParsePrimitiveVarDef();
     std::unique_ptr<ExprAST> ParseIncrDecrAST();
 
     std::unique_ptr<ExprAST> ParseForExpr();
@@ -87,7 +87,7 @@ public:
     std::unique_ptr<ExprAST> ParseDeleteExpr();
     std::unique_ptr<ExprAST> ParseClassAccess(std::unique_ptr<ExprAST> parent);
 
-    std::vector<std::unique_ptr<ExprAST>> ParseNativeBody();
+    std::vector<std::unique_ptr<ExprAST>> ParsePrimitiveBody();
     std::unique_ptr<ExprAST> ParseUnion();
     std::unique_ptr<ExprAST> ParseStruct();
 
