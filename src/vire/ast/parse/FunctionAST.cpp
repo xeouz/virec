@@ -30,17 +30,35 @@ public:
 
 class FunctionBaseAST
 {
+protected:
+    std::unique_ptr<Viretoken> name;
+
+    std::unique_ptr<Viretoken> return_name;
+    std::unique_ptr<types::Base> return_type;
 public:
-    FunctionBaseAST() {}
-    virtual std::string const& getType() const = 0;
-    virtual std::string const& getName() const = 0;
+    FunctionBaseAST(Viretoken* name, Viretoken* return_name)
+    :   name(std::make_unique<Viretoken>(*name))
+    {
+        this->return_name=std::make_unique<Viretoken>(*return_name);
+        
+        std::unique_ptr<types::Base> t(types::construct(this->return_name->value));
+        return_type=std::move(t);
+    }
+
+    std::string      const& getName() const       { return name->value; }
+    types::TypeNames const& getReturnType() const { return return_type->getType(); }
+    std::string      const& getReturnName() const { return return_name->value; }
+
+    Viretoken* const getNameToken() const {return name.get();}
+    Viretoken* const getReturnNameToken() const {return return_name.get();}
+
     virtual std::vector<std::unique_ptr<VariableDefAST>> const& getArgs() const = 0;
 
-    virtual bool is_extern() const {return false;}
-    virtual bool is_proto() const {return false;}
+    virtual bool is_extern() const { return false; }
+    virtual bool is_proto() const { return false; }
 
-    virtual bool isVarDefined(std::string const& name) const {return false;}
-    virtual VariableDefAST* const getVar(const std::string& name) const {return nullptr;};
+    virtual bool isVarDefined(std::string const& name) const = 0;
+    virtual VariableDefAST* const getVar(const std::string& name) const = 0;
 
     virtual ~FunctionBaseAST() {}
 };
@@ -48,65 +66,68 @@ public:
 // PrototypeAST - Class for prototype functions, captures function name and args
 class PrototypeAST : public FunctionBaseAST
 {
-    std::unique_ptr<Viretoken> Name;
-    std::unique_ptr<Viretoken> returnType;
-    std::vector<std::unique_ptr<VariableDefAST>> Args;
+    std::vector<std::unique_ptr<VariableDefAST>> args;
 public:
     int asttype;
-    PrototypeAST(std::unique_ptr<Viretoken> Name, std::vector<std::unique_ptr<VariableDefAST>> Args, std::unique_ptr<Viretoken> returnType)
-    : Name(std::move(Name)), Args(std::move(Args)), returnType(std::move(returnType)) {}
-    PrototypeAST(std::unique_ptr<Viretoken> Name, std::vector<std::unique_ptr<VariableDefAST>> Args)
-    : Name(std::move(Name)), Args(std::move(Args)), returnType(nullptr) {}
-    
-    std::string const& getType() const {return returnType->value;}
-    std::string const& getName() const {return Name->value;}
-    unsigned int getArgCount() const {return Args.size();}
-    bool is_proto() const {return true;}
-    bool is_type_null() const {return returnType==nullptr;}
 
-    std::vector<std::unique_ptr<VariableDefAST>> const& getArgs() const {return Args;}
+    PrototypeAST(Viretoken* name, std::vector<std::unique_ptr<VariableDefAST>> args, Viretoken* return_type)
+    : FunctionBaseAST(name, return_type), args(std::move(args)), asttype(ast_proto) {}
+    
+    unsigned int getArgCount() const {return args.size();}
+    
+    bool is_proto() const {return true;}
+    bool is_type_null() const {return return_type==nullptr;}
+
+    std::vector<std::unique_ptr<VariableDefAST>> const& getArgs() const {return args;}
 };
 
 class ExternAST : public FunctionBaseAST
 {
-    std::unique_ptr<PrototypeAST> Proto;
+    std::vector<std::unique_ptr<VariableDefAST>> args;
 public:
     int asttype;
-    ExternAST(std::unique_ptr<PrototypeAST> Proto) : Proto(std::move(Proto)), asttype(ast_extern) {}
 
-    std::string const& getName() const   {return Proto->getName();}
-    std::string const& getType() const   {return Proto->getType();}
-    PrototypeAST* const getProto() const {return Proto.get();}
-    std::vector<std::unique_ptr<VariableDefAST>> const& getArgs() const {return Proto->getArgs();}
+    ExternAST(Viretoken* name, std::vector<std::unique_ptr<VariableDefAST>> args, Viretoken* return_type)
+    : FunctionBaseAST(name, return_type), args(std::move(args)), asttype(ast_extern) {}
+    
+    unsigned int getArgCount() const {return args.size();}
+    
     bool is_extern() const {return true;}
+    bool is_type_null() const {return return_type==nullptr;}
+
+    std::vector<std::unique_ptr<VariableDefAST>> const& getArgs() const {return args;}
 };
 
 // FunctionAST - Class for functions which can be called by the user
 class FunctionAST : public FunctionBaseAST
 {
-    std::unique_ptr<PrototypeAST> Proto;
-    std::vector<std::unique_ptr<ExprAST>> Statements;
-    std::map<std::string, VariableDefAST*> Locals;
+    std::unique_ptr<PrototypeAST> proto;
+    std::vector<std::unique_ptr<ExprAST>> statements;
+    std::map<std::string, VariableDefAST*> locals;
 public:
     int asttype;
-    FunctionAST(std::unique_ptr<PrototypeAST> proto, std::vector<std::unique_ptr<ExprAST>> stmts)
-    : Proto(std::move(proto)), Statements(std::move(stmts)), asttype(ast_function) 
+    
+    FunctionAST(std::unique_ptr<PrototypeAST> prototype, std::vector<std::unique_ptr<ExprAST>> stmts)
+    : proto(std::move(prototype)), statements(std::move(stmts)),
+    FunctionBaseAST(proto->getNameToken(),proto->getReturnNameToken()), asttype(ast_function) 
     {
-        for(auto const& arg : Proto->getArgs())
-            Locals[arg->getName()] = arg.get();
+        for(auto const& arg : proto->getArgs())
+            locals[arg->getName()] = arg.get();
     }
 
-    std::string const& getType() const {return Proto->getType();}
-    std::string const& getName() const {return Proto->getName();}
+    // Getter Functions
+    PrototypeAST*                                const getProto() const { return proto.get(); }
+    std::vector<std::unique_ptr<VariableDefAST>> const& getArgs() const { return proto->getArgs(); }
+    std::vector<std::unique_ptr<ExprAST>>        const& getBody() const { return statements; }
 
-    PrototypeAST* const getProto() const {return Proto.get();}
-    std::vector<std::unique_ptr<VariableDefAST>> const& getArgs() const {return Proto->getArgs();}
-    std::vector<std::unique_ptr<ExprAST>> const& getBody() const {return Statements;}
-    void insertStatement(std::unique_ptr<ExprAST> Statement) {Statements.insert(Statements.begin(), std::move(Statement));}
+    // Block-based Functions
+    void insertStatement(std::unique_ptr<ExprAST> statement) 
+    { statements.insert( statements.begin(), std::move(statement) ); }
 
-    bool isVarDefined(std::string const& name) const {return Locals.count(name)>0;}
-    VariableDefAST* const getVar(std::string const& name) const {return Locals.at(name);}
-    void addVar(VariableDefAST* const& var) {Locals[var->getName()] = var;}
+    // Variable-based Functions
+    bool isVarDefined(std::string const& name)            const { return locals.count(name)>0; }
+    VariableDefAST* const getVar(std::string const& name) const { return locals.at(name); }
+    void addVar(VariableDefAST* const& var) {locals[var->getName()] = var;}
 };
 
 class ReturnExprAST : public ExprAST

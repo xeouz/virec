@@ -89,7 +89,7 @@ namespace vire
 
         return current_func;
     }
-    std::string const& VAnalyzer::getFuncReturnType(const std::string& name)
+    types::TypeNames VAnalyzer::getFuncReturnType(const std::string& name)
     {
         return getFunc(name)->getType();
     }
@@ -104,7 +104,7 @@ namespace vire
         return scope.at(name);
     }
 
-    std::string VAnalyzer::getType(ExprAST* const& expr)
+    types::TypeNames VAnalyzer::getType(ExprAST* const& expr)
     {
         switch (expr->asttype)
         {
@@ -124,7 +124,7 @@ namespace vire
             default: return "";
         }
     }
-    std::string VAnalyzer::getType(ArrayExprAST* const& array)
+    types::TypeNames VAnalyzer::getType(ArrayExprAST* const& array)
     {
         const auto& vec = array->getElements();
         std::string type=getType(vec[0].get());

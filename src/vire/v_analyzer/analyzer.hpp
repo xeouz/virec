@@ -44,10 +44,8 @@ public:
     bool isStdFunc(std::string const& name);
     unsigned int getFuncArgCount(std::string const& name);
 
-    std::string getType(ExprAST* const& expr);
-    std::string getType(VariableExprAST* const& var);
-    std::string getType(TypedVarAST* const& var);
-    std::string getType(ArrayExprAST* const& arr);
+    types::TypeNames getType(ExprAST* const& expr);
+    types::TypeNames getType(ArrayExprAST* const& arr);
 
     FunctionBaseAST* const getFunc(const std::string& name);
     std::string const& getFuncReturnType(const std::string& name="");
