@@ -461,14 +461,14 @@ namespace vire
         if(CurTok->type!=tok_id)
             return LogErrorP("Expected function name in prototype");
         
-        auto fnName=copyCurrentToken();
+        std::unique_ptr<Viretoken> fn_name=copyCurrentToken();
         getNextToken(tok_id);
 
         if(CurTok->type!=tok_lparen)
             return LogErrorP("Expected '(' in prototype after name");
         getNextToken(); // consume '('
 
-        std::vector<std::unique_ptr<VariableDefAST>> Args;
+        std::vector<std::unique_ptr<VariableDefAST>> args;
         while(CurTok->type==tok_id)
         {
             std::unique_ptr<Viretoken> varName=copyCurrentToken();
@@ -487,7 +487,7 @@ namespace vire
             std::string typeName(CurTok->value);
             getNextToken(); // consume typename
             auto var=std::make_unique<VariableDefAST>(std::move(varName),typeName,nullptr,isconst,!isconst);
-            Args.push_back(std::move(var));
+            args.push_back(std::move(var));
 
             if(CurTok->type!=tok_comma)
             {
@@ -498,17 +498,19 @@ namespace vire
 
         getNextToken(tok_rparen);
 
-        std::unique_ptr<Viretoken> returnType;
+        std::unique_ptr<Viretoken> return_type;
         if(CurTok->type==tok_rarrow || CurTok->type==tok_returns)
         {
             getNextToken();
-            returnType=copyCurrentToken();
+            return_type=copyCurrentToken();
             getNextToken(tok_id);
         }
         else
-            returnType=std::make_unique<Viretoken>("any",tok_id);
-
-        return std::make_unique<PrototypeAST>(std::move(fnName),std::move(Args),std::move(returnType));
+        {
+            return_type=copyCurrentToken();
+        }
+        
+        return std::make_unique<PrototypeAST>(std::move(fn_name),std::move(args),std::move(return_type));
     }
     
     std::unique_ptr<PrototypeAST> Vireparse::ParseProto()

@@ -1,7 +1,4 @@
-func main()
+func main() returns int
 {
-    let a = 20;
-    let b = 20.1;
-
-    let c:int = b;
+    return 0;
 }

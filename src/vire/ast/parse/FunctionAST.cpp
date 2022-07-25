@@ -31,34 +31,29 @@ public:
 class FunctionBaseAST
 {
 protected:
-    std::unique_ptr<Viretoken> name;
-
-    std::unique_ptr<Viretoken> return_name;
-    std::unique_ptr<types::Base> return_type;
+    types::Base return_type;
 public:
-    FunctionBaseAST(Viretoken* name, Viretoken* return_name)
-    :   name(std::make_unique<Viretoken>(*name))
-    {
-        this->return_name=std::make_unique<Viretoken>(*return_name);
-        
-        std::unique_ptr<types::Base> t(types::construct(this->return_name->value));
-        return_type=std::move(t);
-    }
+    FunctionBaseAST(std::string return_name)
+    :   return_type(types::construct(return_name))
+    {}
+    
+    types::Base const getReturnType() const {return return_type;}
+    virtual std::string      const getName()       const = 0;
+    virtual std::string      const getReturnName() const = 0;
 
-    std::string      const& getName() const       { return name->value; }
-    types::TypeNames const& getReturnType() const { return return_type->getType(); }
-    std::string      const& getReturnName() const { return return_name->value; }
+    virtual Viretoken* const getNameToken()        const = 0;
+    virtual Viretoken* const getReturnNameToken()  const = 0;
 
-    Viretoken* const getNameToken() const {return name.get();}
-    Viretoken* const getReturnNameToken() const {return return_name.get();}
+    virtual std::unique_ptr<Viretoken> moveNameToken()       = 0;
+    virtual std::unique_ptr<Viretoken> moveReturnNameToken() = 0;
 
     virtual std::vector<std::unique_ptr<VariableDefAST>> const& getArgs() const = 0;
 
     virtual bool is_extern() const { return false; }
-    virtual bool is_proto() const { return false; }
+    virtual bool is_proto()  const { return false; }
 
-    virtual bool isVarDefined(std::string const& name) const = 0;
-    virtual VariableDefAST* const getVar(const std::string& name) const = 0;
+    //virtual bool isVarDefined(std::string const& name) const = 0;
+    //virtual VariableDefAST* const getVar(const std::string& name) const = 0;
 
     virtual ~FunctionBaseAST() {}
 };
@@ -66,12 +61,27 @@ public:
 // PrototypeAST - Class for prototype functions, captures function name and args
 class PrototypeAST : public FunctionBaseAST
 {
+    std::unique_ptr<Viretoken> name; 
+    std::unique_ptr<Viretoken> return_name;
     std::vector<std::unique_ptr<VariableDefAST>> args;
 public:
     int asttype;
 
-    PrototypeAST(Viretoken* name, std::vector<std::unique_ptr<VariableDefAST>> args, Viretoken* return_type)
-    : FunctionBaseAST(name, return_type), args(std::move(args)), asttype(ast_proto) {}
+    PrototypeAST(std::unique_ptr<Viretoken> name, 
+    std::vector<std::unique_ptr<VariableDefAST>> args, 
+    std::unique_ptr<Viretoken> return_type)
+    : FunctionBaseAST(return_type->value), args(std::move(args)), asttype(ast_proto),
+    name(std::move(name)), return_name(std::move(return_type))
+    {}
+
+    std::string const getName()       const { return getNameToken()->value; }
+    std::string const getReturnName() const { return getReturnNameToken()->value; }
+
+    Viretoken* const getNameToken()        const { return name.get(); }
+    Viretoken* const getReturnNameToken()  const { return return_name.get(); }
+
+    std::unique_ptr<Viretoken> moveNameToken()       { return std::move(name); }
+    std::unique_ptr<Viretoken> moveReturnNameToken() { return std::move(return_name); }
     
     unsigned int getArgCount() const {return args.size();}
     
@@ -83,19 +93,29 @@ public:
 
 class ExternAST : public FunctionBaseAST
 {
-    std::vector<std::unique_ptr<VariableDefAST>> args;
+    std::unique_ptr<PrototypeAST> proto;
 public:
     int asttype;
 
-    ExternAST(Viretoken* name, std::vector<std::unique_ptr<VariableDefAST>> args, Viretoken* return_type)
-    : FunctionBaseAST(name, return_type), args(std::move(args)), asttype(ast_extern) {}
-    
-    unsigned int getArgCount() const {return args.size();}
+    ExternAST(std::unique_ptr<PrototypeAST> prototype)
+    : FunctionBaseAST(prototype->getReturnName()), 
+    asttype(ast_extern), proto(std::move(prototype))
+    {}
+
+    std::string const getName()       const { return proto->getName(); }
+    std::string const getReturnName() const { return proto->getReturnName(); }
+
+    Viretoken* const getNameToken()        const { return proto->getNameToken(); }
+    Viretoken* const getReturnNameToken()  const { return proto->getReturnNameToken(); }
+
+    std::unique_ptr<Viretoken> moveNameToken()       { return proto->moveNameToken(); }
+    std::unique_ptr<Viretoken> moveReturnNameToken() { return proto->moveReturnNameToken(); }
     
     bool is_extern() const {return true;}
     bool is_type_null() const {return return_type==nullptr;}
 
-    std::vector<std::unique_ptr<VariableDefAST>> const& getArgs() const {return args;}
+    PrototypeAST* const getProto() const {return proto.get();}
+    std::vector<std::unique_ptr<VariableDefAST>> const& getArgs() const {return proto->getArgs();}
 };
 
 // FunctionAST - Class for functions which can be called by the user
@@ -108,8 +128,8 @@ public:
     int asttype;
     
     FunctionAST(std::unique_ptr<PrototypeAST> prototype, std::vector<std::unique_ptr<ExprAST>> stmts)
-    : proto(std::move(prototype)), statements(std::move(stmts)),
-    FunctionBaseAST(proto->getNameToken(),proto->getReturnNameToken()), asttype(ast_function) 
+    : FunctionBaseAST(prototype->getReturnName()), 
+    asttype(ast_function), proto(std::move(prototype)), statements(std::move(stmts))
     {
         for(auto const& arg : proto->getArgs())
             locals[arg->getName()] = arg.get();
@@ -119,6 +139,15 @@ public:
     PrototypeAST*                                const getProto() const { return proto.get(); }
     std::vector<std::unique_ptr<VariableDefAST>> const& getArgs() const { return proto->getArgs(); }
     std::vector<std::unique_ptr<ExprAST>>        const& getBody() const { return statements; }
+
+    std::string const getName()       const { return proto->getName(); }
+    std::string const getReturnName() const { return proto->getReturnName(); }
+
+    Viretoken* const getNameToken()        const { return proto->getNameToken(); }
+    Viretoken* const getReturnNameToken()  const { return proto->getReturnNameToken(); }
+
+    std::unique_ptr<Viretoken> moveNameToken()       { return proto->moveNameToken(); }
+    std::unique_ptr<Viretoken> moveReturnNameToken() { return proto->moveReturnNameToken(); }
 
     // Block-based Functions
     void insertStatement(std::unique_ptr<ExprAST> statement) 

@@ -89,9 +89,9 @@ namespace vire
 
         return current_func;
     }
-    types::TypeNames VAnalyzer::getFuncReturnType(const std::string& name)
+    types::Base VAnalyzer::getFuncReturnType(const std::string& name)
     {
-        return getFunc(name)->getType();
+        return getFunc(name)->getReturnType();
     }
 
     CodeAST* const VAnalyzer::getCode()
@@ -104,15 +104,16 @@ namespace vire
         return scope.at(name);
     }
 
-    types::TypeNames VAnalyzer::getType(ExprAST* const& expr)
+    // !!- CHANGES REQUIRED -!!
+    // str to be implemented
+    types::Base VAnalyzer::getType(ExprAST* const& expr)
     {
         switch (expr->asttype)
         {
-            case ast_int: return "int";
-            case ast_float: return "float";
-            case ast_double: return "double";
-            case ast_str: return "str";
-            case ast_char: return "char";
+            case ast_int: return types::construct("int");
+            case ast_float: return types::construct("float");
+            case ast_double: return types::construct("double");
+            case ast_char: return types::construct("char");
 
             case ast_binop: return getType(((BinaryExprAST*const&)expr)->getLHS());
 
@@ -121,19 +122,22 @@ namespace vire
 
             case ast_call: return getFuncReturnType(((CallExprAST*const&)expr)->getName());
 
-            default: return "";
+            default: return types::construct("void");
         }
     }
-    types::TypeNames VAnalyzer::getType(ArrayExprAST* const& array)
+    
+    // !!- CHANGES REQUIRED -!!
+    // unhandled dynamic array typing
+    types::Base VAnalyzer::getType(ArrayExprAST* const& array)
     {
         const auto& vec = array->getElements();
-        std::string type=getType(vec[0].get());
+        auto type=getType(vec[0].get());
         for(int i=0; i<vec.size(); ++i)
         {
-            std::string newType=getType(vec[i].get());
+            auto newType=getType(vec[i].get());
             if(type!=newType)
             {
-                return "any";
+                return types::construct("void");
             }
         }
 
@@ -182,7 +186,7 @@ namespace vire
 
             if(!isvar)
             {
-                if(var->getValue() == nullptr && var->getType() == "auto")
+                if(var->getValue()==nullptr && var->getType() == "auto")
                 {
                     // Requires a variable for definiton
                     unsigned char islet = var->isLet() ? 1 : 0;
@@ -192,11 +196,11 @@ namespace vire
                 }
             }
             
-            std::string type=var->getType();
-            std::string value_type;
+            types::Base type=var->getType();
+            types::Base value_type;
             auto const& value=var->getValue();
             bool is_array=var->isArr() || (value!=nullptr && value->asttype==ast_array);
-            bool is_auto=type=="auto" || type=="";
+            bool is_auto= (type=="auto") || (type=="");
 
             if(value==nullptr)
             {
@@ -467,7 +471,7 @@ namespace vire
             return false;
         }
 
-        if(proto->getType()=="any" || proto->getType()=="auto")
+        if(proto->getReturnType()=="any" || proto->getReturnType()=="auto")
         {
             // Type is not valid
             is_valid=false;
@@ -515,6 +519,7 @@ namespace vire
     }
     bool VAnalyzer::verifyFunction(FunctionAST* const& func)
     {
+        //std::cout << ("Verifying function " + func->getNameToken()->value) << std::endl;
         bool is_valid=true;
 
         if(!verifyPrototype(func->getProto()))
@@ -826,11 +831,15 @@ namespace vire
 
         if(!has_main)
         {
+            auto nametok=std::make_unique<Viretoken>("main", tok_func);
+            auto rettok =std::make_unique<Viretoken>("int", tok_id);
+            std::vector<std::unique_ptr<VariableDefAST>> args;
             code->addFunction(std::make_unique<FunctionAST>(
-                std::make_unique<PrototypeAST>(std::make_unique<Viretoken>("main",tok_id), std::vector<std::unique_ptr<VariableDefAST>>()), 
+                std::make_unique<PrototypeAST>(std::move(nametok), std::move(args), std::move(rettok)), 
                 std::vector<std::unique_ptr<ExprAST>>()
                 )
             );
+
             main_func_indx=funcs.size();
         }
         

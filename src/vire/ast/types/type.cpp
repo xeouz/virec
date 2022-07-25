@@ -30,6 +30,19 @@ inline std::unordered_map<std::string, TypeNames> type_map=
     {"double", TypeNames::Double},
     {"bool", TypeNames::Bool},
 };
+inline std::unordered_map<TypeNames, std::string> typestr_map=
+{
+    {TypeNames::Void, "void"},
+    {TypeNames::Char, "char"},
+    {TypeNames::Int, "int"},
+    {TypeNames::Float, "float"},
+    {TypeNames::Double, "double"},
+    {TypeNames::Bool, "bool"},
+};
+
+// Prototypes
+inline std::string getMapFromType(TypeNames type);
+inline TypeNames getTypeFromMap(std::string typestr);
 
 // Classes
 class Base
@@ -42,10 +55,30 @@ public:
 
     virtual TypeNames getType() const
     { return type; }
-
+    
     virtual bool isSame(const Base& other) const
     { return (getType() == other.getType()); }
+    virtual bool isSame(std::string const& other) const
+    { return (getType() == getTypeFromMap(other)); }
+
+    friend std::ostream& operator<<(std::ostream& os, Base const& type);
 };
+
+inline bool operator==(const Base& lhs, const Base& rhs)
+{ return lhs.isSame(rhs); }
+inline bool operator!=(const Base& lhs, const Base& rhs)
+{ return !(lhs == rhs); }
+
+inline bool operator==(const Base& lhs, const char* rhs)
+{ return lhs.isSame(rhs); }
+inline bool operator!=(const Base& lhs, const char* rhs)
+{ return !(lhs == rhs); }
+
+inline std::ostream& operator<<(std::ostream& os, Base const& type)
+{
+    os << getMapFromType(type.getType());
+    return os;
+}
 
 class Void : public Base
 {
@@ -129,26 +162,39 @@ inline TypeNames getTypeFromMap(std::string typestr)
         return TypeNames::Custom;
     }
 }
-inline Base* construct(std::string typestr)
+
+inline std::string getMapFromType(TypeNames type)
+{
+    if(typestr_map.contains(type))
+    {
+        return typestr_map[type];
+    }
+    else
+    {
+        return "";
+    }
+}
+
+inline Base construct(std::string typestr)
 {
     TypeNames type=getTypeFromMap(typestr);
     switch(type)
     {
         case TypeNames::Char:
-            return new Char();
+            return Char();
         case TypeNames::Int:
-            return new Int();
+            return Int();
         case TypeNames::Float:
-            return new Float();
+            return Float();
         case TypeNames::Double:
-            return new Double();
+            return Double();
         case TypeNames::Bool:
-            return new Bool();
+            return Bool();
         case TypeNames::Void:
-            return new Void();
-        
+            return Void();
+
         default:
-            return new Base();
+            return Base();
     }
 }
 
