@@ -31,13 +31,13 @@ public:
 class FunctionBaseAST
 {
 protected:
-    types::Base return_type;
+    std::unique_ptr<types::Base> return_type;
 public:
     FunctionBaseAST(std::string return_name)
     :   return_type(types::construct(return_name))
     {}
     
-    types::Base const getReturnType() const {return return_type;}
+    types::Base* getReturnType() const { return return_type.get(); }
     virtual std::string      const getName()       const = 0;
     virtual std::string      const getReturnName() const = 0;
 

@@ -37,21 +37,17 @@ class VariableDefAST : public ExprAST
 {
     std::string Name;
     std::unique_ptr<ExprAST> Value;
-    bool isconst, islet, isarr;
-    unsigned int arr_size;
+    bool is_const, is_let, is_array;
 public:
-    VariableDefAST(std::unique_ptr<Viretoken> Name, const std::string& type, std::unique_ptr<ExprAST> Value,
-    bool isconst=0, bool islet=0, bool isarr=0, int arr_size=0)
-    : Name(Name->value),Value(std::move(Value)),ExprAST(type,ast_vardef), 
-    isconst(isconst),islet(islet),isarr(isarr),arr_size(arr_size) {setToken(std::move(Name));}
+    VariableDefAST(std::unique_ptr<Viretoken> Name, std::unique_ptr<types::Base> type, std::unique_ptr<ExprAST> Value,
+    bool is_const=0, bool is_let=0)
+    : Name(Name->value),Value(std::move(Value)),ExprAST(std::move(type),ast_vardef), 
+    is_const(is_const),is_let(is_let) 
+    { setToken(std::move(Name)); }
 
     std::string const& getName() const {return Name;}
-    const bool& isConst() const {return isconst;}
-    const bool& isLet() const {return islet;}
-    const bool& isArr() const {return isarr;}
-    const unsigned int& getArrSize() const {return arr_size;}
-
-    void setArrSize(unsigned int size) {arr_size = size;}
+    const bool& isConst() const {return is_const;}
+    const bool& isLet() const {return is_let;}
 
     ExprAST* const getValue() const {return Value.get();}
     std::unique_ptr<ExprAST> moveValue() {return std::move(Value);}

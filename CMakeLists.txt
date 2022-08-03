@@ -8,6 +8,8 @@ find_package(LLVM REQUIRED CONFIG)
 message(STATUS "Found LLVM: ${LLVM_VERSION}")
 message(STATUS "Using LLVMConfig.cmake in ${LLVM_DIR}")
 
+set(CMAKE_BUILD_TYPE Debug)
+
 # -- Compile Flags
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED true)
@@ -46,7 +48,7 @@ add_custom_command(
         ${CMAKE_SOURCE_DIR}/src/res $<TARGET_FILE_DIR:VIRELANG>/res
 )
 
-# -- Run the output
+# -- Run the program
 add_custom_command(
     TARGET VIRELANG POST_BUILD
     COMMAND ./VIRELANG

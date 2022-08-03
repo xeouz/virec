@@ -1,4 +1,6 @@
 func main() returns int
 {
+    let a[2][2]:int = [[1,2],[1,3,2]];
+
     return 0;
 }

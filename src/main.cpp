@@ -3,7 +3,7 @@
 #include <iostream>
 #include <memory>
 
-int main()
+int main(int argc, char ** argv)
 {
     auto file=vire::proto::openFile("res/test.ve");
     auto code=vire::proto::readFile(file, 1);
@@ -21,6 +21,9 @@ int main()
     bool success=analyzer->verifyCode(std::move(ast));
 
     std::cout << "Analyzing Success: " << success << std::endl;
+
+    std::cout << "\n\n";
+    return 42;
 
     if(!success)
     {

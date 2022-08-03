@@ -44,16 +44,15 @@ public:
     bool isStdFunc(std::string const& name);
     unsigned int getFuncArgCount(std::string const& name);
 
-    types::Base getType(ExprAST* const& expr);
-    types::Base getType(ArrayExprAST* const& arr);
+    std::unique_ptr<types::Base> getType(ExprAST* const& expr);
+    std::unique_ptr<types::Base> getType(ArrayExprAST* const& arr);
 
     FunctionBaseAST* const getFunc(const std::string& name);
-    types::Base getFuncReturnType(const std::string& name="");
+    std::unique_ptr<types::Base> getFuncReturnType(const std::string& name="");
 
     CodeAST* const getCode();
 
     // Verification functions
-
     ReturnExprAST* const getReturnStatement(std::vector<std::unique_ptr<ExprAST>> const& block);
 
     bool verifyVar(VariableExprAST* const& var);

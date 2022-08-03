@@ -65,7 +65,7 @@ namespace vire
 
     void VAnalyzer::addVar(VariableDefAST* const& var)
     {
-        scope.insert(std::make_pair(var->getName(), var));
+        //scope.insert(std::make_pair(var->getName(), var));
     }
     void VAnalyzer::removeVar(VariableDefAST* const& var)
     {
@@ -89,9 +89,10 @@ namespace vire
 
         return current_func;
     }
-    types::Base VAnalyzer::getFuncReturnType(const std::string& name)
+    std::unique_ptr<types::Base> VAnalyzer::getFuncReturnType(const std::string& name)
     {
-        return getFunc(name)->getReturnType();
+        types::Base const& type=(*getFunc(name)->getReturnType());
+        return std::make_unique<types::Base>(type);
     }
 
     CodeAST* const VAnalyzer::getCode()
@@ -106,7 +107,7 @@ namespace vire
 
     // !!- CHANGES REQUIRED -!!
     // str to be implemented
-    types::Base VAnalyzer::getType(ExprAST* const& expr)
+    std::unique_ptr<types::Base> VAnalyzer::getType(ExprAST* const& expr)
     {
         switch (expr->asttype)
         {
@@ -117,10 +118,14 @@ namespace vire
 
             case ast_binop: return getType(((BinaryExprAST*const&)expr)->getLHS());
 
-            case ast_varincrdecr: return getVar(((VariableExprAST*const&)expr)->getName())->getType();
-            case ast_var: return getVar(((VariableExprAST*const&)expr)->getName())->getType();
+            case ast_varincrdecr: 
+            return std::make_unique<types::Base>(*getVar(((VariableExprAST*const&)expr)->getName())->getType());
+            case ast_var: 
+            return std::make_unique<types::Base>(*getVar(((VariableExprAST*const&)expr)->getName())->getType());
 
             case ast_call: return getFuncReturnType(((CallExprAST*const&)expr)->getName());
+
+            case ast_array: return getType((ArrayExprAST*const&)expr);
 
             default: return types::construct("void");
         }
@@ -128,20 +133,21 @@ namespace vire
     
     // !!- CHANGES REQUIRED -!!
     // unhandled dynamic array typing
-    types::Base VAnalyzer::getType(ArrayExprAST* const& array)
+    std::unique_ptr<types::Base> VAnalyzer::getType(ArrayExprAST* const& array)
     {
         const auto& vec = array->getElements();
         auto type=getType(vec[0].get());
         for(int i=0; i<vec.size(); ++i)
         {
-            auto newType=getType(vec[i].get());
-            if(type!=newType)
+            auto new_type=getType(vec[i].get());
+            if(!types::isSame(type.get(), new_type.get()))
             {
+                std::cout << "Error: Array element types do not match: " << *type << " " << *new_type << std::endl;
                 return types::construct("void");
             }
+            vec[i]->setType(std::move(new_type));
         }
-
-        return type;
+        return std::make_unique<types::Array>(std::move(type), vec.size());
     }
 
     // Helper functions
@@ -186,7 +192,7 @@ namespace vire
 
             if(!isvar)
             {
-                if(var->getValue()==nullptr && var->getType() == "auto")
+                if(var->getValue()==nullptr && types::isSame(var->getType(), "auto"))
                 {
                     // Requires a variable for definiton
                     unsigned char islet = var->isLet() ? 1 : 0;
@@ -196,12 +202,11 @@ namespace vire
                 }
             }
             
-            types::Base type=var->getType();
-            types::Base value_type;
-            auto const& value=var->getValue();
-            bool is_array=var->isArr() || (value!=nullptr && value->asttype==ast_array);
-            bool is_auto= (type=="auto") || (type=="");
+            auto* type=var->getType();
+            std::unique_ptr<types::Base> value_type;
 
+            auto const& value=var->getValue();
+            bool is_auto=(type->getType()==types::TypeNames::Void);
             if(value==nullptr)
             {
                 return true;
@@ -212,36 +217,23 @@ namespace vire
                 if(isvar)
                 {
                     std::cout << "any type not implement yet" << std::endl;
-                    type=getType(value);
+                    type=getType(value).release();
                 }
                 else
                 {
-                    type=getType(var->getValue());
+                    type=getType(var->getValue()).release();
                 }
             }
-            
-            if(is_array)
-            {
-                auto arr=cast_static<ArrayExprAST>(var->moveValue());
-                value_type=getType(arr.get());
-                var->setValue(std::move(arr));
-                if(is_auto) type=value_type;
-            }
-            else
-            {
-                value_type=getType(var->getValue());
-            }
+            value_type=getType(value);
 
-            if(value_type != type)
+            if(!types::isSame(type, value_type.get()))    
             {
-                // Type mismatch
-                std::cout << "Type mismatch, types are: " << value_type << " and " << type << std::endl;
+                std::cout << "Error: Type mismatch: " << *type << " " << *value_type << std::endl;
                 return false;
             }
 
-            type=value_type;
+            var->setType(std::move(value_type));
 
-            var->setType(type);
             return true;
         }
         std::cout << "Variable already defined" << std::endl;
@@ -270,10 +262,10 @@ namespace vire
 
         auto assign_type=getType(assign->getValue());
 
-        if(var->getType() != assign_type)
+        if(types::isSame(var->getType(), assign_type.get()))
         {
             // Type mismatch
-            std::cout << "Type mismatch in assignment, types are: " << var->getType() << " and " << assign_type << std::endl;
+            std::cout << "Type mismatch in assignment, types are: " << var->getType() << " and " << *assign_type << std::endl;
             return false;
         }
         
@@ -407,7 +399,8 @@ namespace vire
                 is_valid=false;
             }
 
-            if(func_args[i]->getType() != getType(arg.get()))
+            auto argtype=getType(arg.get());
+            if(!types::isSame(func_args[i]->getType(), argtype.get()))
             {
                 // Argument type mismatch
                 is_valid=false;
@@ -420,9 +413,13 @@ namespace vire
     bool VAnalyzer::verifyReturn(ReturnExprAST* const& ret)
     {
         const auto& ret_type=getFuncReturnType();
-        if(ret_type!=getType(ret->getValue()))
+        
+        auto ret_expr_type=getType(ret->getValue());
+
+        
+        if(!types::isSame(ret_type.get(), ret_expr_type.get()))
         {
-            std::cout << "Return type mismatch, expected " << ret_type << " got " << getType(ret->getValue()) << std::endl;
+            std::cout << "Return type mismatch, expected " << *ret_type << " got " << *ret_expr_type << std::endl;
             // Type mismatch
             return false;
         }
@@ -471,7 +468,7 @@ namespace vire
             return false;
         }
 
-        if(proto->getReturnType()=="any" || proto->getReturnType()=="auto")
+        if(types::isSame(proto->getReturnType(),"any") || types::isSame(proto->getReturnType(),"auto"))
         {
             // Type is not valid
             is_valid=false;
@@ -481,7 +478,7 @@ namespace vire
         
         for(const auto& arg : args)
         {   
-            if(arg->getType() == "auto" || arg->getType() == "any")
+            if(types::isSame(arg->getType(),"auto") || types::isSame(arg->getType(),"any"))
             {
                 // Type is not valid
                 is_valid=false;
@@ -533,7 +530,7 @@ namespace vire
             // Block is not valid
             is_valid=false;
         }
-
+        
         return is_valid;
     }
 
@@ -863,32 +860,32 @@ namespace vire
     {
         switch(expr->asttype)
         {
-            case ast_int: return verifyInt(((std::unique_ptr<IntExprAST> const&)expr).get());
-            case ast_float: return verifyFloat(((std::unique_ptr<FloatExprAST> const&)expr).get());
-            case ast_double: return verifyDouble(((std::unique_ptr<DoubleExprAST> const&)expr).get());
-            case ast_str: return verifyStr(((std::unique_ptr<StrExprAST> const&)expr).get());
-            case ast_char: return verifyChar(((std::unique_ptr<CharExprAST> const&)expr).get());
+            case ast_int: return verifyInt((IntExprAST*const&)expr);
+            case ast_float: return verifyFloat((FloatExprAST*const&)expr);
+            case ast_double: return verifyDouble((DoubleExprAST*const&)expr);
+            case ast_str: return verifyStr((StrExprAST*const&)expr);
+            case ast_char: return verifyChar((CharExprAST*const&)expr);
 
-            case ast_binop: return verifyBinop(((std::unique_ptr<BinaryExprAST> const&)expr).get());
-            case ast_unop: return verifyUnop(((std::unique_ptr<UnaryExprAST> const&)expr).get());
+            case ast_binop: return verifyBinop((BinaryExprAST*const&)expr);
+            case ast_unop: return verifyUnop((UnaryExprAST*const&)expr);
 
-            case ast_varincrdecr: return verifyIncrDecr(((std::unique_ptr<VariableIncrDecrAST> const&)expr).get());
-            case ast_var: return verifyVar(((std::unique_ptr<VariableExprAST> const&)expr).get());
-            case ast_vardef: return verifyVarDef(((std::unique_ptr<VariableDefAST> const&)expr).get());
-            case ast_typedvar: return verifyTypedVar(((std::unique_ptr<TypedVarAST> const&)expr).get());
-            case ast_varassign: return verifyVarAssign(((std::unique_ptr<VariableAssignAST>&)expr).get());
+            case ast_varincrdecr: return verifyIncrDecr((VariableIncrDecrAST*const&)expr);
+            case ast_var: return verifyVar((VariableExprAST*const&)expr);
+            case ast_vardef: return verifyVarDef((VariableDefAST*const&)expr);
+            case ast_typedvar: return verifyTypedVar((TypedVarAST*const&)expr);
+            case ast_varassign: return verifyVarAssign((VariableAssignAST*const&)expr);
 
-            case ast_call: return verifyCall(((std::unique_ptr<CallExprAST> const&)expr).get());
+            case ast_call: return verifyCall((CallExprAST*const&)expr);
 
-            case ast_for: return verifyFor(((std::unique_ptr<ForExprAST> const&)expr).get());
-            case ast_while: return verifyWhile(((std::unique_ptr<WhileExprAST> const&)expr).get());
-            case ast_array: return verifyArray(((std::unique_ptr<ArrayExprAST> const&)expr).get());
+            case ast_for: return verifyFor((ForExprAST*const&)expr);
+            case ast_while: return verifyWhile((WhileExprAST*const&)expr);
+            case ast_array: return verifyArray((ArrayExprAST*const&)expr);
 
-            case ast_break: return verifyBreak(((std::unique_ptr<BreakExprAST> const&)expr).get());
-            case ast_continue: return verifyContinue(((std::unique_ptr<ContinueExprAST> const&)expr).get());
-            case ast_return: return verifyReturn(((std::unique_ptr<ReturnExprAST> const&)expr).get());
+            case ast_break: return verifyBreak((BreakExprAST*const&)expr);
+            case ast_continue: return verifyContinue((ContinueExprAST*const&)expr);
+            case ast_return: return verifyReturn((ReturnExprAST*const&)expr);
 
-            case ast_ifelse: return verifyIf(((std::unique_ptr<IfExprAST> const&)expr).get());
+            case ast_ifelse: return verifyIf((IfExprAST*const&)expr);
 
             default: return false;
         }
