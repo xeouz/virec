@@ -331,7 +331,7 @@ namespace vire
     }
  
     std::unique_ptr<ExprAST> Vireparse::ParseVariableDef()
-    {
+    { 
         bool isconst=false;
         bool islet=true;
         if(CurTok->type==tok_const)
@@ -380,7 +380,7 @@ namespace vire
             else
             {
                 // Automatic type inference
-                type_ref->setChild(types::construct(CurTok->value));
+                type_ref->setChild(types::construct("void"));
             }
         }
         else

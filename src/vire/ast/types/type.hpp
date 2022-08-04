@@ -74,11 +74,11 @@ public:
     }
 };
 
-// Prototypes
 inline bool isSame(Base* const& a, Base* const& b);
 inline bool isSame(Base* const& a, const char*  b);
 
 inline std::unique_ptr<Base> construct(std::string typestr);
+inline Base* getArrayRootType(Base* const& type);
 
 inline std::ostream& operator<<(std::ostream& os, Base const& type)
 {
@@ -188,9 +188,28 @@ public:
             
             bool same_length = (length == other_array->getLength());
             
-            bool b=(same_child && same_length);
+            bool b=false;
 
-            
+            bool other_has_auto=getArrayRootType(other_array)->getType()==TypeNames::Void;
+            bool this_has_auto=false;
+            if(child->getType()==TypeNames::Array)
+            {
+                this_has_auto=getArrayRootType(static_cast<Array*>(child.get()))->getType()==TypeNames::Void;
+            }
+            else
+            {
+                this_has_auto=child->getType()==TypeNames::Void;
+            }
+
+            if(this_has_auto || other_has_auto)
+            {
+                b = same_length;
+            }
+            else
+            {
+                b = same_child && same_length;
+            }
+
             return b;
         }
         return false;
@@ -228,6 +247,21 @@ inline void printAsArray(Base* const& type)
 {
     auto* a= static_cast<Array*>(type);
     std::cout << a->getChild() << "[" << a->getLength() << "]";
+}
+
+inline Base* getArrayRootType(Base* const& arr)
+{
+    Base* t;
+
+    auto* a=static_cast<Array*>(arr);
+    t=a->getChild();
+
+    while(t->getType() == TypeNames::Array)
+    {
+        a=static_cast<Array*>(t);
+        t=a->getChild();
+    }
+    return t;
 }
 
 inline TypeNames getTypeFromMap(std::string typestr)
