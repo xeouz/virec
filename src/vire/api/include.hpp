@@ -6,4 +6,4 @@
 #include "../errors/include.hpp"
 #include "../proto/include.hpp"
 #include "../v_analyzer/include.hpp"
-// #include "../v_compiler/include.hpp"
+#include "../v_compiler/include.hpp"

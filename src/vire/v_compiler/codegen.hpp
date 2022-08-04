@@ -1,8 +1,7 @@
 #pragma once
 
-#include "../includes.hpp"
-#include __VIRE_AST_PATH
-#include __VIRE_VANALYZER_PATH
+#include "vire/ast/include.hpp"
+#include "vire/v_analyzer/include.hpp"
 
 // LLVM
 #include "llvm/ADT/APFloat.h"
@@ -53,7 +52,7 @@ public:
         Module = std::make_unique<llvm::Module>(name, CTX);
     }
     
-    llvm::Type* getLLVMType(const std::string& type);
+    llvm::Type* getLLVMType(types::Base* type);
 
     llvm::BranchInst* createBrIfNoTerminator(llvm::BasicBlock* block);
 
@@ -83,6 +82,8 @@ public:
     llvm::Value* compileWhileExpr(WhileExprAST* const& whileexpr);
     llvm::Value* compileBreakExpr(BreakExprAST* const& breakexpr);
     llvm::Value* compileContinueExpr(ContinueExprAST* const& continueexpr);
+
+    llvm::Value* compileArrayExpr(ArrayExprAST* const& expr);
 
     llvm::Value* compileCallExpr(CallExprAST* const& expr);
     llvm::Value* compileReturnExpr(ReturnExprAST* const& expr);

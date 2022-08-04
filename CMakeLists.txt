@@ -30,7 +30,7 @@ foreach(target ${LLVM_TARGETS_TO_BUILD})
     list(APPEND targets "LLVM${target}CodeGen")
 endforeach()
 llvm_map_components_to_libnames(llvm_libs ${LLVM_TARGETS_TO_BUILD} support core irreader)
-# target_link_libraries(VIRELANG PRIVATE ${llvm_libs})
+target_link_libraries(VIRELANG PRIVATE ${llvm_libs})
 
 set(VIRE_SRC_PATH "${CMAKE_CURRENT_SOURCE_DIR}/src/vire")
 
@@ -40,6 +40,7 @@ include(${VIRE_SRC_PATH}/proto/Proto.cmake)
 include(${VIRE_SRC_PATH}/v_analyzer/VAnalyzer.cmake)
 include(${VIRE_SRC_PATH}/errors/ErrorBuilder.cmake)
 include(${VIRE_SRC_PATH}/config/Config.cmake)
+include(${VIRE_SRC_PATH}/v_compiler/VCompiler.cmake)
 
 # -- Copy the resources to the build directory
 add_custom_command(

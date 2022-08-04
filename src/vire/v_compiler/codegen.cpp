@@ -2,31 +2,26 @@
 
 namespace vire
 {
-    llvm::Type* VCompiler::getLLVMType(const std::string& type)
+    llvm::Type* VCompiler::getLLVMType(types::Base* type)
     {
-        if (type == "int")
+        switch(type->getType())
         {
-            return llvm::Type::getInt32Ty(CTX);
-        }
-        else if (type == "float")
-        {
-            return llvm::Type::getFloatTy(CTX);
-        }
-        else if (type == "double")
-        {
-            return llvm::Type::getDoubleTy(CTX);
-        }
-        else if (type == "char")
-        {
-            return llvm::Type::getInt8Ty(CTX);
-        }
-        else if (type == "str")
-        {
-            return llvm::Type::getInt8PtrTy(CTX);
-        }
-        else
-        {
-            return nullptr;
+            case types::TypeNames::Void:
+                return llvm::Type::getVoidTy(CTX);
+            case types::TypeNames::Bool:
+                return llvm::Type::getInt1Ty(CTX);
+            case types::TypeNames::Char:
+                return llvm::Type::getInt8Ty(CTX);
+            case types::TypeNames::Int:
+                return llvm::Type::getInt32Ty(CTX);
+            case types::TypeNames::Float:
+                return llvm::Type::getFloatTy(CTX);
+            case types::TypeNames::Array:
+                return llvm::ArrayType::get
+                (getLLVMType(((types::Array*)type)->getChild()), ((types::Array*)type)->getLength());
+            
+            default:
+                return llvm::Type::getVoidTy(CTX);
         }
     }
 
@@ -331,7 +326,7 @@ namespace vire
         auto const& proto_args=proto->getArgs();
         std::vector<llvm::Type*> args(proto_args.size());
 
-        llvm::Type* func_ret_type=getLLVMType(proto->getType());
+        llvm::Type* func_ret_type=getLLVMType(proto->getReturnType());
 
         for(size_t i=0; i<proto_args.size(); i++)
         {
@@ -379,7 +374,7 @@ namespace vire
         auto const& func=(FunctionAST*)analyzer->getFunc(Name);
 
         // Create return value
-        auto ret_type=getLLVMType(func->getType());
+        auto ret_type=getLLVMType(func->getReturnType());
         auto ret_val=Builder.CreateAlloca(ret_type, nullptr, "retval");
         namedValues["retval"]=ret_val;
 
