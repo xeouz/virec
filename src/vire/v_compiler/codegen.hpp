@@ -58,11 +58,13 @@ public:
 
     llvm::Value* compileExpr(ExprAST* const& expr);
 
-    llvm::Value* compileNumExpr(IntExprAST* const& expr);
-    llvm::Value* compileNumExpr(FloatExprAST* const& expr);
-    llvm::Value* compileNumExpr(DoubleExprAST* const& expr);
-    llvm::Value* compileCharExpr(CharExprAST* const& expr);
-    llvm::Value* compileStrExpr(StrExprAST* const& expr);
+    llvm::Constant* compileConstantExpr(ExprAST* const& expr);
+    llvm::Constant* compileConstantExpr(IntExprAST* const& expr);
+    llvm::Constant* compileConstantExpr(FloatExprAST* const& expr);
+    llvm::Constant* compileConstantExpr(DoubleExprAST* const& expr);
+    llvm::Constant* compileConstantExpr(CharExprAST* const& expr);
+    llvm::Constant* compileConstantExpr(StrExprAST* const& expr);
+    llvm::Constant* compileConstantExpr(ArrayExprAST* const& expr);
 
     llvm::Value* compileBinopExpr(BinaryExprAST* const& expr);
 
@@ -82,8 +84,6 @@ public:
     llvm::Value* compileWhileExpr(WhileExprAST* const& whileexpr);
     llvm::Value* compileBreakExpr(BreakExprAST* const& breakexpr);
     llvm::Value* compileContinueExpr(ContinueExprAST* const& continueexpr);
-
-    llvm::Value* compileArrayExpr(ArrayExprAST* const& expr);
 
     llvm::Value* compileCallExpr(CallExprAST* const& expr);
     llvm::Value* compileReturnExpr(ReturnExprAST* const& expr);

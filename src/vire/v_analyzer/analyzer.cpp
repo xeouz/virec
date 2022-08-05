@@ -228,6 +228,7 @@ namespace vire
                 }
             }
             value_type=getType(value);
+            value->setType(getType(value));
 
             if(!types::isSame(type, value_type.get()))    
             {

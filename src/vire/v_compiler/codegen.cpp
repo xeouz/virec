@@ -43,13 +43,15 @@ namespace vire
         switch(expr->asttype)
         {
             case ast_int:
-                return compileNumExpr((IntExprAST* const&)expr);
+                return compileConstantExpr((IntExprAST* const&)expr);
             case ast_float:
-                return compileNumExpr((FloatExprAST* const&)expr);
+                return compileConstantExpr((FloatExprAST* const&)expr);
             case ast_double:
-                return compileNumExpr((DoubleExprAST* const&)expr);
+                return compileConstantExpr((DoubleExprAST* const&)expr);
             case ast_char:
-                return compileCharExpr((CharExprAST* const&)expr);
+                return compileConstantExpr((CharExprAST* const&)expr);
+            case ast_array:
+                return compileConstantExpr((ArrayExprAST* const&)expr);
 
             case ast_varincrdecr:
                 return compileIncrDecr((VariableIncrDecrAST* const&)expr);
@@ -85,26 +87,58 @@ namespace vire
         }
     }
 
-    llvm::Value* VCompiler::compileNumExpr(IntExprAST* const& expr)
+    llvm::Constant* VCompiler::compileConstantExpr(ExprAST* const& expr)
+    {
+        switch(expr->getType()->getType())
+        {
+            case types::TypeNames::Int:
+                return compileConstantExpr((IntExprAST* const&)expr);
+            case types::TypeNames::Float:
+                return compileConstantExpr((FloatExprAST* const&)expr);
+            case types::TypeNames::Double:
+                return compileConstantExpr((DoubleExprAST* const&)expr);
+            case types::TypeNames::Char:
+                return compileConstantExpr((CharExprAST* const&)expr);
+            case types::TypeNames::Array:
+                return compileConstantExpr((ArrayExprAST* const&)expr);
+            default:
+                return nullptr;
+        }
+    }
+    llvm::Constant* VCompiler::compileConstantExpr(IntExprAST* const& expr)
     {
         
         return llvm::ConstantInt::get(CTX, llvm::APInt(32, expr->getValue(), true));
     }
-    llvm::Value* VCompiler::compileNumExpr(FloatExprAST* const& expr)
+    llvm::Constant* VCompiler::compileConstantExpr(FloatExprAST* const& expr)
     {
         return llvm::ConstantFP::get(CTX, llvm::APFloat(expr->getValue()));
     }
-    llvm::Value* VCompiler::compileNumExpr(DoubleExprAST* const& expr)
+    llvm::Constant* VCompiler::compileConstantExpr(DoubleExprAST* const& expr)
     {
         return llvm::ConstantFP::get(CTX, llvm::APFloat(expr->getValue()));
     }
-    llvm::Value* VCompiler::compileCharExpr(CharExprAST* const& expr)
+    llvm::Constant* VCompiler::compileConstantExpr(CharExprAST* const& expr)
     {
         return llvm::ConstantInt::get(CTX, llvm::APInt(8, expr->getValue(), true));
     }
-    llvm::Value* VCompiler::compileStrExpr(StrExprAST* const& expr)
+    llvm::Constant* VCompiler::compileConstantExpr(StrExprAST* const& expr)
     {
-        return Builder.CreateGlobalString(expr->getValue(), "str");
+        return nullptr;
+    }
+
+    llvm::Constant* VCompiler::compileConstantExpr(ArrayExprAST* const& expr)
+    {
+        auto* type=getLLVMType(expr->getType());
+
+        std::vector<llvm::Constant*> constants;
+        for(auto& elem : expr->getElements())
+        {
+            llvm::Constant* constant=compileConstantExpr(elem.get());
+            constants.push_back(constant);
+        }
+
+        return llvm::ConstantArray::get(llvm::ArrayType::get(type, constants.size()), constants);
     }
 
     llvm::Value* VCompiler::compileIncrDecr(VariableIncrDecrAST* const& expr)
