@@ -137,6 +137,7 @@ namespace vire
     {
         const auto& vec = array->getElements();
         auto type=getType(vec[0].get());
+
         for(int i=0; i<vec.size(); ++i)
         {
             auto new_type=getType(vec[i].get());
@@ -147,7 +148,9 @@ namespace vire
             }
             vec[i]->setType(std::move(new_type));
         }
-        return std::make_unique<types::Array>(std::move(type), vec.size());
+        
+        unsigned int len=((types::Array*)array->getType())->getLength();
+        return std::make_unique<types::Array>(std::move(type), len);
     }
 
     // Helper functions

@@ -1,6 +1,6 @@
 func main() returns int
 {
-    let a = 10;
+    let a[3] = [7,8];
 
     return 0;
 }

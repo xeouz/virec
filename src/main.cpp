@@ -29,6 +29,8 @@ int main(int argc, char ** argv)
         return 42;
     }
 
+    return 0;
+
     // Analysis and Frontend are done.
     // Now we can use the AST to generate the code.
     

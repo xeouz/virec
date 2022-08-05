@@ -408,6 +408,18 @@ namespace vire
                 value=ParseExpression();
         }
 
+        if(is_array && value!=nullptr)
+        {
+            auto* vtype=(types::Array*)value->getType();
+            auto* stype=(types::Array*)type.get();
+            
+            if(vtype->getLength() <= stype->getLength())
+            {
+                vtype->setLength(stype->getLength());
+            }
+
+        }
+
         return std::make_unique<VariableDefAST>(std::move(var_name),std::move(type),std::move(value),isconst,islet);
     }
     std::unique_ptr<ExprAST> Vireparse::ParseVariableAssign(std::unique_ptr<Viretoken> varName)

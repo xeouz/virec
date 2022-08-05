@@ -63,12 +63,16 @@ public:
 // ArrayExprAST - CLass for representing Arrays, eg - [1,2,3,4,5]
 class ArrayExprAST : public ExprAST
 {
-    std::vector<std::unique_ptr<ExprAST>> Elements;
+    std::vector<std::unique_ptr<ExprAST>> elements;
 public:
-    ArrayExprAST(std::vector<std::unique_ptr<ExprAST>> Elements)
-    :   Elements(std::move(Elements)), ExprAST("arr", ast_array) {}
+    ArrayExprAST(std::vector<std::unique_ptr<ExprAST>> elements)
+    :   elements(std::move(elements)), ExprAST("arr", ast_array) 
+    {
+        auto t=std::make_unique<types::Array>(types::construct("void"), this->elements.size());
+        setType(std::move(t));
+    }
 
-    std::vector<std::unique_ptr<ExprAST>> const& getElements() const {return Elements;}
+    std::vector<std::unique_ptr<ExprAST>> const& getElements() const {return elements;}
 };
 
 }

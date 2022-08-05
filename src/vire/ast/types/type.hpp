@@ -178,6 +178,11 @@ public:
     {
         return length;
     }
+    void setLength(unsigned int new_length)
+    {
+        length = new_length;
+        size = child->getSize() * length;
+    }
 
     bool isSame(Base* const& other)
     {
@@ -187,7 +192,7 @@ public:
             bool same_child = types::isSame(child.get(), other_array->getChild());
             
             bool same_length = (length == other_array->getLength());
-            
+       
             bool b=false;
 
             bool other_has_auto=getArrayRootType(other_array)->getType()==TypeNames::Void;
@@ -296,6 +301,27 @@ inline std::string getMapFromType(TypeNames type)
 inline std::unique_ptr<Base> construct(std::string typestr)
 {
     TypeNames type=getTypeFromMap(typestr);
+    switch(type)
+    {
+        case TypeNames::Void:
+            return std::make_unique<Void>();
+        case TypeNames::Char:
+            return std::make_unique<Char>();
+        case TypeNames::Int:
+            return std::make_unique<Int>();
+        case TypeNames::Float:
+            return std::make_unique<Float>();
+        case TypeNames::Double:
+            return std::make_unique<Double>();
+        case TypeNames::Bool:
+            return std::make_unique<Bool>();
+        
+        default:
+            return std::make_unique<Void>();
+    }
+}
+inline std::unique_ptr<Base> construct(TypeNames type)
+{
     switch(type)
     {
         case TypeNames::Void:
