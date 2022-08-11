@@ -358,7 +358,6 @@ namespace vire
             getNextToken(); // consume `let` / `const`
 
         auto var_name=copyCurrentToken();
-        var_name->value="_"+var_name->value;
         getNextToken(tok_id);
 
         bool is_array=false;
