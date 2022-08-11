@@ -158,6 +158,19 @@ namespace vire
         std::unique_ptr<Viretoken> IdName=copyCurrentToken();
         getNextToken(tok_id);
 
+        if(CurTok->type == tok_lbrack) // if it is an array access
+        {
+            getNextToken(tok_lbrack);
+
+            auto index=ParseExpression();
+            if(!index)
+                return LogError("Expected expression after '['");
+            
+            getNextToken(tok_rbrack);
+
+            return std::make_unique<VariableArrayAccessAST>(std::move(IdName),std::move(index));
+        }
+
         if(CurTok->type != tok_lparen) // if it is not a function call
         {
             IdName->value="_"+IdName->value;
@@ -206,7 +219,7 @@ namespace vire
 
         getNextToken(tok_rparen); // consume ')'
 
-        auto call=std::make_unique<CallExprAST>(std::move(std::move(IdName)),std::move(Args));
+        auto call=std::make_unique<CallExprAST>(std::move(IdName),std::move(Args));
 
         if(CurTok->type==tok_dot)
             return ParseClassAccess(std::move(call));

@@ -59,8 +59,6 @@ public:
         size = 0;
     }
 
-    virtual ~Base() {}
-
     virtual TypeNames getType() const { return type; }
     virtual int8_t getSize() const { return size; }
     
@@ -78,6 +76,7 @@ inline bool isSame(Base* const& a, Base* const& b);
 inline bool isSame(Base* const& a, const char*  b);
 
 inline std::unique_ptr<Base> construct(std::string typestr);
+inline std::unique_ptr<Base> construct(TypeNames type);
 inline Base* getArrayRootType(Base* const& type);
 
 inline std::ostream& operator<<(std::ostream& os, Base const& type)
@@ -158,6 +157,13 @@ public:
         this->length = length;
         this->size = child->getSize() * length;
     }
+    Array(Base* b, int length)
+    {
+        this->type = TypeNames::Array;
+        this->child = std::unique_ptr<Base>(b);
+        this->length = length;
+        this->size = child->getSize() * length;
+    }
 
     Base* getChild() const 
     {
@@ -189,8 +195,8 @@ public:
         if(other->getType() == TypeNames::Array)
         {
             Array* other_array = static_cast<Array*>(other);
+
             bool same_child = types::isSame(child.get(), other_array->getChild());
-            
             bool same_length = (length == other_array->getLength());
        
             bool b=false;
@@ -232,7 +238,9 @@ inline bool isSame(Base* const& a, Base* const& b)
         }
         else
         {
+            
             Array* a_array = static_cast<Array*>(a);
+            
             bool f=a_array->isSame(b);
 
             return f;
@@ -246,6 +254,19 @@ inline bool isSame(Base* const& a, const char* b)
     bool same=isSame(a, t.get());
     t.release();
     return same;
+}
+
+inline std::unique_ptr<Base> copyType(Base* const& type)
+{
+    if(type->getType() == TypeNames::Array)
+    {
+        Array* array = static_cast<Array*>(type);
+        return std::make_unique<Array>(copyType(array->getChild()), array->getLength());
+    }
+    else
+    {
+        return construct(type->getType());
+    }
 }
 
 inline void printAsArray(Base* const& type)

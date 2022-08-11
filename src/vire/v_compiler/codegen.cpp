@@ -61,6 +61,8 @@ namespace vire
                 return compileVariableDef((VariableDefAST* const&)expr);
             case ast_varassign:
                 return compileVariableAssign((VariableAssignAST* const&)expr);
+            case ast_array_access:
+                return compileVariableArrayAccess((VariableArrayAccessAST* const&)expr);
 
             case ast_binop:
                 return compileBinopExpr((BinaryExprAST* const&)expr);
@@ -138,7 +140,12 @@ namespace vire
             constants.push_back(constant);
         }
 
-        return llvm::ConstantArray::get(llvm::ArrayType::get(type, constants.size()), constants);
+        constexpr auto linkage=llvm::GlobalValue::LinkageTypes::PrivateLinkage;
+        auto* gbl=new llvm::GlobalVariable(type, true, linkage, nullptr, "array");
+        gbl->setInitializer(llvm::ConstantArray::get(llvm::ArrayType::get(type, constants.size()), constants));
+        Module->getGlobalList().push_back(gbl);
+
+        return gbl;
     }
 
     llvm::Value* VCompiler::compileIncrDecr(VariableIncrDecrAST* const& expr)
@@ -194,6 +201,17 @@ namespace vire
         Builder.CreateStore(val, var);
 
         return val;
+    }
+    llvm::Value* VCompiler::compileVariableArrayAccess(VariableArrayAccessAST* const& access)
+    {
+        auto* var=namedValues[access->getName()];
+        auto* indx_expr=(IntExprAST*)access->getIndex();
+        int indx=indx_expr->getValue();
+
+        llvm::Type* ty=var->getAllocatedType();
+        llvm::Value* indx_val=llvm::ConstantInt::get(CTX, llvm::APInt(32, indx, true));
+        llvm::Value* indx_ptr=Builder.CreateInBoundsGEP(ty, var, {indx_val});
+        return Builder.CreateLoad(ty, indx_ptr);
     }
 
     llvm::Value* VCompiler::compileBinopExpr(BinaryExprAST* const& expr)

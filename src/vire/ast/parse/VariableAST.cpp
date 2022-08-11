@@ -11,70 +11,104 @@ namespace vire
 // VariableExprAST - Class for referencing a variable, eg - `myvar`
 class VariableExprAST : public ExprAST
 {
-    std::string Name;
+    std::string name;
 public:
-    VariableExprAST(std::unique_ptr<Viretoken> Name) : Name(Name->value), ExprAST("",ast_var) 
-    {setToken(std::move(Name));} 
+    VariableExprAST(std::unique_ptr<Viretoken> name) : name(name->value), ExprAST("",ast_var) 
+    {setToken(std::move(name));} 
 
-    std::string const& getName() const {return Name;}
+    std::string const& getName() const {return name;}
     Viretoken* const getToken() const {return token.get();}
     std::unique_ptr<Viretoken> moveToken() {return std::move(token);}
 };
 
 class VariableAssignAST: public ExprAST
 {
-    std::string Name;
-    std::unique_ptr<ExprAST> Value;
+    std::string name;
+    std::unique_ptr<ExprAST> value;
 public: 
-    VariableAssignAST(std::unique_ptr<Viretoken> Name, std::unique_ptr<ExprAST> Value)
-    : Name(Name->value), Value(std::move(Value)), ExprAST("void",ast_varassign) {setToken(std::move(Name));}
+    VariableAssignAST(std::unique_ptr<Viretoken> name, std::unique_ptr<ExprAST> value)
+    : name(name->value), value(std::move(value)), ExprAST("void",ast_varassign) {setToken(std::move(name));}
 
-    std::string const& getName() const {return Name;}
-    ExprAST* const getValue() const {return Value.get();}
+    std::string const& getName() const {return name;}
+    ExprAST* const getValue() const {return value.get();}
+};
+
+class VariableArrayAccessAST: public ExprAST
+{
+    std::string name;
+    std::unique_ptr<ExprAST> indx;
+public:
+    VariableArrayAccessAST(std::unique_ptr<Viretoken> name, std::unique_ptr<ExprAST> indx)
+    : name(name->value), indx(std::move(indx)), ExprAST("void",ast_array_access) {setToken(std::move(name));}
+    
+    std::string const& getName() const {return name;}
+    ExprAST* const getIndex() const {return indx.get();}
 };
 
 class VariableDefAST : public ExprAST
 {
-    std::string Name;
-    std::unique_ptr<ExprAST> Value;
+    std::string name;
+    std::unique_ptr<ExprAST> value;
     bool is_const, is_let, is_array;
+    bool use_value_type;
 public:
-    VariableDefAST(std::unique_ptr<Viretoken> Name, std::unique_ptr<types::Base> type, std::unique_ptr<ExprAST> Value,
-    bool is_const=0, bool is_let=0)
-    : Name(Name->value),Value(std::move(Value)),ExprAST(std::move(type),ast_vardef), 
-    is_const(is_const),is_let(is_let) 
-    { setToken(std::move(Name)); }
+    VariableDefAST(std::unique_ptr<Viretoken> name, std::unique_ptr<types::Base> type, std::unique_ptr<ExprAST> value,
+    bool is_const=false, bool is_let=false)
+    : name(name->value),value(std::move(value)),ExprAST(std::move(type),ast_vardef), 
+    is_const(is_const),is_let(is_let), use_value_type(false)
+    { setToken(std::move(name)); }
 
-    std::string const& getName() const {return Name;}
+    std::string const& getName() const {return name;}
     const bool& isConst() const {return is_const;}
     const bool& isLet() const {return is_let;}
 
-    ExprAST* const getValue() const {return Value.get();}
-    std::unique_ptr<ExprAST> moveValue() {return std::move(Value);}
-    void setValue(std::unique_ptr<ExprAST> Value) {this->Value=std::move(Value);}
+    types::Base* getType() const
+    {
+        if(type==nullptr || use_value_type)
+        {
+            return value->getType();
+        }
+
+        return type.get();
+    }
+    void setType(std::unique_ptr<types::Base> type) 
+    {
+        this->type=nullptr;
+        value->setType(std::move(type));
+    }
+    void setType(types::Base* t)
+    {
+        value->setType(t);
+    }
+
+    ExprAST* const getValue() const {return value.get();}
+    std::unique_ptr<ExprAST> moveValue() {return std::move(value);}
+    void setValue(std::unique_ptr<ExprAST> value) {this->value=std::move(value);}
+
+    void setUseValueType(bool use_value_type) {this->use_value_type=use_value_type;}
 };
 
 class TypedVarAST : public ExprAST
 {
-    std::unique_ptr<Viretoken> Name;
+    std::unique_ptr<Viretoken> name;
 public:
-    TypedVarAST(std::unique_ptr<Viretoken> Name, std::unique_ptr<Viretoken> Type) 
-    : Name(std::move(Name)), ExprAST(Type->value,ast_typedvar)
+    TypedVarAST(std::unique_ptr<Viretoken> name, std::unique_ptr<Viretoken> Type) 
+    : name(std::move(name)), ExprAST(Type->value,ast_typedvar)
     {setToken(std::move(Type));}
 
-    std::string const& getName() const {return Name->value;}
+    std::string const& getName() const {return name->value;}
 };
 
 class VariableIncrDecrAST : public ExprAST
 {
-    std::string Name;
+    std::string name;
     bool isincr, ispre;
 public:
-    VariableIncrDecrAST(std::unique_ptr<Viretoken> Name, bool isincr, bool ispre)
-    : Name(Name->value), ExprAST("void",ast_varincrdecr), isincr(isincr), ispre(ispre)
-    {setToken(std::move(Name));}
+    VariableIncrDecrAST(std::unique_ptr<Viretoken> name, bool isincr, bool ispre)
+    : name(name->value), ExprAST("void",ast_varincrdecr), isincr(isincr), ispre(ispre)
+    {setToken(std::move(name));}
     
-    std::string const& getName() const {return Name;}
+    std::string const& getName() const {return name;}
     bool isIncr() const {return isincr;}
     bool isPre() const {return ispre;}
 };

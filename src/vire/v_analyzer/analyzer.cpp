@@ -65,7 +65,8 @@ namespace vire
 
     void VAnalyzer::addVar(VariableDefAST* const& var)
     {
-        //scope.insert(std::make_pair(var->getName(), var));
+        scope.insert(std::make_pair(var->getName(), var));
+        scope_varref->push_back(var);
     }
     void VAnalyzer::removeVar(VariableDefAST* const& var)
     {
@@ -89,10 +90,10 @@ namespace vire
 
         return current_func;
     }
-    std::unique_ptr<types::Base> VAnalyzer::getFuncReturnType(const std::string& name)
+    types::Base* VAnalyzer::getFuncReturnType(const std::string& name)
     {
-        types::Base const& type=(*getFunc(name)->getReturnType());
-        return std::make_unique<types::Base>(type);
+        auto* type=getFunc(name)->getReturnType();
+        return type;
     }
 
     CodeAST* const VAnalyzer::getCode()
@@ -107,50 +108,68 @@ namespace vire
 
     // !!- CHANGES REQUIRED -!!
     // str to be implemented
-    std::unique_ptr<types::Base> VAnalyzer::getType(ExprAST* const& expr)
+    types::Base* VAnalyzer::getType(ExprAST* const& expr)
     {
         switch (expr->asttype)
         {
-            case ast_int: return types::construct("int");
-            case ast_float: return types::construct("float");
-            case ast_double: return types::construct("double");
-            case ast_char: return types::construct("char");
+            case ast_int: return expr->getType();
+            case ast_float: return expr->getType();
+            case ast_double: return expr->getType();
+            case ast_char: return expr->getType();
 
-            case ast_binop: return getType(((BinaryExprAST*const&)expr)->getLHS());
+            case ast_binop: return getType(((BinaryExprAST*)expr)->getLHS());
 
             case ast_varincrdecr: 
-            return std::make_unique<types::Base>(*getVar(((VariableExprAST*const&)expr)->getName())->getType());
-            case ast_var: 
-            return std::make_unique<types::Base>(*getVar(((VariableExprAST*const&)expr)->getName())->getType());
+            return getVar(((VariableExprAST*)expr)->getName())->getType();
+            case ast_var:
+            {
+                auto* var=getVar(((VariableExprAST*)expr)->getName());
+                return var->getType();
+            }
+            case ast_array_access:
+            {
+                auto* var=getVar(((VariableArrayAccessAST*)expr)->getName());
+                auto* array_type=var->getType();
 
-            case ast_call: return getFuncReturnType(((CallExprAST*const&)expr)->getName());
+                return ((types::Array*)array_type)->getChild();
+            }
 
-            case ast_array: return getType((ArrayExprAST*const&)expr);
+            case ast_call: return getFuncReturnType(((CallExprAST*)expr)->getName());
 
-            default: return types::construct("void");
+            case ast_array: return getType((ArrayExprAST*)expr);
+
+            default:
+            {
+                std::cout<<"Error: Unknown type in getType()"<<std::endl;
+                return nullptr;
+            }
         }
     }
     
     // !!- CHANGES REQUIRED -!!
     // unhandled dynamic array typing
-    std::unique_ptr<types::Base> VAnalyzer::getType(ArrayExprAST* const& array)
+    types::Base* VAnalyzer::getType(ArrayExprAST* const& array)
     {
-        const auto& vec = array->getElements();
-        auto type=getType(vec[0].get());
+        const auto& vec=array->getElements();
+        auto type=types::copyType(getType(vec[0].get()));
 
         for(int i=0; i<vec.size(); ++i)
         {
-            auto new_type=getType(vec[i].get());
-            if(!types::isSame(type.get(), new_type.get()))
+            auto* new_type=getType(vec[i].get());
+
+            if(!types::isSame(type.get(), new_type))
             {
                 std::cout << "Error: Array element types do not match: " << *type << " " << *new_type << std::endl;
-                return types::construct("void");
+                return nullptr;
             }
-            vec[i]->setType(std::move(new_type));
         }
         
         unsigned int len=((types::Array*)array->getType())->getLength();
-        return std::make_unique<types::Array>(std::move(type), len);
+
+        auto type_uptr=std::make_unique<types::Array>(std::move(type), len);
+        array->setType(std::move(type_uptr));
+
+        return array->getType();
     }
 
     // Helper functions
@@ -191,9 +210,9 @@ namespace vire
     {
         if(!isVarDefined(var->getName(),check_globally_only))
         {
-            bool isvar=!(var->isLet() || var->isConst());
+            bool is_var=!(var->isLet() || var->isConst());
 
-            if(!isvar)
+            if(!is_var)
             {
                 if(var->getValue()==nullptr && types::isSame(var->getType(), "auto"))
                 {
@@ -206,38 +225,38 @@ namespace vire
             }
             
             auto* type=var->getType();
-            std::unique_ptr<types::Base> value_type;
+            types::Base* value_type;
 
             auto const& value=var->getValue();
             bool is_auto=(type->getType()==types::TypeNames::Void);
             if(value==nullptr)
             {
+                addVar(var);
                 return true;
             }
 
-            if(is_auto)
+            if(is_auto && is_var)
             {
-                if(isvar)
-                {
-                    std::cout << "any type not implement yet" << std::endl;
-                    type=getType(value).release();
-                }
-                else
-                {
-                    type=getType(var->getValue()).release();
-                }
+                std::cout << "`any` type not implement yet" << std::endl;
             }
+ 
             value_type=getType(value);
-            value->setType(getType(value));
 
-            if(!types::isSame(type, value_type.get()))    
+            if(!is_auto)
             {
-                std::cout << "Error: Type mismatch: " << *type << " " << *value_type << std::endl;
-                return false;
+                if(!types::isSame(type, value_type))    
+                {
+                    std::cout << "Error: Type mismatch: " << *type << " " << *value_type << std::endl;
+                    return false;
+                }
             }
-
-            var->setType(std::move(value_type));
-
+            
+            auto value_type_uptr=types::copyType(value_type);
+            value->setType(std::move(value_type_uptr));
+            var->setUseValueType(true);
+            
+            addVar(var);
+            
             return true;
         }
         std::cout << "Variable already defined" << std::endl;
@@ -264,12 +283,42 @@ namespace vire
             return false;
         }
 
-        auto assign_type=getType(assign->getValue());
+        auto* assign_type=getType(assign->getValue());
 
-        if(types::isSame(var->getType(), assign_type.get()))
+        if(types::isSame(var->getType(), assign_type))
         {
             // Type mismatch
             std::cout << "Type mismatch in assignment, types are: " << var->getType() << " and " << *assign_type << std::endl;
+            return false;
+        }
+        
+        std::cout << "Type mismatch in assignment, types are: " << var->getType() << " and " << *assign_type << std::endl;
+        return true;
+    }
+    bool VAnalyzer::verifyVarArrayAccess(VariableArrayAccessAST* const& access)
+    {
+        if(!isVarDefined(access->getName()))
+        {
+            // Var is not defined
+            return false;
+        }
+        
+        auto const& var=getVar(access->getName());
+
+        auto array_len=((types::Array*)var->getType())->getLength();
+        auto access_index=access->getIndex();
+        if(access_index->getType()->getType()!=types::TypeNames::Int && var->isConst())
+        {
+            // Index is not an int
+            std::cout << "Array needs a specified integer index" << std::endl;
+            return false;
+        }
+
+        auto& indx=(IntExprAST* const&)access_index;
+        if(indx->getValue()>array_len)
+        {
+            // Index out of bounds
+            std::cout << "Array index out of bounds" << std::endl;
             return false;
         }
         
@@ -403,8 +452,8 @@ namespace vire
                 is_valid=false;
             }
 
-            auto argtype=getType(arg.get());
-            if(!types::isSame(func_args[i]->getType(), argtype.get()))
+            auto* argtype=getType(arg.get());
+            if(!types::isSame(func_args[i]->getType(), argtype))
             {
                 // Argument type mismatch
                 is_valid=false;
@@ -418,10 +467,10 @@ namespace vire
     {
         const auto& ret_type=getFuncReturnType();
         
-        auto ret_expr_type=getType(ret->getValue());
+        auto* ret_expr_type=getType(ret->getValue());
 
         
-        if(!types::isSame(ret_type.get(), ret_expr_type.get()))
+        if(!types::isSame(ret_type, ret_expr_type))
         {
             std::cout << "Return type mismatch, expected " << *ret_type << " got " << *ret_expr_type << std::endl;
             // Type mismatch
@@ -728,7 +777,9 @@ namespace vire
 
     bool VAnalyzer::verifyBlock(std::vector<std::unique_ptr<ExprAST>> const& block)
     {
-        std::vector<VariableDefAST*> refcnt;
+        auto* refscope=new std::vector<VariableDefAST*>();
+        this->scope_varref=refscope;
+
         for(auto const& expr : block)
         {
             auto* ptr=expr.get();
@@ -738,16 +789,14 @@ namespace vire
                 return false;
             }
 
-            if(expr->asttype==ast_vardef)
-            {
-                addVar((VariableDefAST*)ptr);
-                refcnt.push_back((VariableDefAST*)ptr);
-            }
         }
-        for(auto const& var : refcnt)
+        for(const auto& var : *refscope)
         {
             removeVar(var);
         }
+
+        this->scope_varref=nullptr;
+        delete refscope;
         
         return true;
     }

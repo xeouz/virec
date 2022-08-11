@@ -22,6 +22,7 @@ class VAnalyzer
 
     // Scope Stack
     std::map<std::string, VariableDefAST*> scope;
+    std::vector<VariableDefAST*>* scope_varref;
 
     // Functions
     void addVar(VariableDefAST* const& var);
@@ -44,11 +45,11 @@ public:
     bool isStdFunc(std::string const& name);
     unsigned int getFuncArgCount(std::string const& name);
 
-    std::unique_ptr<types::Base> getType(ExprAST* const& expr);
-    std::unique_ptr<types::Base> getType(ArrayExprAST* const& arr);
+    types::Base* getType(ExprAST* const& expr);
+    types::Base* getType(ArrayExprAST* const& arr);
+    types::Base* getFuncReturnType(const std::string& name="");
 
     FunctionBaseAST* const getFunc(const std::string& name);
-    std::unique_ptr<types::Base> getFuncReturnType(const std::string& name="");
 
     CodeAST* const getCode();
 
@@ -60,6 +61,7 @@ public:
     bool verifyVarDef(VariableDefAST* const& var, bool check_globally_only=false);
     bool verifyTypedVar(TypedVarAST* const& var);
     bool verifyVarAssign(VariableAssignAST* const& var);
+    bool verifyVarArrayAccess(VariableArrayAccessAST* const& access);
 
     // Constant/Literal verification due to overflows and invalid escape sequences
     bool verifyInt(IntExprAST* const& int_); 

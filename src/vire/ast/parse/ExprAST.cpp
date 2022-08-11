@@ -10,7 +10,8 @@
 namespace vire
 {
 
-class ExprAST{
+class ExprAST
+{
 protected:
     std::unique_ptr<types::Base> type;
     std::unique_ptr<Viretoken> token;
@@ -24,16 +25,30 @@ public:
     : asttype(asttype), token(std::move(token)), type(std::move(type))
     {}
 
-    virtual ~ExprAST() {}
+    /* 
+    virtual ~ExprAST()
+    {
+        //std::cout << "ExprAST destructor" << std::endl;
+        token.reset();
+        
+        if(type!=nullptr)
+            type.reset();
+    }
+    */
+   
     virtual types::Base* getType() const { return type.get(); }
 
     virtual void setType(std::unique_ptr<types::Base> t) 
     {
-        this->type.swap(t);
+        this->type=std::move(t);
     }
     virtual void setType(std::string const& newtype) 
     {
         type=types::construct(newtype); 
+    }
+    virtual void setType(types::Base* t)
+    {
+        type.reset(t);
     }
 
     virtual const std::size_t& getLine()    const 

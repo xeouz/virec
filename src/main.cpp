@@ -24,9 +24,9 @@ int main(int argc, char ** argv)
 
     std::cout << "\n\n";
 
-    if(!success)
+    if(true)
     {
-        return 42;
+        return 0;
     }
 
     // Analysis and Frontend are done.

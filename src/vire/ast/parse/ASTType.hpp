@@ -47,6 +47,7 @@ enum asttype
 
     ast_try,
 
+    ast_array_access,
     ast_class_access,
 
     ast_array,
