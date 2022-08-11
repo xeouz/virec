@@ -156,6 +156,7 @@ namespace vire
     std::unique_ptr<ExprAST> Vireparse::ParseIdExpr()
     {
         std::unique_ptr<Viretoken> IdName=copyCurrentToken();
+        IdName->value="_"+IdName->value;
         getNextToken(tok_id);
 
         if(CurTok->type == tok_lbrack) // if it is an array access
@@ -358,6 +359,7 @@ namespace vire
             getNextToken(); // consume `let` / `const`
 
         auto var_name=copyCurrentToken();
+        var_name->value="_"+var_name->value;
         getNextToken(tok_id);
 
         bool is_array=false;

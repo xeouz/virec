@@ -136,13 +136,23 @@ namespace vire
         std::vector<llvm::Constant*> constants;
         for(auto& elem : expr->getElements())
         {
-            llvm::Constant* constant=compileConstantExpr(elem.get());
+            llvm::Constant* constant;
+            if(elem->getType()->getType() != types::TypeNames::Array)
+            {
+                constant=compileConstantExpr(elem.get());
+            }
+            else
+            {
+                constant=compileConstantExpr(elem.get());
+            }
             constants.push_back(constant);
         }
 
         constexpr auto linkage=llvm::GlobalValue::LinkageTypes::PrivateLinkage;
         auto* gbl=new llvm::GlobalVariable(type, true, linkage, nullptr, "array");
         gbl->setInitializer(llvm::ConstantArray::get(llvm::ArrayType::get(type, constants.size()), constants));
+        gbl->setUnnamedAddr(llvm::GlobalValue::UnnamedAddr::Global);
+        gbl->setAlignment(llvm::Align(4));
         Module->getGlobalList().push_back(gbl);
 
         return gbl;
