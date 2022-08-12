@@ -129,7 +129,7 @@ namespace vire
         return nullptr;
     }
 
-    llvm::Constant* VCompiler::compileConstantExpr(ArrayExprAST* const& expr)
+    llvm::Constant* VCompiler::compileConstantExpr(ArrayExprAST* const& expr, bool create_global_variable)
     {
         auto* type=getLLVMType(expr->getType());
 
@@ -137,23 +137,29 @@ namespace vire
         for(auto& elem : expr->getElements())
         {
             llvm::Constant* constant;
-            if(elem->getType()->getType() != types::TypeNames::Array)
+            if(elem->getType()->getType() == types::TypeNames::Array)
             {
-                constant=compileConstantExpr(elem.get());
+                constant=compileConstantExpr((ArrayExprAST* const&)elem, false);
             }
             else
             {
-                constant=compileConstantExpr(elem.get());
+                constant=compileConstantExpr((ExprAST* const&)elem);
             }
             constants.push_back(constant);
         }
 
+        auto* atype=llvm::ArrayType::get(type->getArrayElementType(), constants.size());
+
+        if(!create_global_variable)
+        {
+            return llvm::ConstantArray::get(atype, constants);
+        }
+
         constexpr auto linkage=llvm::GlobalValue::LinkageTypes::PrivateLinkage;
         auto* gbl=new llvm::GlobalVariable(type, true, linkage, nullptr, "array");
-        gbl->setInitializer(llvm::ConstantArray::get(llvm::ArrayType::get(type, constants.size()), constants));
+        gbl->setInitializer(llvm::ConstantArray::get(atype, constants));
         gbl->setUnnamedAddr(llvm::GlobalValue::UnnamedAddr::Global);
         gbl->setAlignment(llvm::Align(4));
-        Module->getGlobalList().push_back(gbl);
 
         return gbl;
     }
