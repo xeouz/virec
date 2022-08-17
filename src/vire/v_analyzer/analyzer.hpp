@@ -34,7 +34,7 @@ class VAnalyzer
     VariableDefAST* const getVar(std::string const& name);
 public:
     VAnalyzer(errors::ErrorBuilder* const& builder, std::string const& code="")
-    : builder(builder), code(code) {}
+    : builder(builder), code(code), scope_varref(nullptr) {}
 
     errors::ErrorBuilder* const getErrorBuilder() const { return builder; }
 
@@ -42,7 +42,6 @@ public:
     bool isUnionDefined(std::string const& name);
     bool isClassDefined(std::string const& name);
     bool isFuncDefined(std::string const& name);
-    bool isStdFunc(std::string const& name);
     unsigned int getFuncArgCount(std::string const& name);
 
     types::Base* getType(ExprAST* const& expr);

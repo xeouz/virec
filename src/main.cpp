@@ -31,11 +31,14 @@ int main(int argc, char ** argv)
     std::cout << "Generating Code" << std::endl; 
     auto compiler=std::make_unique<vire::VCompiler>(std::move(analyzer), "test");
 
+    compiler->compileExtern("putd"); 
     compiler->compileFunction("main");
 
     std::cout << "Compiling Success\n---\n" << std::endl;
     std::cout << compiler->getCompiledOutput() << std::endl;
     std::cout << "---\n" << std::endl;
+
+    compiler->compileToObjectFile("test.o"); 
     
     std::cout << "\n";
 

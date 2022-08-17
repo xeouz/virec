@@ -160,6 +160,7 @@ namespace vire
         gbl->setInitializer(llvm::ConstantArray::get(atype, constants));
         gbl->setUnnamedAddr(llvm::GlobalValue::UnnamedAddr::Global);
         gbl->setAlignment(llvm::Align(4));
+        Module->getGlobalList().push_back(gbl);
 
         return gbl;
     }
@@ -199,10 +200,30 @@ namespace vire
         auto* alloca=Builder.CreateAlloca(var_type, nullptr, def->getName());
 
         auto const& value=def->getValue();
-        if(value)
+
+        if(!value)
+        {
+            namedValues[def->getName()]=alloca;
+            return alloca;
+        }
+
+        bool is_array=(value->asttype==ast_array);
+        if(!is_array)
         {
             auto* val=compileExpr(value);
             Builder.CreateStore(val, alloca);
+        }
+        else
+        {
+            auto* val=compileConstantExpr((ArrayExprAST* const&)value);
+
+            // Create an i8*
+            auto* ptr=Builder.CreateBitCast(alloca, llvm::IntegerType::getInt8PtrTy(CTX));
+
+            // Call memcpy to copy the array
+            auto align=alloca->getAlign();
+            auto size=((ArrayExprAST* const&)value)->getElements().size()*var_type->getArrayElementType()->getPrimitiveSizeInBits()/8;
+            auto* call_inst=Builder.CreateMemCpy(ptr, align, val, align, llvm::ConstantInt::get(CTX, llvm::APInt(32, size, true)));
         }
 
         namedValues[def->getName()]=alloca;
@@ -224,10 +245,16 @@ namespace vire
         auto* indx_expr=(IntExprAST*)access->getIndex();
         int indx=indx_expr->getValue();
 
-        llvm::Type* ty=var->getAllocatedType();
-        llvm::Value* indx_val=llvm::ConstantInt::get(CTX, llvm::APInt(32, indx, true));
-        llvm::Value* indx_ptr=Builder.CreateInBoundsGEP(ty, var, {indx_val});
-        return Builder.CreateLoad(ty, indx_ptr);
+        // get the type of the array element
+        auto* ty=var->getAllocatedType();
+
+        llvm::Value* indx_val=llvm::ConstantInt::get(CTX, llvm::APInt(32, indx, false));
+
+        llvm::Value* indices[2];
+        indices[0]=llvm::ConstantInt::get(CTX, llvm::APInt(32, 0, false));  // index 0 is the array index
+        indices[1]=indx_val;                                               // index 1 is the element index
+        llvm::Value* indx_ptr=Builder.CreateInBoundsGEP(ty, var, llvm::ArrayRef<llvm::Value*>(indices, 2));
+        return Builder.CreateLoad(ty->getArrayElementType(), indx_ptr);
     }
 
     llvm::Value* VCompiler::compileBinopExpr(BinaryExprAST* const& expr)
@@ -417,8 +444,7 @@ namespace vire
         llvm::Function* func=compilePrototype(Name);
 
         // Remove in release
-        std::cout << "Compiled extern " << Name << std::endl;
-        func->print(llvm::errs());
+        // func->print(llvm::errs());
         return func;
     }
     llvm::Function* VCompiler::compileFunction(const std::string& Name)

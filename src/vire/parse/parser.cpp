@@ -194,6 +194,9 @@ namespace vire
             }
         }
         
+        // Remove `_` from the function name
+        IdName->value=IdName->value.substr(1);
+
         getNextToken(tok_lparen); // consume '('
 
         std::vector<std::unique_ptr<ExprAST>> Args;

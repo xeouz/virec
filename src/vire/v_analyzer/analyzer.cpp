@@ -54,19 +54,15 @@ namespace vire
         }
         return false;
     }
-    bool VAnalyzer::isStdFunc(const std::string& name)
-    {
-        if(name=="echo")
-        {
-            return true;
-        }
-        return false;
-    }
 
     void VAnalyzer::addVar(VariableDefAST* const& var)
     {
         scope.insert(std::make_pair(var->getName(), var));
-        scope_varref->push_back(var);
+        
+        if(scope_varref != nullptr)
+        {
+            scope_varref->push_back(var);
+        }
     }
     void VAnalyzer::removeVar(VariableDefAST* const& var)
     {
@@ -80,6 +76,11 @@ namespace vire
     FunctionBaseAST* const VAnalyzer::getFunc(std::string const& name)
     {
         const auto& functions=codeast->getFunctions();
+
+        if(name=="")
+        {
+            return current_func;
+        }
         for(int i=0; i<functions.size(); i++)
         {
             if(functions[i]->getName()==name)
@@ -88,7 +89,8 @@ namespace vire
             }
         }
 
-        return current_func;
+        std::cout << "Function `" << name << "` not found" << std::endl;
+        return nullptr;
     }
     types::Base* VAnalyzer::getFuncReturnType(const std::string& name)
     {
@@ -241,6 +243,11 @@ namespace vire
             }
  
             value_type=getType(value);
+            if(value_type->getType()==types::TypeNames::Array && value->asttype!=ast_array)
+            {
+                std::cout << "Error: Cannot assign arrays to variables without array literal" << std::endl;
+                return false;
+            }
 
             if(!is_auto)
             {
@@ -315,7 +322,7 @@ namespace vire
         }
 
         auto& indx=(IntExprAST* const&)access_index;
-        if(indx->getValue()>array_len)
+        if(indx->getValue()>(array_len-1))
         {
             // Index out of bounds
             std::cout << "Array index out of bounds" << std::endl;
@@ -423,11 +430,7 @@ namespace vire
         bool is_valid=true;
         auto name=call->getName();
 
-        if(isStdFunc(name))
-        {
-            is_valid=true;
-        }
-        else if(!isFuncDefined(name))
+        if(!isFuncDefined(name))
         {
             // Function is not defined
             is_valid=false;
@@ -439,7 +442,7 @@ namespace vire
         if(args.size() != func_args.size())
         {
             // Argument count mismatch
-            return false;
+            is_valid=false;
         }
 
         for(unsigned int i=0; i<args.size(); ++i)
@@ -469,6 +472,11 @@ namespace vire
         
         auto* ret_expr_type=getType(ret->getValue());
 
+        if(!verifyExpr(ret->getValue()))
+        {
+            // Return value is not valid
+            return false;
+        }
         
         if(!types::isSame(ret_type, ret_expr_type))
         {
@@ -526,7 +534,7 @@ namespace vire
             // Type is not valid
             is_valid=false;
         }
-        
+
         const auto& args=proto->getArgs();
         
         for(const auto& arg : args)
@@ -927,6 +935,7 @@ namespace vire
             case ast_vardef: return verifyVarDef((VariableDefAST*const&)expr);
             case ast_typedvar: return verifyTypedVar((TypedVarAST*const&)expr);
             case ast_varassign: return verifyVarAssign((VariableAssignAST*const&)expr);
+            case ast_array_access: return verifyVarArrayAccess((VariableArrayAccessAST*const&)expr);
 
             case ast_call: return verifyCall((CallExprAST*const&)expr);
 
