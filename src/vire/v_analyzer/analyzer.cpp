@@ -206,6 +206,7 @@ namespace vire
             // Var is not defined
             return false;
         }
+        
         return true;
     }
     bool VAnalyzer::verifyIncrDecr(VariableIncrDecrAST* const& var)
@@ -264,14 +265,29 @@ namespace vire
             {
                 if(!types::isSame(type, value_type))    
                 {
-                    std::cout << "Error: Type mismatch: " << *type << " " << *value_type << std::endl;
-                    return false;
+                    if(!types::isUserDefined(type) && !types::isUserDefined(value_type))
+                    {
+                        auto new_type=types::copyType(value_type);
+                        auto org_type=types::copyType(type);
+                        auto new_value=var->moveValue();
+                        auto new_cast_value=std::make_unique<CastExprAST>(std::move(new_value), std::move(org_type), true);
+                        new_cast_value->setOriginalType(std::move(new_type));
+
+                        var->setValue(std::move(new_cast_value));
+                    }
+                    else
+                    {
+                        std::cout << "Error: Type mismatch: " << *type << " " << *value_type << std::endl;
+                        return false;
+                    } 
                 }
             }
-            
-            auto value_type_uptr=types::copyType(value_type);
-            value->setType(std::move(value_type_uptr));
-            var->setUseValueType(true);
+            else
+            { 
+                auto value_type_uptr=types::copyType(value_type);
+                var->getValue()->setType(std::move(value_type_uptr));
+                var->setUseValueType(true);
+            }
             
             addVar(var);
             

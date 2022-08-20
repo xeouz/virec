@@ -370,5 +370,15 @@ inline std::unique_ptr<Base> construct(TypeNames type)
     }
 }
 
+inline bool isUserDefined(TypeNames type)
+{
+    return (type == TypeNames::Custom) && !(type == TypeNames::Void) && !(type == TypeNames::Array);
+}
+inline bool isUserDefined(Base* _type)
+{
+    TypeNames type=_type->getType();
+    return isUserDefined(type);
+}
+
 } // namespace types
 } // namespace vire

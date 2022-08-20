@@ -2,11 +2,9 @@ extern putd(a:int) returns int;
 
 func main() returns int
 {
-    let a = [[1,2],[1,2]];
+    let a = 100;
 
-    let b = a[1][1];
-
-    putd(b);
+    let b:char = a;
 
     return 0;
 }

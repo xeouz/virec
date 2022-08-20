@@ -24,7 +24,6 @@ int main(int argc, char ** argv)
 
     std::cout << "\n\n";
 
- 
     // Analysis and Frontend are done.
     // Now we can use the AST to generate the code.
     

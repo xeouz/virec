@@ -53,5 +53,7 @@ enum asttype
     ast_array,
 
     ast_varincrdecr,
+
+    ast_cast,
 };
 }

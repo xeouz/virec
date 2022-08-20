@@ -121,4 +121,45 @@ public:
     bool isPre() const {return ispre;}
 };
 
+class CastExprAST : public ExprAST
+{
+    std::unique_ptr<ExprAST> expr;
+    std::unique_ptr<types::Base> target_type;
+    bool is_non_user_defined;
+public:
+    CastExprAST(std::unique_ptr<ExprAST> expr, std::unique_ptr<types::Base> type, bool is_non_user_defined=false)
+    : expr(std::move(expr)), target_type(std::move(type)), ExprAST("void",ast_cast), is_non_user_defined(is_non_user_defined)
+    {}
+
+    ExprAST* const getExpr() const 
+    {
+        return expr.get();
+    }
+    types::Base* getType() const 
+    {
+        return expr->getType();
+    }
+    types::Base* getTargetType() const 
+    {
+        return target_type.get();
+    }
+    types::Base* getOriginalType() const 
+    {
+        return expr->getType();
+    }
+    bool isNonUserDefined() const 
+    {
+        return is_non_user_defined;
+    }
+
+    void setOriginalType(std::unique_ptr<types::Base> type) 
+    {
+        expr->setType(std::move(type));
+    }
+    void setTargetType(std::unique_ptr<types::Base> type) 
+    {
+        target_type=std::move(type);
+    }
+};
+
 }

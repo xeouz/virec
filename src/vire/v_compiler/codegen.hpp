@@ -76,6 +76,7 @@ public:
     llvm::Value* compileVariableDef(VariableDefAST* const& var);
     llvm::Value* compileVariableAssign(VariableAssignAST* const& var);
     llvm::Value* compileVariableArrayAccess(VariableArrayAccessAST* const& var);
+    llvm::Value* compileCastExpr(CastExprAST* const& var);
 
     std::vector<llvm::Value*> compileBlock(std::vector<std::unique_ptr<ExprAST>> const& block);
 

@@ -21,6 +21,7 @@ namespace vire
                 (getLLVMType(((types::Array*)type)->getChild()), ((types::Array*)type)->getLength());
             
             default:
+                std::cout << "Unknown type: " << (int)type->getType() << std::endl;
                 return llvm::Type::getVoidTy(CTX);
         }
     }
@@ -78,6 +79,8 @@ namespace vire
                 return compileVariableAssign((VariableAssignAST* const&)expr);
             case ast_array_access:
                 return compileVariableArrayAccess((VariableArrayAccessAST* const&)expr);
+            case ast_cast:
+                return compileCastExpr((CastExprAST* const&)expr);
 
             case ast_binop:
                 return compileBinopExpr((BinaryExprAST* const&)expr);
@@ -100,6 +103,7 @@ namespace vire
             case ast_return:
                 return compileReturnExpr((ReturnExprAST* const&)expr);
             default:
+                std::cout << "Unknown expression type: " << (int)expr->asttype << std::endl;
                 return nullptr;
         }
     }
@@ -305,6 +309,44 @@ namespace vire
         }
 
         return Builder.CreateLoad(ty, expr);
+    }
+    llvm::Value* VCompiler::compileCastExpr(CastExprAST* const& cast_expr)
+    {
+        if(cast_expr->isNonUserDefined())
+        {
+            bool is_zext=false;
+            
+            auto* const& source_type=cast_expr->getOriginalType();
+            auto* const& target_type=cast_expr->getTargetType();
+
+            if(source_type->getSize() > target_type->getSize())
+            {
+                is_zext=true;
+            }
+            else 
+            {
+                is_zext=false;
+                std::cout << "Warning, conversion from " << (int)target_type->getSize() << " to " << (int)source_type->getSize() << " is a truncation" << std::endl;
+}
+
+            auto* expr=compileExpr(cast_expr->getExpr());
+
+            if(is_zext)
+            {
+                return Builder.CreateZExt(expr, getLLVMType(target_type));
+            }
+            else
+            {
+                std::cout << *cast_expr->getExpr()->getType() << std::endl;
+                auto* trunc=Builder.CreateTrunc(expr, getLLVMType(target_type));
+                trunc->print(llvm::errs());
+                return trunc;
+            }
+        }
+        else
+        {
+            return nullptr;
+        }
     }
 
     llvm::Value* VCompiler::compileBinopExpr(BinaryExprAST* const& expr)
