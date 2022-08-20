@@ -1,8 +1,12 @@
-extern putd(x:int) returns int;
+extern putd(a:int) returns int;
 
 func main() returns int
 {
-    putd(b[1]);
+    let a = [[1,2],[1,2]];
+
+    let b = a[1][1];
+
+    putd(b);
 
     return 0;
 }

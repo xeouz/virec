@@ -61,6 +61,8 @@ public:
 
     virtual TypeNames getType() const { return type; }
     virtual int8_t getSize() const { return size; }
+
+    virtual unsigned int getDepth() const { return 0; }
     
     virtual bool isSame(Base* const& other) const
     {
@@ -180,6 +182,11 @@ public:
         child = std::move(new_child);
     }
 
+
+    unsigned int getDepth() const
+    {
+        return child->getDepth() + 1;
+    }
     unsigned int getLength() const
     {
         return length;

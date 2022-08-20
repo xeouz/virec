@@ -97,6 +97,7 @@ namespace vire
 
             Stms.push_back(std::move(stm));
         }
+
         getNextToken(tok_rbrace);
 
         return std::move(Stms);
@@ -148,65 +149,75 @@ namespace vire
     {
         auto LHS=ParsePrimary();
         if(!LHS)
+        {
             return nullptr;
-        
+        }
+
         return ParseBinopExpr(0,std::move(LHS));
     }
 
     std::unique_ptr<ExprAST> Vireparse::ParseIdExpr()
     {
-        std::unique_ptr<Viretoken> IdName=copyCurrentToken();
-        IdName->value="_"+IdName->value;
+        std::unique_ptr<Viretoken> id_name=copyCurrentToken();
+        id_name->value="_"+id_name->value;
         getNextToken(tok_id);
-
-        if(CurTok->type == tok_lbrack) // if it is an array access
-        {
-            getNextToken(tok_lbrack);
-
-            auto index=ParseExpression();
-            if(!index)
-                return LogError("Expected expression after '['");
-            
-            getNextToken(tok_rbrack);
-
-            return std::make_unique<VariableArrayAccessAST>(std::move(IdName),std::move(index));
-        }
-
+        
+        std::unique_ptr<ExprAST> expr;
         if(CurTok->type != tok_lparen) // if it is not a function call
         {
-            IdName->value="_"+IdName->value;
             if(CurTok->type == tok_equal)
             {
-                return ParseVariableAssign(std::move(IdName));
+                expr=ParseVariableAssign(std::move(id_name));
             }
             else if(CurTok->type == tok_incr || CurTok->type==tok_decr)
             {
-                auto var=std::make_unique<VariableIncrDecrAST>(std::move(IdName),CurTok->type==tok_incr,false);
-                getNextToken();
-                return std::move(var);
+                expr=std::make_unique<VariableIncrDecrAST>(std::move(id_name),CurTok->type==tok_incr,false);
             }
             else
             {    
-                auto var=std::make_unique<VariableExprAST>(std::move(IdName));
-                if(CurTok->type==tok_dot)
-                    return ParseClassAccess(std::move(var));
-                return std::move(var);
+                expr=std::make_unique<VariableExprAST>(std::move(id_name));
+
+                if(CurTok->type == tok_dot)
+                {
+                    expr=ParseClassAccess(std::move(expr));
+                }
+                
+                if(CurTok->type == tok_lbrack)
+                {
+                    std::vector<std::unique_ptr<ExprAST>> indices;
+                    while(CurTok->type == tok_lbrack)
+                    {
+                        getNextToken();
+                        auto index=ParseExpression();
+                        if(!index)
+                        {
+                            return nullptr;
+                        }
+                        getNextToken(tok_rbrack);
+
+                        indices.push_back(std::move(index));
+                    }
+
+                    expr=std::make_unique<VariableArrayAccessAST>(std::move(expr),std::move(indices));
+                }
             }
+            
+            return std::move(expr);
         }
         
         // Remove `_` from the function name
-        IdName->value=IdName->value.substr(1);
+        id_name->value=id_name->value.substr(1);
 
         getNextToken(tok_lparen); // consume '('
 
-        std::vector<std::unique_ptr<ExprAST>> Args;
-        if(CurTok->type!=tok_rparen)
+        std::vector<std::unique_ptr<ExprAST>> args;
+        if(CurTok->type != tok_rparen)
         {
             while(1)
             {
                 if(auto Arg=ParseExpression())
                 {
-                    Args.push_back(std::move(Arg));
+                    args.push_back(std::move(Arg));
                 }
                 else
                     return nullptr;
@@ -223,12 +234,9 @@ namespace vire
 
         getNextToken(tok_rparen); // consume ')'
 
-        auto call=std::make_unique<CallExprAST>(std::move(IdName),std::move(Args));
-
-        if(CurTok->type==tok_dot)
-            return ParseClassAccess(std::move(call));
+        expr=std::make_unique<CallExprAST>(std::move(id_name),std::move(args));
         
-        return std::move(call);
+        return std::move(expr);
     }
 
     std::unique_ptr<ExprAST> Vireparse::ParseNumberExpr()
@@ -696,30 +704,30 @@ namespace vire
         
         auto id_expr=ParseIdExpr();
 
-        std::vector<std::unique_ptr<ExprAST>> Args;
-        std::unique_ptr<Viretoken> IdName;
+        std::vector<std::unique_ptr<ExprAST>> args;
+        std::unique_ptr<Viretoken> id_name;
         if(id_expr->asttype==ast_var)
         {
             std::unique_ptr<VariableExprAST> var(static_cast<VariableExprAST*>(id_expr.release()));
-            IdName=var->moveToken();
+            id_name=var->moveToken();
         }
         else if(id_expr->asttype==ast_call)
         {
             std::unique_ptr<CallExprAST> call(static_cast<CallExprAST*>(id_expr.release()));
-            IdName=call->moveToken();
-            Args=call->moveArgs();
+            id_name=call->moveToken();
+            args=call->moveArgs();
         }
 
-        return std::make_unique<NewExprAST>(std::move(IdName),std::move(Args));
+        return std::make_unique<NewExprAST>(std::move(id_name),std::move(args));
     }
     std::unique_ptr<ExprAST> Vireparse::ParseDeleteExpr()
     {
         getNextToken(tok_delete);
 
-        auto IdName=copyCurrentToken();
+        auto id_name=copyCurrentToken();
         getNextToken(tok_id);
 
-        return std::make_unique<DeleteExprAST>(std::move(IdName));
+        return std::make_unique<DeleteExprAST>(std::move(id_name));
     }
     std::unique_ptr<ExprAST> Vireparse::ParseClassAccess(std::unique_ptr<ExprAST> parent)
     {

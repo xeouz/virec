@@ -105,6 +105,11 @@ namespace vire
 
     VariableDefAST* const VAnalyzer::getVar(const std::string& name)
     {
+        if(!isVarDefined(name))
+        {
+           std::cout << "Variable `" << name << "` not found" << std::endl;
+           return nullptr;
+        }
         return scope.at(name);
     }
 
@@ -130,10 +135,16 @@ namespace vire
             }
             case ast_array_access:
             {
-                auto* var=getVar(((VariableArrayAccessAST*)expr)->getName());
-                auto* array_type=var->getType();
+                auto* expr_cast=(VariableArrayAccessAST*)expr;
+                auto* array_type=(types::Array*)getType(expr_cast->getExpr());
 
-                return ((types::Array*)array_type)->getChild();
+                // Loop over the indices and get the type of each index
+                for(int i=0; i<expr_cast->getIndices().size(); ++i)
+                {
+                    array_type=(types::Array*)array_type->getChild();
+                }
+
+                return array_type;
             }
 
             case ast_call: return getFuncReturnType(((CallExprAST*)expr)->getName());
@@ -304,31 +315,57 @@ namespace vire
     }
     bool VAnalyzer::verifyVarArrayAccess(VariableArrayAccessAST* const& access)
     {
-        if(!isVarDefined(access->getName()))
+        if(!verifyExpr(access->getExpr()))
         {
-            // Var is not defined
+            // Expr is not valid
             return false;
         }
         
-        auto const& var=getVar(access->getName());
-
-        auto array_len=((types::Array*)var->getType())->getLength();
-        auto access_index=access->getIndex();
-        if(access_index->getType()->getType()!=types::TypeNames::Int && var->isConst())
+        auto const& indices=access->getIndices();
+        auto* type=getType(access->getExpr());
+        
+        if(type->getType()!=types::TypeNames::Array)
         {
-            // Index is not an int
-            std::cout << "Array needs a specified integer index" << std::endl;
+            std::cout << "Error: Variable is not an array" << std::endl;
             return false;
         }
-
-        auto& indx=(IntExprAST* const&)access_index;
-        if(indx->getValue()>(array_len-1))
+        else
         {
-            // Index out of bounds
-            std::cout << "Array index out of bounds" << std::endl;
-            return false;
+            auto* array_type=(types::Array*)type;
+            if(indices.size()!=array_type->getDepth())
+            {
+                std::cout << "Error: Array index mismatch" << std::endl;
+                return false;
+            }
+            else
+            {
+                auto* child_array_type=array_type;
+                for(auto const& index : indices)
+                {
+                    std::cout << "Index: " << std::endl;
+                    auto* index_type=getType(index.get());
+                    if(index->asttype==ast_int)
+                    {
+                        auto* index_cast=(IntExprAST*)index.get();
+                        if(index_cast->getValue() >= child_array_type->getLength())
+                        {
+                            std::cout << "Error: Array index out of bounds" << std::endl;
+                            return false;
+                        }
+                    }
+                    else
+                    {
+                        std::cout << "Error: Array index is not an integer" << std::endl;
+                        return false;
+                    }
+
+                    child_array_type=(types::Array*)child_array_type->getChild();
+                }
+            }
         }
         
+        access->setType(type);
+
         return true;
     }
 

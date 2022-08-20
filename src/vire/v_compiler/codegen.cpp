@@ -36,6 +36,21 @@ namespace vire
             return nullptr;
         }
     }
+    llvm::Value* VCompiler::getAsPtrForGEP(llvm::Value* expr)
+    {
+        // Check if expr is llvm::LoadInst
+        if (llvm::LoadInst* load = llvm::dyn_cast<llvm::LoadInst>(expr))
+        {
+            // remove the expr from the block
+            load->getParent()->getInstList().remove(load);
+            // return the alloca
+            return namedValues[load->getPointerOperand()->getName()];
+        }
+        else
+        {
+            return expr;
+        }
+    }
 
     llvm::Value* VCompiler::compileExpr(ExprAST* const& expr)
     {
@@ -222,7 +237,14 @@ namespace vire
 
             // Call memcpy to copy the array
             auto align=alloca->getAlign();
-            auto size=((ArrayExprAST* const&)value)->getElements().size()*var_type->getArrayElementType()->getPrimitiveSizeInBits()/8;
+
+            // Set the size of the array
+            auto* array_ast=(ArrayExprAST* const&)value;
+            auto elems=array_ast->getElements().size();
+            auto elem_size=array_ast->getElements()[0]->getType()->getSize();
+            auto size=elems*elem_size;
+
+            // Create the memcpy call
             auto* call_inst=Builder.CreateMemCpy(ptr, align, val, align, llvm::ConstantInt::get(CTX, llvm::APInt(32, size, true)));
         }
 
@@ -241,20 +263,48 @@ namespace vire
     }
     llvm::Value* VCompiler::compileVariableArrayAccess(VariableArrayAccessAST* const& access)
     {
-        auto* var=namedValues[access->getName()];
-        auto* indx_expr=(IntExprAST*)access->getIndex();
-        int indx=indx_expr->getValue();
+        /* Single index access, kept for reference */
+        /*
+            auto* var=namedValues[access->getName()];
+            auto* indx_expr=(IntExprAST*)access->getIndex();
+            int indx=indx_expr->getValue();
 
-        // get the type of the array element
-        auto* ty=var->getAllocatedType();
+            // get the type of the array element
+            auto* ty=var->getAllocatedType();
 
-        llvm::Value* indx_val=llvm::ConstantInt::get(CTX, llvm::APInt(32, indx, false));
+            llvm::Value* indx_val=llvm::ConstantInt::get(CTX, llvm::APInt(32, indx, false));
 
-        llvm::Value* indices[2];
-        indices[0]=llvm::ConstantInt::get(CTX, llvm::APInt(32, 0, false));  // index 0 is the array index
-        indices[1]=indx_val;                                               // index 1 is the element index
-        llvm::Value* indx_ptr=Builder.CreateInBoundsGEP(ty, var, llvm::ArrayRef<llvm::Value*>(indices, 2));
-        return Builder.CreateLoad(ty->getArrayElementType(), indx_ptr);
+            llvm::Value* indices[2];
+            indices[0]=llvm::ConstantInt::get(CTX, llvm::APInt(32, 0, false));  // index 0 is the array index
+            indices[1]=indx_val;                                               // index 1 is the element index
+            llvm::Value* indx_ptr=Builder.CreateInBoundsGEP(ty, var, llvm::ArrayRef<llvm::Value*>(indices, 2));
+            return Builder.CreateLoad(ty->getArrayElementType(), indx_ptr);
+        */
+
+        /* Multi index access */
+        auto* expr=compileExpr(access->getExpr());
+        auto* ty=expr->getType();
+
+        expr=getAsPtrForGEP(expr);
+
+        for(auto const& elem : access->getIndices())
+        {
+            // Implemented only for int expressions, WIP
+            if(elem->getType()->getType() != types::TypeNames::Int)
+            {
+                throw std::runtime_error("Array index must be an int expression, WIP");
+            }
+            
+            auto* indx_expr=(IntExprAST*)elem.get();
+            int indx=indx_expr->getValue();
+
+            llvm::Value* indx_val=llvm::ConstantInt::get(CTX, llvm::APInt(32, indx, false));
+            expr=Builder.CreateInBoundsGEP(ty, expr, {llvm::ConstantInt::get(CTX, llvm::APInt(32, 0, false)), indx_val});
+            
+            ty=ty->getArrayElementType();
+        }
+
+        return Builder.CreateLoad(ty, expr);
     }
 
     llvm::Value* VCompiler::compileBinopExpr(BinaryExprAST* const& expr)

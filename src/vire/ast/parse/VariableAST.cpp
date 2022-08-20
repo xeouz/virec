@@ -35,14 +35,22 @@ public:
 
 class VariableArrayAccessAST: public ExprAST
 {
-    std::string name;
-    std::unique_ptr<ExprAST> indx;
+    std::unique_ptr<ExprAST> expr;
+    std::vector<std::unique_ptr<ExprAST>> indices;
 public:
-    VariableArrayAccessAST(std::unique_ptr<Viretoken> name, std::unique_ptr<ExprAST> indx)
-    : name(name->value), indx(std::move(indx)), ExprAST("void",ast_array_access) {setToken(std::move(name));}
+    VariableArrayAccessAST(std::unique_ptr<ExprAST> expr, std::vector<std::unique_ptr<ExprAST>> indx)
+    : expr(std::move(expr)), indices(std::move(indx)), ExprAST("void",ast_array_access) 
+    {
+    }
     
-    std::string const& getName() const {return name;}
-    ExprAST* const getIndex() const {return indx.get();}
+    ExprAST* const getExpr() const 
+    {
+        return expr.get();
+    }
+    std::vector<std::unique_ptr<ExprAST>> const& getIndices() const 
+    {
+        return indices;
+    }
 };
 
 class VariableDefAST : public ExprAST

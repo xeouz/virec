@@ -24,14 +24,14 @@ int main(int argc, char ** argv)
 
     std::cout << "\n\n";
 
-
+ 
     // Analysis and Frontend are done.
     // Now we can use the AST to generate the code.
     
     std::cout << "Generating Code" << std::endl; 
     auto compiler=std::make_unique<vire::VCompiler>(std::move(analyzer), "test");
 
-    compiler->compileExtern("putd"); 
+    compiler->compileExtern("putd");
     compiler->compileFunction("main");
 
     std::cout << "Compiling Success\n---\n" << std::endl;
