@@ -316,30 +316,35 @@ namespace vire
         {
             bool is_zext=false;
             
-            auto* const& source_type=cast_expr->getOriginalType();
-            auto* const& target_type=cast_expr->getTargetType();
+            auto* const& dest_type=cast_expr->getDestType();
+            auto* const& target_type=cast_expr->getSourceType();
 
-            if(source_type->getSize() > target_type->getSize())
+            if(dest_type->getSize() > target_type->getSize())
             {
                 is_zext=true;
             }
             else 
             {
                 is_zext=false;
-                std::cout << "Warning, conversion from " << (int)target_type->getSize() << " to " << (int)source_type->getSize() << " is a truncation" << std::endl;
-}
+                std::cout << "Warning, conversion from " << (int)target_type->getSize() << " to " << (int)dest_type->getSize() << " is a truncation" << std::endl;
+            }
 
             auto* expr=compileExpr(cast_expr->getExpr());
 
             if(is_zext)
-            {
-                return Builder.CreateZExt(expr, getLLVMType(target_type));
+            {   
+                // No direct return for debugging purposes
+
+                // `target_type` is used since this is a truncation
+                auto* zext=Builder.CreateZExt(expr, getLLVMType(dest_type));
+                return zext;
             }
             else
             {
-                std::cout << *cast_expr->getExpr()->getType() << std::endl;
-                auto* trunc=Builder.CreateTrunc(expr, getLLVMType(target_type));
-                trunc->print(llvm::errs());
+                // No direct return for debugging purposes
+
+                // `source_type` is used since this is a truncation
+                auto* trunc=Builder.CreateTrunc(expr, getLLVMType(dest_type));
                 return trunc;
             }
         }

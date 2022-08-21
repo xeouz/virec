@@ -6,5 +6,7 @@ func main() returns int
 
     let b:char = a;
 
+    let c:int = b;
+
     return 0;
 }

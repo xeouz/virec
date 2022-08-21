@@ -267,11 +267,11 @@ namespace vire
                 {
                     if(!types::isUserDefined(type) && !types::isUserDefined(value_type))
                     {
-                        auto new_type=types::copyType(value_type);
-                        auto org_type=types::copyType(type);
+                        auto src_type=types::copyType(value_type);
+                        auto dst_type=types::copyType(type);
                         auto new_value=var->moveValue();
-                        auto new_cast_value=std::make_unique<CastExprAST>(std::move(new_value), std::move(org_type), true);
-                        new_cast_value->setOriginalType(std::move(new_type));
+                        auto new_cast_value=std::make_unique<CastExprAST>(std::move(new_value), std::move(dst_type), true);
+                        new_cast_value->setSourceType(std::move(src_type));
 
                         var->setValue(std::move(new_cast_value));
                     }
