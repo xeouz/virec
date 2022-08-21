@@ -4,9 +4,5 @@ func main() returns int
 {
     let a = 100;
 
-    let b:char = a;
-
-    let c:int = b;
-
     return 0;
 }

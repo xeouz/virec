@@ -454,15 +454,6 @@ namespace vire
 
         return std::make_unique<VariableAssignAST>(std::move(varName), std::move(value));
     }
-    std::unique_ptr<ExprAST> Vireparse::ParsePrimitiveVarDef()
-    {
-        auto typeName=copyCurrentToken();
-        getNextToken(tok_id);
-        auto varName=copyCurrentToken();
-        getNextToken(tok_id);
-
-        return std::make_unique<TypedVarAST>(std::move(varName),std::move(typeName));
-    }
 
     std::unique_ptr<ExprAST> Vireparse::ParseForExpr()
     {
@@ -741,6 +732,7 @@ namespace vire
     {
         getNextToken(tok_lbrace);
         std::vector<std::unique_ptr<ExprAST>> members;
+
         while(CurTok->type!=tok_rbrace)
         {
             if(CurTok->type==tok_eof) return LogErrorVP("Expected '}' found end of file");
@@ -754,14 +746,20 @@ namespace vire
             {
                 member=ParseStruct();
             }
-            else
+            else if(CurTok->type==tok_id)
             {
-                member=ParsePrimitiveVarDef();
-                getNextToken(tok_semicol);
+                auto type=copyCurrentToken();
+                getNextToken(tok_id);
+
+                auto name=copyCurrentToken();
+                getNextToken(tok_id);
+
+                member=std::make_unique<VariableDefAST>(std::move(name), types::construct(type->value), nullptr);
             }
             
             members.push_back(std::move(member));
         }
+        
         getNextToken(tok_rbrace);
 
         return std::move(members);

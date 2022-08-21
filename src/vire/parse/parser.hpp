@@ -66,7 +66,6 @@ public:
 
     std::unique_ptr<ExprAST> ParseVariableDef();
     std::unique_ptr<ExprAST> ParseVariableAssign(std::unique_ptr<Viretoken> varName);
-    std::unique_ptr<ExprAST> ParsePrimitiveVarDef();
     std::unique_ptr<ExprAST> ParseIncrDecrAST();
 
     std::unique_ptr<ExprAST> ParseForExpr();

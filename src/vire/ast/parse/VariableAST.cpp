@@ -96,17 +96,6 @@ public:
     void setUseValueType(bool use_value_type) {this->use_value_type=use_value_type;}
 };
 
-class TypedVarAST : public ExprAST
-{
-    std::unique_ptr<Viretoken> name;
-public:
-    TypedVarAST(std::unique_ptr<Viretoken> name, std::unique_ptr<Viretoken> Type) 
-    : name(std::move(name)), ExprAST(Type->value,ast_typedvar)
-    {setToken(std::move(Type));}
-
-    std::string const& getName() const {return name->value;}
-};
-
 class VariableIncrDecrAST : public ExprAST
 {
     std::string name;

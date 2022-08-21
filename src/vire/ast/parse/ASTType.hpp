@@ -29,7 +29,6 @@ enum asttype
     ast_class,
 
     ast_union,
-    ast_typedvar,
     ast_struct,
 
     ast_return,

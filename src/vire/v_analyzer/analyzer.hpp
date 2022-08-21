@@ -58,7 +58,6 @@ public:
     bool verifyVar(VariableExprAST* const& var);
     bool verifyIncrDecr(VariableIncrDecrAST* const& var);
     bool verifyVarDef(VariableDefAST* const& var, bool check_globally_only=false);
-    bool verifyTypedVar(TypedVarAST* const& var);
     bool verifyVarAssign(VariableAssignAST* const& var);
     bool verifyVarArrayAccess(VariableArrayAccessAST* const& access);
 

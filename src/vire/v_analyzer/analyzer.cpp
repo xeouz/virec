@@ -297,10 +297,6 @@ namespace vire
         // Variable is already defined
         return false;
     }
-    bool VAnalyzer::verifyTypedVar(TypedVarAST* const& var)
-    {
-        return true;
-    }
     bool VAnalyzer::verifyVarAssign(VariableAssignAST* const& assign)
     {
         if(!isVarDefined(assign->getName()))
@@ -652,13 +648,9 @@ namespace vire
     {
         for(const auto& expr: body)
         {
-            if(expr->asttype==ast_typedvar)
+            if(expr->asttype==ast_vardef)
             {
-                if(!verifyTypedVar(((std::unique_ptr<TypedVarAST> const&)expr).get()))
-                {
-                    // TypedVar is not valid
-                    return false;
-                }
+                continue;
             }
             else if(expr->asttype==ast_struct)
             {
@@ -986,7 +978,6 @@ namespace vire
             case ast_varincrdecr: return verifyIncrDecr((VariableIncrDecrAST*const&)expr);
             case ast_var: return verifyVar((VariableExprAST*const&)expr);
             case ast_vardef: return verifyVarDef((VariableDefAST*const&)expr);
-            case ast_typedvar: return verifyTypedVar((TypedVarAST*const&)expr);
             case ast_varassign: return verifyVarAssign((VariableAssignAST*const&)expr);
             case ast_array_access: return verifyVarArrayAccess((VariableArrayAccessAST*const&)expr);
 
