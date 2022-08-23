@@ -1,7 +1,7 @@
 #include "vire/api/include.hpp"
 
 #include <iostream>
-#include <memory>
+#include <memory> 
 
 int main(int argc, char ** argv)
 {
@@ -10,7 +10,7 @@ int main(int argc, char ** argv)
 
     auto builder=std::make_unique<vire::errors::ErrorBuilder>("This program");
  
-    auto lexer=std::make_unique<vire::Virelex>(code,0, builder);
+    auto lexer=std::make_unique<vire::Virelex>(code, 0, builder);
     auto parser=std::make_unique<vire::Vireparse>(std::move(lexer)); 
     auto analyzer=std::make_unique<vire::VAnalyzer>(builder.get(), code);
 
@@ -22,6 +22,8 @@ int main(int argc, char ** argv)
 
     std::cout << "Analyzing Success: " << success << std::endl;
 
+    if(!success) return success;
+
     std::cout << "\n\n";
 
     // Analysis and Frontend are done.
@@ -31,7 +33,7 @@ int main(int argc, char ** argv)
     auto compiler=std::make_unique<vire::VCompiler>(std::move(analyzer), "test");
 
     compiler->compileExtern("putd");
-    compiler->compileFunction("main");
+    compiler->compileFunction("main");  
 
     std::cout << "Compiling Success\n---\n" << std::endl;
     std::cout << compiler->getCompiledOutput() << std::endl;

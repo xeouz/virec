@@ -753,8 +753,14 @@ namespace vire
 
                 auto name=copyCurrentToken();
                 getNextToken(tok_id);
+                getNextToken(tok_semicol);
 
                 member=std::make_unique<VariableDefAST>(std::move(name), types::construct(type->value), nullptr);
+            }
+            else
+            {
+                std::cout << "Invalid Token: " << CurTok->value << std::endl;
+                break;
             }
             
             members.push_back(std::move(member));

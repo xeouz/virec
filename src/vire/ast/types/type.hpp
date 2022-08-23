@@ -40,6 +40,11 @@ inline std::unordered_map<TypeNames, std::string> typestr_map=
     {TypeNames::Float, "float"},
     {TypeNames::Double, "double"},
     {TypeNames::Bool, "bool"},
+    {TypeNames::Custom, "custom"},
+};
+inline std::unordered_map<std::string, int> custom_type_sizes=
+{
+
 };
 
 // Prototypes
@@ -234,6 +239,28 @@ public:
     }
 };
 
+class Custom : public Base
+{
+    std::string name;
+public:
+    Custom(int size, std::string name)
+    : name(name)
+    {
+        this->type=TypeNames::Custom;
+        this->size=size;
+    }
+
+    std::string const& getName() const 
+    {
+        return name;
+    }
+
+    bool isSame(Custom* other)
+    {
+        return name==other->getName();
+    }
+};
+
 // Functions
 inline bool isSame(Base* const& a, Base* const& b)
 {
@@ -241,11 +268,15 @@ inline bool isSame(Base* const& a, Base* const& b)
     {
         if(a->getType() != TypeNames::Array)
         {
+            if(a->getType() == TypeNames::Custom)
+            {
+                return a->isSame(b);
+            }
+
             return true;
         }
         else
         {
-            
             Array* a_array = static_cast<Array*>(a);
             
             bool f=a_array->isSame(b);
@@ -343,6 +374,8 @@ inline std::unique_ptr<Base> construct(std::string typestr)
             return std::make_unique<Double>();
         case TypeNames::Bool:
             return std::make_unique<Bool>();
+        case TypeNames::Custom:
+            return std::make_unique<Custom>(typestr, custom_type_sizes.at(typestr));
         
         default:
             return std::make_unique<Void>();
@@ -378,6 +411,25 @@ inline bool isUserDefined(Base* _type)
 {
     TypeNames type=_type->getType();
     return isUserDefined(type);
+}
+
+inline void addTypeToMap(std::string name)
+{
+    type_map.insert(std::make_pair(name,TypeNames::Custom));
+}
+inline bool isTypeinMap(std::string name)
+{
+    if(type_map.count(name)>0)
+    {
+        return true;
+    }
+
+    return false;
+}
+
+inline void addTypeSizeToMap(std::string name, unsigned int size)
+{
+    custom_type_sizes.insert(std::make_pair(name,size));
 }
 
 } // namespace types

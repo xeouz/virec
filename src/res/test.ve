@@ -1,8 +1,12 @@
 extern putd(a:int) returns int;
 
+struct foo
+{
+    int a;
+}
+
 func main() returns int
 {
-    let a = 100;
-
-    return 0;
+    let a:foo;
+    
 }

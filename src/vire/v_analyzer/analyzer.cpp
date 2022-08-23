@@ -646,18 +646,31 @@ namespace vire
 
     bool VAnalyzer::verifyUnionStructBody(std::vector<std::unique_ptr<ExprAST>> const& body)
     {
+        bool is_valid=true;
+
+        std::map<std::string, VariableDefAST*> scope;
+
         for(const auto& expr: body)
         {
             if(expr->asttype==ast_vardef)
             {
-                continue;
+                auto* var=(VariableDefAST*)expr.get();
+                if(scope.count(var->getName())>0)
+                {
+                    std::cout << "Redeclaration of variable in struct" << std::endl;
+                    is_valid=false;
+                }
+                else
+                {
+                    scope.insert(std::make_pair(var->getName(),var));
+                }
             }
             else if(expr->asttype==ast_struct)
             {
                 if(!verifyStruct(((std::unique_ptr<StructExprAST> const&)expr).get()))
                 {
                     // Struct is not valid
-                    return false;
+                    is_valid=false;
                 }
             }
             else if(expr->asttype==ast_union)
@@ -665,12 +678,12 @@ namespace vire
                 if(!verifyUnion(((std::unique_ptr<UnionExprAST> const&)expr).get()))
                 {
                     // Union is not valid
-                    return false;
+                    is_valid=false;
                 }
             }
         }
 
-        return true;
+        return is_valid;
     }
     bool VAnalyzer::verifyUnion(UnionExprAST* const& union_)
     {
@@ -686,15 +699,35 @@ namespace vire
     }
     bool VAnalyzer::verifyStruct(StructExprAST* const& struct_)
     {
+        bool is_valid=true;
         const auto& members=struct_->getMembers();
-        
+
         if(!verifyUnionStructBody(members))
         {
             // Struct body is not valid
-            return false;
+            return is_valid=false;
         }
 
-        return true;
+        unsigned int size=0;
+        for(auto const& member : members)
+        {
+            size+=member->getType()->getSize();
+        }
+        struct_->setSize(size);
+
+        if(!types::isTypeinMap(struct_->getName()))
+        {
+            types::addTypeToMap(struct_->getName());
+            types::addTypeSizeToMap(struct_->getName(), struct_->getSize());
+        }
+        else
+        {
+            std::cout << "Struct already defined" << std::endl;
+            is_valid=false;
+
+        }
+
+        return is_valid;
     }
 
     bool VAnalyzer::verifyIfThen(IfThenExpr* const& if_then)

@@ -24,6 +24,9 @@ class VAnalyzer
     std::map<std::string, VariableDefAST*> scope;
     std::vector<VariableDefAST*>* scope_varref;
 
+    // Type Stack
+    std::map<std::string, ExprAST*> types;
+
     // Functions
     void addVar(VariableDefAST* const& var);
     void removeVar(VariableDefAST* const& var);

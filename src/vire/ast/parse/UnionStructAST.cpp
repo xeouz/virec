@@ -11,35 +11,64 @@ namespace vire
 
 class UnionExprAST : public ExprAST
 {
-    std::vector<std::unique_ptr<ExprAST>> Members;
-    std::unique_ptr<Viretoken> Name;
-    char is_anonymous;
+    std::vector<std::unique_ptr<ExprAST>> members;
+    std::unique_ptr<Viretoken> name;
+
+    unsigned int size;
 public:
-    UnionExprAST(std::vector<std::unique_ptr<ExprAST>> Members) : Members(std::move(Members)), Name(nullptr), is_anonymous(1)
-    , ExprAST("void",ast_union) {}
-    UnionExprAST(std::vector<std::unique_ptr<ExprAST>> Members, std::unique_ptr<Viretoken> Name) 
-    : Members(std::move(Members)), Name(std::move(Name)), is_anonymous(0), ExprAST("void",ast_union)
+    UnionExprAST(std::vector<std::unique_ptr<ExprAST>> members, std::unique_ptr<Viretoken> name) 
+    : members(std::move(members)), name(std::move(name)), ExprAST("void",ast_union)
     {}
 
-    const std::string& getName() const {return Name->value;}
+    void setSize(unsigned int size)
+    {
+        this->size=size;
+    }
 
-    const std::vector<std::unique_ptr<ExprAST>>& getMembers() const {return Members;}
+    const std::string& getName() const 
+    {
+        return name->value;
+    }
+    const unsigned int getSize() const
+    {
+        return size;
+    }
+
+    const std::vector<std::unique_ptr<ExprAST>>& getMembers() const 
+    {
+        return members;
+    }
 };
 
 class StructExprAST : public ExprAST
 {
-    std::vector<std::unique_ptr<ExprAST>> Members;
-    std::unique_ptr<Viretoken> Name;
-    char is_anonymous;
+    std::vector<std::unique_ptr<ExprAST>> members;
+    std::unique_ptr<Viretoken> name;
+
+    unsigned int size;
 public:
-    StructExprAST(std::vector<std::unique_ptr<ExprAST>> Members)
-    : Members(std::move(Members)), Name(nullptr), is_anonymous(1), ExprAST("void",ast_struct) {}
-    StructExprAST(std::vector<std::unique_ptr<ExprAST>> Members, std::unique_ptr<Viretoken> Name)
-    : Members(std::move(Members)), Name(std::move(Name)), is_anonymous(0), ExprAST("void",ast_struct) {}
+    StructExprAST(std::vector<std::unique_ptr<ExprAST>> members, std::unique_ptr<Viretoken> name)
+    : members(std::move(members)), name(std::move(name)),  ExprAST("void",ast_struct)
+    {}
 
-    const std::string& getName() const {return Name->value;}
+    void setSize(unsigned int size)
+    {
+        this->size=size;
+    }
 
-    const std::vector<std::unique_ptr<ExprAST>>& getMembers() const {return Members;}
+    const std::string& getName() const 
+    {
+        return name->value;
+    }
+    const unsigned int getSize() const 
+    {
+        return size;
+    }
+
+    const std::vector<std::unique_ptr<ExprAST>>& getMembers() const 
+    {
+        return members;
+    }
 };
 
 }
