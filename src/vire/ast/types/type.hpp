@@ -82,7 +82,7 @@ public:
 inline bool isSame(Base* const& a, Base* const& b);
 inline bool isSame(Base* const& a, const char*  b);
 
-inline std::unique_ptr<Base> construct(std::string typestr);
+inline std::unique_ptr<Base> construct(std::string typestr, bool create_custom=false);
 inline std::unique_ptr<Base> construct(TypeNames type);
 inline Base* getArrayRootType(Base* const& type);
 
@@ -94,11 +94,18 @@ inline std::ostream& operator<<(std::ostream& os, Base const& type)
 
 class Void : public Base
 {
+    std::string name;
 public:
-    Void()
+    Void(std::string name="")
     {
         type = TypeNames::Void;
         size = 0;
+        this->name = name;
+    }
+
+    std::string const& getName() const
+    {
+        return name;
     }
 };
 
@@ -243,7 +250,7 @@ class Custom : public Base
 {
     std::string name;
 public:
-    Custom(int size, std::string name)
+    Custom(std::string name, int size)
     : name(name)
     {
         this->type=TypeNames::Custom;
@@ -357,7 +364,7 @@ inline std::string getMapFromType(TypeNames type)
     }
 }
 
-inline std::unique_ptr<Base> construct(std::string typestr)
+inline std::unique_ptr<Base> construct(std::string typestr, bool create_custom)
 {
     TypeNames type=getTypeFromMap(typestr);
     switch(type)
@@ -375,7 +382,11 @@ inline std::unique_ptr<Base> construct(std::string typestr)
         case TypeNames::Bool:
             return std::make_unique<Bool>();
         case TypeNames::Custom:
+        {
+            if(!create_custom)  return std::make_unique<Void>(typestr);
+            
             return std::make_unique<Custom>(typestr, custom_type_sizes.at(typestr));
+        }
         
         default:
             return std::make_unique<Void>();

@@ -225,29 +225,49 @@ namespace vire
         if(!isVarDefined(var->getName(),check_globally_only))
         {
             bool is_var=!(var->isLet() || var->isConst());
-
             if(!is_var)
             {
-                if(var->getValue()==nullptr && types::isSame(var->getType(), "auto"))
+                bool type_is_void=false;
+                bool type_is_given=true;
+                auto* ty=var->getType();
+
+                type_is_void=(ty->getType()==types::TypeNames::Void);
+                if(type_is_void)
+                {
+                    auto* voidty=(types::Void*)ty;
+                    if(types::isTypeinMap(voidty->getName()))
+                    {
+                        type_is_given=true;
+                    }
+                    else
+                    {
+                        type_is_given=false;
+                    }
+                }
+
+                if(var->getValue()==nullptr && !type_is_given)
                 {
                     // Requires a variable for definiton
                     unsigned char islet = var->isLet() ? 1 : 0;
                     builder->addError<errors::analyze_requires_type>
                     (this->code, islet, var->getName(), var->getLine(), var->getCharpos());
+
                     return false;
                 }
             }
-            
-            auto* type=var->getType();
+            types::Base* type=var->getType();
             types::Base* value_type;
 
             auto const& value=var->getValue();
-            bool is_auto=(type->getType()==types::TypeNames::Void);
+
             if(value==nullptr)
             {
+                std::cout << var->getName() << " is valid" << std::endl; 
                 addVar(var);
                 return true;
             }
+
+            bool is_auto=(type->getType()==types::TypeNames::Void);
 
             if(is_auto && is_var)
             {
@@ -283,8 +303,9 @@ namespace vire
                 }
             }
             else
-            { 
+            {
                 auto value_type_uptr=types::copyType(value_type);
+
                 var->getValue()->setType(std::move(value_type_uptr));
                 var->setUseValueType(true);
             }
@@ -621,7 +642,7 @@ namespace vire
             // Prototype is not valid
             return false;
         }
-
+        
         return true;
     }
     bool VAnalyzer::verifyFunction(FunctionAST* const& func)
@@ -715,6 +736,8 @@ namespace vire
         }
         struct_->setSize(size);
 
+        if(!is_valid)   return is_valid;
+
         if(!types::isTypeinMap(struct_->getName()))
         {
             types::addTypeToMap(struct_->getName());
@@ -724,7 +747,6 @@ namespace vire
         {
             std::cout << "Struct already defined" << std::endl;
             is_valid=false;
-
         }
 
         return is_valid;
@@ -907,6 +929,25 @@ namespace vire
                 return false;
             }
         }
+        for(const auto& union_struct : union_structs)
+        {
+            if(union_struct->asttype==ast_union)
+            {
+                if(!verifyUnion(((std::unique_ptr<UnionExprAST> const&)union_struct).get()))
+                {
+                    // Union is not valid
+                    is_valid=false;
+                }
+            }
+            else
+            {
+                if(!verifyStruct(((std::unique_ptr<StructExprAST> const&)union_struct).get()))
+                {
+                    // Struct is not valid
+                    is_valid=false;
+                }
+            }
+        } 
         for(unsigned int it=0; it<funcs.size(); ++it)
         {
             const auto& func=funcs[it];
@@ -945,25 +986,6 @@ namespace vire
 
             addFunction(std::move(funcs[it]));
         }
-        for(const auto& union_struct : union_structs)
-        {
-            if(union_struct->asttype==ast_union)
-            {
-                if(!verifyUnion(((std::unique_ptr<UnionExprAST> const&)union_struct).get()))
-                {
-                    // Union is not valid
-                    is_valid=false;
-                }
-            }
-            else
-            {
-                if(!verifyStruct(((std::unique_ptr<StructExprAST> const&)union_struct).get()))
-                {
-                    // Struct is not valid
-                    is_valid=false;
-                }
-            }
-        } 
 
         if(!has_main)
         {

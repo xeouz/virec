@@ -1,12 +1,12 @@
-extern putd(a:int) returns int;
+extern putd(c:int) returns int;
 
 struct foo
 {
-    int a;
+    int x;
 }
 
 func main() returns int
 {
     let a:foo;
-    
+    return 0;
 }

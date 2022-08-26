@@ -24,31 +24,31 @@ public:
     ExprAST(std::unique_ptr<types::Base> type, int asttype, std::unique_ptr<Viretoken> token=nullptr)
     : asttype(asttype), token(std::move(token)), type(std::move(type))
     {}
-
-    /* 
-    virtual ~ExprAST()
-    {
-        //std::cout << "ExprAST destructor" << std::endl;
-        token.reset();
-        
-        if(type!=nullptr)
-            type.reset();
-    }
-    */
    
-    virtual types::Base* getType() const { return type.get(); }
+    virtual types::Base* getType() const 
+    {
+        return type.get(); 
+    }
 
     virtual void setType(std::unique_ptr<types::Base> t) 
     {
+        if(type->getType()==types::TypeNames::Void)
+        {
+            auto* voidty=(types::Void*)t.get();
+            if(types::isTypeinMap(voidty->getName()))
+            {
+                t=types::construct(voidty->getName(), true);
+            }
+        }
         this->type=std::move(t);
     }
     virtual void setType(std::string const& newtype) 
     {
-        type=types::construct(newtype); 
+        setType(types::construct(newtype)); 
     }
     virtual void setType(types::Base* t)
     {
-        type.reset(t);
+        setType(std::unique_ptr<types::Base>(t));
     }
 
     virtual const std::size_t& getLine()    const 

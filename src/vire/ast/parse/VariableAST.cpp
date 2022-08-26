@@ -62,9 +62,11 @@ class VariableDefAST : public ExprAST
 public:
     VariableDefAST(std::unique_ptr<Viretoken> name, std::unique_ptr<types::Base> type, std::unique_ptr<ExprAST> value,
     bool is_const=false, bool is_let=false)
-    : name(name->value),value(std::move(value)),ExprAST(std::move(type),ast_vardef), 
+    : name(name->value), value(std::move(value)), ExprAST(std::move(type),ast_vardef), 
     is_const(is_const),is_let(is_let), use_value_type(false)
-    { setToken(std::move(name)); }
+    {
+        setToken(std::move(name));
+    }
 
     std::string const& getName() const {return name;}
     const bool& isConst() const {return is_const;}

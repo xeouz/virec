@@ -419,7 +419,7 @@ namespace vire
             else
             {
                 // Automatic type inference
-                type=types::construct(CurTok->value);
+                type=types::construct("void");
             }
         }
 
@@ -526,6 +526,7 @@ namespace vire
         while(CurTok->type==tok_id)
         {
             std::unique_ptr<Viretoken> var_name=copyCurrentToken();
+            var_name->value="_"+var_name->value;
             getNextToken(tok_id); // consume id
             if(CurTok->type!=tok_colon) 
                 return LogErrorP("Expected ':' for type specifier after arg name");
@@ -775,40 +776,33 @@ namespace vire
         getNextToken(tok_union);
 
         char is_anonymous=1;
-        std::unique_ptr<Viretoken> Name;
+        std::unique_ptr<Viretoken> name;
         if(CurTok->type==tok_id)
         {
             is_anonymous=0;
-            Name=copyCurrentToken();
+            name=copyCurrentToken();
             getNextToken();
         }
 
         auto body=ParsePrimitiveBody();
-
-        if(is_anonymous)
-            return std::make_unique<UnionExprAST>(std::move(body));
-        else
-            return std::make_unique<UnionExprAST>(std::move(body),std::move(Name));
+        return std::make_unique<UnionExprAST>(std::move(body),std::move(name));
     }
     std::unique_ptr<ExprAST> Vireparse::ParseStruct()
     {
         getNextToken(tok_struct);
 
         char is_anonymous=1;
-        std::unique_ptr<Viretoken> Name;
+        std::unique_ptr<Viretoken> name;
         if(CurTok->type==tok_id)
         {
             is_anonymous=0;
-            Name=copyCurrentToken();
+            name=copyCurrentToken();
             getNextToken();
         }
 
         auto body=ParsePrimitiveBody();
 
-        if(is_anonymous)
-            return std::make_unique<StructExprAST>(std::move(body));
-        else
-            return std::make_unique<StructExprAST>(std::move(body),std::move(Name));
+        return std::make_unique<StructExprAST>(std::move(body),std::move(name));
     }
 
     std::unique_ptr<ExprAST> Vireparse::ParseUnsafe()
