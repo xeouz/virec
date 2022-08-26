@@ -99,6 +99,7 @@ public:
     bool verifyUnionStructBody(std::vector<std::unique_ptr<ExprAST>> const& body);
     bool verifyUnion(UnionExprAST* const& union_);
     bool verifyStruct(StructExprAST* const& struct_);
+    bool verifyTypeAccess(ClassAccessAST* const& member);
 
     // If-Else verifications
     bool verifyIfThen(IfThenExpr* const& if_);
