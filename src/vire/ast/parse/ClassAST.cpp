@@ -5,6 +5,7 @@
 
 #include "VariableAST.cpp"
 #include "FunctionAST.cpp"
+#include "Identifier.cpp"
 
 #include <string>
 #include <vector>
@@ -107,7 +108,7 @@ public:
     {
         return parent.get();
     }
-    ExprAST* const getChild()
+    IdentifierExprAST* const getChild()
     {
         return child.get();
     }

@@ -23,6 +23,10 @@ public:
     {
         return token.get();
     }
+    virtual std::unique_ptr<Viretoken> moveToken()
+    {
+        return std::move(token);
+    }
 };
 
 // VariableExprAST - Class for referencing a variable, eg - `myvar`

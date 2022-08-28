@@ -52,6 +52,16 @@ namespace vire
         printf("\n");
         return std::vector<std::unique_ptr<ExprAST>>();
     }
+    std::unordered_map<std::string, std::unique_ptr<ExprAST>> Vireparse::LogErrorPB(const char* str,...)
+    {
+        std::va_list args;
+        va_start(args,str);
+        fprintf(stderr,"Parse Error: ");
+        std::vfprintf(stderr,str,args);
+        va_end(args);
+        printf("\n");
+        return std::unordered_map<std::string, std::unique_ptr<ExprAST>>();
+    }
 
     void Vireparse::getNextToken()
     {
@@ -723,29 +733,42 @@ namespace vire
     }
     std::unique_ptr<ExprAST> Vireparse::ParseClassAccess(std::unique_ptr<ExprAST> parent)
     {
+        std::cout << "e" << std::endl;
         getNextToken(tok_dot);
         auto child=ParseIdExpr();
 
-        return std::make_unique<ClassAccessAST>(std::move(parent),std::move(child));
+        if(!(child->asttype==ast_var || child->asttype==ast_call || child->asttype==ast_class_access))
+        {
+            std::cout << "Expected a class member during parsing" << std::endl;
+            return nullptr;
+        }
+
+        auto cast_child=cast_static<IdentifierExprAST>(std::move(child));
+        std::cout << cast_child->getName() << std::endl;
+
+        return std::make_unique<ClassAccessAST>(std::move(parent),std::move(cast_child));
     }
 
-    std::vector<std::unique_ptr<ExprAST>> Vireparse::ParsePrimitiveBody()
+    std::unordered_map<std::string, std::unique_ptr<ExprAST>> Vireparse::ParsePrimitiveBody()
     {
         getNextToken(tok_lbrace);
-        std::vector<std::unique_ptr<ExprAST>> members;
+        std::unordered_map<std::string, std::unique_ptr<ExprAST>> members;
 
         while(CurTok->type!=tok_rbrace)
         {
-            if(CurTok->type==tok_eof) return LogErrorVP("Expected '}' found end of file");
+            if(CurTok->type==tok_eof) return LogErrorPB("Expected '}' found end of file");
 
             std::unique_ptr<ExprAST> member;
+            std::string member_name;
             if(CurTok->type==tok_union)
             {
                 member=ParseUnion();
+                member_name=((UnionExprAST*)member.get())->getName();
             }
             else if(CurTok->type==tok_struct)
             {
                 member=ParseStruct();
+                member_name=((StructExprAST*)member.get())->getName();
             }
             else if(CurTok->type==tok_id)
             {
@@ -756,6 +779,7 @@ namespace vire
                 getNextToken(tok_id);
                 getNextToken(tok_semicol);
 
+                member_name=name->value;
                 member=std::make_unique<VariableDefAST>(std::move(name), types::construct(type->value), nullptr);
             }
             else
@@ -764,7 +788,7 @@ namespace vire
                 break;
             }
             
-            members.push_back(std::move(member));
+            members.insert(std::make_pair(member_name, std::move(member)));
         }
         
         getNextToken(tok_rbrace);

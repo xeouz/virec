@@ -8,5 +8,8 @@ struct foo
 func main() returns int
 {
     let a:foo;
+
+    let b = a.x;
+
     return 0;
 }

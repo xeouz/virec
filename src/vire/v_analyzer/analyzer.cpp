@@ -797,6 +797,13 @@ namespace vire
 
         auto* st=getStruct(ptype_custom->getName());
 
+        auto name=access->getChild()->getName();
+        if(!st->isMember(name))
+        {
+            std::cout << "No member as " << name << " in struct" << std::endl;
+            is_valid=false;
+        }
+
         return is_valid;
     }
 
