@@ -52,6 +52,7 @@ public:
     types::Base* getFuncReturnType(const std::string& name="");
 
     FunctionBaseAST* const getFunc(const std::string& name);
+    StructExprAST* const getStruct(const std::string& name);
 
     CodeAST* const getCode();
 
@@ -96,7 +97,7 @@ public:
     bool verifyDelete(DeleteExprAST const& delete_);
 
     // Struct/Union verifications
-    bool verifyUnionStructBody(std::vector<std::unique_ptr<ExprAST>> const& body);
+    bool verifyUnionStructBody(std::vector<ExprAST*> const& body);
     bool verifyUnion(UnionExprAST* const& union_);
     bool verifyStruct(StructExprAST* const& struct_);
     bool verifyTypeAccess(ClassAccessAST* const& member);

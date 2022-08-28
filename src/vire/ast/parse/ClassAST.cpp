@@ -98,13 +98,19 @@ public:
 class ClassAccessAST : public ExprAST
 {
     std::unique_ptr<ExprAST> parent;
-    std::unique_ptr<ExprAST> child;
+    std::unique_ptr<IdentifierExprAST> child;
 public:
-    ClassAccessAST(std::unique_ptr<ExprAST> parent, std::unique_ptr<ExprAST> child)
+    ClassAccessAST(std::unique_ptr<ExprAST> parent, std::unique_ptr<IdentifierExprAST> child)
     : parent(std::move(parent)), child(std::move(child)), ExprAST("",ast_class_access) {}
 
-    ExprAST* const getParent() { return parent.get();}
-    ExprAST* const getChild()  { return child.get(); }
+    ExprAST* const getParent()
+    {
+        return parent.get();
+    }
+    ExprAST* const getChild()
+    {
+        return child.get();
+    }
 };
 
 }

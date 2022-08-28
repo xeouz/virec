@@ -11,6 +11,7 @@
 
 namespace vire
 {
+
 // CallExprAST - Class for function calls, eg - `print()`
 class CallExprAST : public ExprAST
 {
@@ -27,6 +28,7 @@ public:
     std::vector<std::unique_ptr<ExprAST>> const& getArgs() const {return Args;}
     std::vector<std::unique_ptr<ExprAST>> moveArgs() {return std::move(Args);}
 };
+
 
 class FunctionBaseAST
 {

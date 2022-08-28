@@ -9,65 +9,67 @@
 namespace vire
 {
 
-class UnionExprAST : public ExprAST
+class TypeAST : public ExprAST
 {
-    std::vector<std::unique_ptr<ExprAST>> members;
+    std::unordered_map<std::string, std::unique_ptr<ExprAST>> members;
     std::unique_ptr<Viretoken> name;
-
-    unsigned int size;
 public:
-    UnionExprAST(std::vector<std::unique_ptr<ExprAST>> members, std::unique_ptr<Viretoken> name) 
-    : members(std::move(members)), name(std::move(name)), ExprAST("void",ast_union)
-    {}
-
-    void setSize(unsigned int size)
+    TypeAST(std::unordered_map<std::string, std::unique_ptr<ExprAST>> members, std::unique_ptr<Viretoken> name, int asttype=ast_type)
+    : members(std::move(members)), name(std::move(name)), ExprAST("void", asttype)
     {
-        this->size=size;
+
     }
 
-    const std::string& getName() const 
+    virtual std::string const& getName() const
     {
         return name->value;
     }
-    const unsigned int getSize() const
-    {
-        return size;
-    }
 
-    const std::vector<std::unique_ptr<ExprAST>>& getMembers() const 
+    virtual std::unordered_map<std::string, std::unique_ptr<ExprAST>> const& getMembers()
     {
         return members;
+    }
+    virtual std::vector<ExprAST*> const getMembersValues() const
+    {
+        std::vector<ExprAST*> values;
+        values.reserve(members.size());
+
+        for(auto& [str,ptr]:members)
+        {
+            values.push_back(ptr.get());
+        }
+
+        return values;
+    }
+
+    virtual bool isMember(std::string const& name)
+    {
+        if(members.count(name)>0)
+        {
+            return true;
+        }
+
+        return false;
     }
 };
 
-class StructExprAST : public ExprAST
+class UnionExprAST : public TypeAST
 {
-    std::vector<std::unique_ptr<ExprAST>> members;
-    std::unique_ptr<Viretoken> name;
-
-    unsigned int size;
 public:
-    StructExprAST(std::vector<std::unique_ptr<ExprAST>> members, std::unique_ptr<Viretoken> name)
-    : members(std::move(members)), name(std::move(name)),  ExprAST("void",ast_struct)
-    {}
+    UnionExprAST(std::unordered_map<std::string, std::unique_ptr<ExprAST>> members, std::unique_ptr<Viretoken> name)
+    : TypeAST(std::move(members), std::move(name), ast_union)
+    {
 
-    void setSize(unsigned int size)
-    {
-        this->size=size;
     }
+};
 
-    const std::string& getName() const 
+class StructExprAST : public TypeAST
+{
+public:
+    StructExprAST(std::unordered_map<std::string, std::unique_ptr<ExprAST>> members, std::unique_ptr<Viretoken> name)
+    : TypeAST(std::move(members), std::move(name), ast_struct)
     {
-        return name->value;
-    }
-    const unsigned int getSize() const 
-    {
-        return size;
-    }
 
-    const std::vector<std::unique_ptr<ExprAST>>& getMembers() const 
-    {
-        return members;
     }
 };
 

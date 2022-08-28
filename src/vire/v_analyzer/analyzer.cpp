@@ -24,6 +24,10 @@ namespace vire
         return scope.count(name)==true;
     }
 
+    bool VAnalyzer::isStructDefined(const std::string& name)
+    {
+        return types::isTypeinMap(name);
+    }
     bool VAnalyzer::isFuncDefined(const std::string& name)
     {
         const auto& functions=codeast->getFunctions();
@@ -111,6 +115,29 @@ namespace vire
            return nullptr;
         }
         return scope.at(name);
+    }
+    StructExprAST* const VAnalyzer::getStruct(const std::string& name)
+    {
+        if(!isStructDefined(name))
+        {
+            return nullptr;
+        }
+
+        auto const& structs=codeast->getUnionStructs();
+        for(auto const& expr : structs)
+        {
+            if(expr->asttype==ast_struct)
+            {
+                auto* st=(StructExprAST*)expr.get();
+
+                if(st->getName()==name)
+                {
+                    return st;
+                }
+            }
+        }
+
+        return nullptr;
     }
 
     // !!- CHANGES REQUIRED -!!
@@ -262,7 +289,7 @@ namespace vire
 
             if(value==nullptr)
             {
-                std::cout << var->getName() << " is valid" << std::endl; 
+                std::cout << var->getName() << " is valid" << std::endl;
                 addVar(var);
                 return true;
             }
@@ -665,17 +692,17 @@ namespace vire
         return is_valid;
     }
 
-    bool VAnalyzer::verifyUnionStructBody(std::vector<std::unique_ptr<ExprAST>> const& body)
+    bool VAnalyzer::verifyUnionStructBody(std::vector<ExprAST*> const& body)
     {
         bool is_valid=true;
 
         std::map<std::string, VariableDefAST*> scope;
 
-        for(const auto& expr: body)
+        for(auto* expr: body)
         {
             if(expr->asttype==ast_vardef)
             {
-                auto* var=(VariableDefAST*)expr.get();
+                auto* var=(VariableDefAST*)expr;
                 if(scope.count(var->getName())>0)
                 {
                     std::cout << "Redeclaration of variable in struct" << std::endl;
@@ -688,7 +715,7 @@ namespace vire
             }
             else if(expr->asttype==ast_struct)
             {
-                if(!verifyStruct(((std::unique_ptr<StructExprAST> const&)expr).get()))
+                if(!verifyStruct((StructExprAST*)expr))
                 {
                     // Struct is not valid
                     is_valid=false;
@@ -696,7 +723,7 @@ namespace vire
             }
             else if(expr->asttype==ast_union)
             {
-                if(!verifyUnion(((std::unique_ptr<UnionExprAST> const&)expr).get()))
+                if(!verifyUnion((UnionExprAST*)expr))
                 {
                     // Union is not valid
                     is_valid=false;
@@ -708,7 +735,7 @@ namespace vire
     }
     bool VAnalyzer::verifyUnion(UnionExprAST* const& union_)
     {
-        const auto& members=union_->getMembers();
+        auto const& members=union_->getMembersValues();
         
         if(!verifyUnionStructBody(members))
         {
@@ -721,8 +748,8 @@ namespace vire
     bool VAnalyzer::verifyStruct(StructExprAST* const& struct_)
     {
         bool is_valid=true;
-        const auto& members=struct_->getMembers();
 
+        auto const& members=struct_->getMembersValues();
         if(!verifyUnionStructBody(members))
         {
             // Struct body is not valid
@@ -734,20 +761,41 @@ namespace vire
         {
             size+=member->getType()->getSize();
         }
-        struct_->setSize(size);
 
         if(!is_valid)   return is_valid;
 
         if(!types::isTypeinMap(struct_->getName()))
         {
             types::addTypeToMap(struct_->getName());
-            types::addTypeSizeToMap(struct_->getName(), struct_->getSize());
+            types::addTypeSizeToMap(struct_->getName(), size);
         }
         else
         {
             std::cout << "Struct already defined" << std::endl;
             is_valid=false;
         }
+
+        return is_valid;
+    }
+    bool VAnalyzer::verifyTypeAccess(ClassAccessAST* const& access)
+    {
+        bool is_valid=true;
+        auto* ptype=getType(access->getParent());
+
+        if(ptype->getType() != types::TypeNames::Custom)
+        {
+            std::cout << "Parent is not a type" << std::endl;
+            is_valid=false;
+        }
+
+        auto* ptype_custom=(types::Custom*)ptype;
+
+        if(!types::isTypeinMap(ptype_custom->getName()))
+        {
+            std::cout << "Type " << ptype_custom << " is not defined" << std::endl;
+        }
+
+        auto* st=getStruct(ptype_custom->getName());
 
         return is_valid;
     }
@@ -929,8 +977,9 @@ namespace vire
                 return false;
             }
         }
-        for(const auto& union_struct : union_structs)
+        for(unsigned int it=0; it<funcs.size(); ++it)
         {
+            const auto& union_struct=union_structs[it];
             if(union_struct->asttype==ast_union)
             {
                 if(!verifyUnion(((std::unique_ptr<UnionExprAST> const&)union_struct).get()))
@@ -947,6 +996,8 @@ namespace vire
                     is_valid=false;
                 }
             }
+
+            codeast->addUnionStruct(std::move(union_structs[it]));
         } 
         for(unsigned int it=0; it<funcs.size(); ++it)
         {

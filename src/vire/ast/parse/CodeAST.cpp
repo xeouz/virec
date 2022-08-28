@@ -57,6 +57,11 @@ public:
     void addFunction(std::unique_ptr<FunctionBaseAST> func) {
         Functions.push_back(std::move(func));
     }
+
+    void addUnionStruct(std::unique_ptr<ExprAST> union_struct)
+    {
+        UnionStructs.push_back(std::move(union_struct));
+    }
 };
 
 }

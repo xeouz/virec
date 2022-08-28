@@ -8,31 +8,8 @@
 
 namespace vire
 {
-// VariableExprAST - Class for referencing a variable, eg - `myvar`
-class VariableExprAST : public ExprAST
-{
-    std::string name;
-public:
-    VariableExprAST(std::unique_ptr<Viretoken> name) : name(name->value), ExprAST("",ast_var) 
-    {setToken(std::move(name));} 
-
-    std::string const& getName() const {return name;}
-    Viretoken* const getToken() const {return token.get();}
-    std::unique_ptr<Viretoken> moveToken() {return std::move(token);}
-};
-
-class VariableAssignAST: public ExprAST
-{
-    std::string name;
-    std::unique_ptr<ExprAST> value;
-public: 
-    VariableAssignAST(std::unique_ptr<Viretoken> name, std::unique_ptr<ExprAST> value)
-    : name(name->value), value(std::move(value)), ExprAST("void",ast_varassign) {setToken(std::move(name));}
-
-    std::string const& getName() const {return name;}
-    ExprAST* const getValue() const {return value.get();}
-};
-
+    
+// VariableArrayAccessAST - Class for array access, eg - `foo[bar]`
 class VariableArrayAccessAST: public ExprAST
 {
     std::unique_ptr<ExprAST> expr;
@@ -51,6 +28,18 @@ public:
     {
         return indices;
     }
+};
+
+class VariableAssignAST: public ExprAST
+{
+    std::string name;
+    std::unique_ptr<ExprAST> value;
+public: 
+    VariableAssignAST(std::unique_ptr<Viretoken> name, std::unique_ptr<ExprAST> value)
+    : name(name->value), value(std::move(value)), ExprAST("void",ast_varassign) {setToken(std::move(name));}
+
+    std::string const& getName() const {return name;}
+    ExprAST* const getValue() const {return value.get();}
 };
 
 class VariableDefAST : public ExprAST

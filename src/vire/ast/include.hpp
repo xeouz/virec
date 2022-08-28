@@ -13,6 +13,7 @@
 #include "parse/TryExcept.cpp"
 #include "parse/CodeAST.cpp"
 #include "parse/HelperFunctions.cpp"
+#include "parse/Identifier.cpp"
 #include "parse/ASTType.hpp"
 
 #include "types/type.hpp" 

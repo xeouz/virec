@@ -30,6 +30,7 @@ enum asttype
 
     ast_union,
     ast_struct,
+    ast_type,
 
     ast_return,
     ast_break,
