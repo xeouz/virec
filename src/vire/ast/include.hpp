@@ -10,7 +10,6 @@
 #include "parse/UnionStructAST.cpp"
 #include "parse/ControlFlow.cpp"
 #include "parse/Memory.cpp"
-#include "parse/TryExcept.cpp"
 #include "parse/CodeAST.cpp"
 #include "parse/HelperFunctions.cpp"
 #include "parse/Identifier.cpp"

@@ -17,7 +17,6 @@ public:
     TypeAST(std::unordered_map<std::string, std::unique_ptr<ExprAST>> members, std::unique_ptr<Viretoken> name, int asttype=ast_type)
     : members(std::move(members)), name(std::move(name)), ExprAST("void", asttype)
     {
-
     }
 
     virtual std::string const& getName() const
@@ -50,6 +49,10 @@ public:
         }
 
         return false;
+    }
+    virtual ExprAST* getMember(std::string const& name)
+    {
+        return members.at(name).get();
     }
 };
 

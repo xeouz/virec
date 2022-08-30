@@ -35,8 +35,9 @@ class VariableExprAST : public IdentifierExprAST
     std::string name;
 public:
     VariableExprAST(std::unique_ptr<Viretoken> name) : 
-    name(name->value), IdentifierExprAST(std::move(name))
+    IdentifierExprAST(std::move(name))
     {
+        this->name=this->getToken()->value;
     } 
 };
 

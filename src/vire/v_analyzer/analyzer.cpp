@@ -178,6 +178,29 @@ namespace vire
 
             case ast_array: return getType((ArrayExprAST*)expr);
 
+            case ast_class_access:
+            {
+                auto* access=(ClassAccessAST*)expr;
+                auto* child=access->getChild();
+
+                if(child->asttype==ast_class_access)
+                {
+                    return getType(child);
+                }
+
+                auto* struct_type=getType(access->getParent());
+
+                if(struct_type->getType()!=types::TypeNames::Void)
+                {
+                    std::cout << "Struct type is not defined" << std::endl;
+                    return nullptr;
+                }
+
+                auto* struct_=getStruct(((types::Void*)struct_type)->getName());
+                std::cout << child->getName() << std::endl;
+                return struct_->getMember(child->getName())->getType();
+            }
+
             default:
             {
                 std::cout<<"Error: Unknown type in getType()"<<std::endl;
@@ -289,7 +312,6 @@ namespace vire
 
             if(value==nullptr)
             {
-                std::cout << var->getName() << " is valid" << std::endl;
                 addVar(var);
                 return true;
             }
@@ -779,6 +801,7 @@ namespace vire
     }
     bool VAnalyzer::verifyTypeAccess(ClassAccessAST* const& access)
     {
+        std::cout << "Here" << std::endl;
         bool is_valid=true;
         auto* ptype=getType(access->getParent());
 
@@ -798,6 +821,7 @@ namespace vire
         auto* st=getStruct(ptype_custom->getName());
 
         auto name=access->getChild()->getName();
+        
         if(!st->isMember(name))
         {
             std::cout << "No member as " << name << " in struct" << std::endl;
@@ -984,7 +1008,7 @@ namespace vire
                 return false;
             }
         }
-        for(unsigned int it=0; it<funcs.size(); ++it)
+        for(unsigned int it=0; it<union_structs.size(); ++it)
         {
             const auto& union_struct=union_structs[it];
             if(union_struct->asttype==ast_union)
@@ -1005,7 +1029,7 @@ namespace vire
             }
 
             codeast->addUnionStruct(std::move(union_structs[it]));
-        } 
+        }
         for(unsigned int it=0; it<funcs.size(); ++it)
         {
             const auto& func=funcs[it];

@@ -733,7 +733,6 @@ namespace vire
     }
     std::unique_ptr<ExprAST> Vireparse::ParseClassAccess(std::unique_ptr<ExprAST> parent)
     {
-        std::cout << "e" << std::endl;
         getNextToken(tok_dot);
         auto child=ParseIdExpr();
 
@@ -744,7 +743,6 @@ namespace vire
         }
 
         auto cast_child=cast_static<IdentifierExprAST>(std::move(child));
-        std::cout << cast_child->getName() << std::endl;
 
         return std::make_unique<ClassAccessAST>(std::move(parent),std::move(cast_child));
     }
@@ -780,6 +778,7 @@ namespace vire
                 getNextToken(tok_semicol);
 
                 member_name=name->value;
+                name->value="_"+name->value;
                 member=std::make_unique<VariableDefAST>(std::move(name), types::construct(type->value), nullptr);
             }
             else
@@ -788,6 +787,7 @@ namespace vire
                 break;
             }
             
+            member_name="_"+member_name;
             members.insert(std::make_pair(member_name, std::move(member)));
         }
         
