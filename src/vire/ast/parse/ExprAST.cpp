@@ -7,6 +7,8 @@
 #include "vire/lex/include.hpp"
 #include "vire/ast/types/type.hpp"
 
+#include "ASTType.hpp"
+
 namespace vire
 {
 
@@ -32,7 +34,7 @@ public:
 
     virtual void setType(std::unique_ptr<types::Base> t) 
     {
-        if(type->getType()==types::TypeNames::Void)
+        if(t->getType()==types::TypeNames::Void)
         {
             auto* voidty=(types::Void*)t.get();
             if(types::isTypeinMap(voidty->getName()))
@@ -40,6 +42,7 @@ public:
                 t=types::construct(voidty->getName(), true);
             }
         }
+        
         this->type=std::move(t);
     }
     virtual void setType(std::string const& newtype) 

@@ -197,7 +197,7 @@ namespace vire
                 }
 
                 auto* struct_=getStruct(((types::Void*)struct_type)->getName());
-                std::cout << child->getName() << std::endl;
+
                 return struct_->getMember(child->getName())->getType();
             }
 
@@ -424,7 +424,6 @@ namespace vire
                 auto* child_array_type=array_type;
                 for(auto const& index : indices)
                 {
-                    std::cout << "Index: " << std::endl;
                     auto* index_type=getType(index.get());
                     if(index->asttype==ast_int)
                     {
