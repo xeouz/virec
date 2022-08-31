@@ -7,10 +7,9 @@ struct foo
 
 func main() returns int
 {
-    let a:foo;
-
+    let a=10;
     let b:int;
-    b=a.x;
+    b=a;
 
     return 0;
 }

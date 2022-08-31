@@ -369,6 +369,7 @@ namespace vire
     }
     bool VAnalyzer::verifyVarAssign(VariableAssignAST* const& assign)
     {
+        bool is_valid=true;
         if(!isVarDefined(assign->getName()))
         {
             // Var is not defined
@@ -380,20 +381,19 @@ namespace vire
         {
             // Var is const
             std::cout << "Var is const" << std::endl;
-            return false;
+            is_valid=false;
         }
 
         auto* assign_type=getType(assign->getValue());
 
-        if(types::isSame(var->getType(), assign_type))
+        if(!types::isSame(var->getType(), assign_type))
         {
             // Type mismatch
-            std::cout << "Type mismatch in assignment, types are: " << var->getType() << " and " << *assign_type << std::endl;
-            return false;
+            std::cout << "Type mismatch in assignment, types are: " << *var->getType() << " and " << *assign_type << std::endl;
+            is_valid=false;
         }
         
-        std::cout << "Type mismatch in assignment, types are: " << var->getType() << " and " << *assign_type << std::endl;
-        return true;
+        return is_valid;
     }
     bool VAnalyzer::verifyVarArrayAccess(VariableArrayAccessAST* const& access)
     {
