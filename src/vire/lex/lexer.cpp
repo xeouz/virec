@@ -47,8 +47,6 @@ public:
         this->charpos=-1;
     }
     
-    ~Virelex(){}
-
     char getNext(char move_amt=0)
     {
         if(this->indx+move_amt+1==this->len)

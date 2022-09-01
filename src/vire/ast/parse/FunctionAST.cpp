@@ -29,7 +29,6 @@ public:
     std::vector<std::unique_ptr<ExprAST>> moveArgs() {return std::move(Args);}
 };
 
-
 class FunctionBaseAST
 {
 protected:
@@ -57,7 +56,7 @@ public:
     //virtual bool isVarDefined(std::string const& name) const = 0;
     //virtual VariableDefAST* const getVar(const std::string& name) const = 0;
 
-    virtual ~FunctionBaseAST() {}
+    virtual ~FunctionBaseAST() = default;
 };
 
 // PrototypeAST - Class for prototype functions, captures function name and args

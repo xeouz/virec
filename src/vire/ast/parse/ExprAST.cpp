@@ -26,6 +26,8 @@ public:
     ExprAST(std::unique_ptr<types::Base> type, int asttype, std::unique_ptr<Viretoken> token=nullptr)
     : asttype(asttype), token(std::move(token)), type(std::move(type))
     {}
+
+    virtual ~ExprAST() = default;
    
     virtual types::Base* getType() const 
     {

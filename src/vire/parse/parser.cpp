@@ -252,23 +252,23 @@ namespace vire
     std::unique_ptr<ExprAST> Vireparse::ParseNumberExpr()
     {
         auto token=copyCurrentToken();
-        if(CurTok->type==tok_int)
+
+        if(token->type==tok_int)
         {
-            auto Result=std::make_unique<IntExprAST>(std::stoi(CurTok->value),std::move(token));
+            int num=std::stoi(token->value);
+            auto result=std::make_unique<IntExprAST>(num, std::move(token));
             getNextToken(tok_int);
-            return std::move(Result);
+            return std::move(result);
         }
-        else if(CurTok->type==tok_float)
+        else if(token->type==tok_float)
         {
-            auto Result=std::make_unique<FloatExprAST>(std::stof(CurTok->value),std::move(token));
+            auto result=std::make_unique<FloatExprAST>(std::stof(CurTok->value),std::move(token));
             getNextToken(tok_float);
-            return std::move(Result);
         }
-        else if(CurTok->type==tok_double)
+        else if(token->type==tok_double)
         {
-            auto Result=std::make_unique<DoubleExprAST>(std::stod(CurTok->value),std::move(token));
+            auto result=std::make_unique<DoubleExprAST>(std::stod(CurTok->value),std::move(token));
             getNextToken(tok_double);
-            return std::move(Result);
         }
 
         return nullptr;
@@ -278,15 +278,15 @@ namespace vire
         auto token=copyCurrentToken();
         if(CurTok->type==tok_char)
         {
-            auto Result=std::make_unique<CharExprAST>(CurTok->value.at(0),std::move(token));
+            auto result=std::make_unique<CharExprAST>(CurTok->value.at(0),std::move(token));
             getNextToken(tok_char);
-            return std::move(Result);
+            return std::move(result);
         }
         else // assume the tok is tok_str
         {
-            auto Result=std::make_unique<StrExprAST>(std::string(CurTok->value),std::move(token));
+            auto result=std::make_unique<StrExprAST>(std::string(CurTok->value),std::move(token));
             getNextToken(tok_str);
-            return Result;
+            return result;
         }
     }
     std::unique_ptr<ExprAST> Vireparse::ParseArrayExpr()

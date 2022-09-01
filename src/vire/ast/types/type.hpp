@@ -297,7 +297,6 @@ inline bool isSame(Base* const& a, const char* b)
 {
     auto t=construct(b);
     bool same=isSame(a, t.get());
-    t.release();
     return same;
 }
 

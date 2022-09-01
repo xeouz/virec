@@ -15,12 +15,17 @@ class IntExprAST : public ExprAST
 {
     int val;
 public:
-    IntExprAST(int val, std::unique_ptr<Viretoken> token=nullptr) : val(val), ExprAST("int",ast_int,std::move(token)) {}
+    IntExprAST(int val, std::unique_ptr<Viretoken> token) : val(val), 
+    ExprAST(types::construct(types::TypeNames::Int), ast_int, std::move(token)) 
+    {}
 
-    const int& getValue() const {return val;}
+    int const getValue() const 
+    {
+        return val;
+    }
 };
 
-// FloatExprAST - Class for representing floats, eg 1.23
+// FloatExprAST - Class for representing floats, eg 1.23f
 class FloatExprAST: public ExprAST 
 {
     float val;

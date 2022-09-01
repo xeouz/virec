@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <string>
+#include <memory>
 
 #include "token.hpp"
 
@@ -33,8 +34,6 @@ public:
             this->invalid=1;
         }
     }
-
-    ~Viretoken(){}
 
     static std::unique_ptr<Viretoken> construct(std::string _name, int _type=tok_id, std::size_t _line=0, std::size_t _charpos=0)
     {

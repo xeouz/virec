@@ -1,18 +1,8 @@
-extern putd(c:int) returns int;
-
-struct foo
-{
-    struct t
-    {
-        int x;
-    }
-}
+extern put(c:int) returns int;
 
 func main() returns int
 {
-    let a:foo;
-
-    let b:double=a.t.x;
+    let a=0;
 
     return 0;
 }
