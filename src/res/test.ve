@@ -12,7 +12,7 @@ func main() returns int
 {
     let a:foo;
 
-    let b:int=a.t.x;
+    let b:double=a.t.x;
 
     return 0;
 }

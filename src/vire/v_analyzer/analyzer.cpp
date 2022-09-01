@@ -181,24 +181,18 @@ namespace vire
             case ast_class_access:
             {
                 auto* access=(ClassAccessAST*)expr;
-                auto* child=access->getChild();
-
-                if(child->asttype==ast_class_access)
+                
+                auto* st_type=getType(access->getParent());
+                auto name=((types::Void*)st_type)->getName();
+                auto* st=getStruct(name);
+                while(access->getChild()->asttype==ast_class_access)
                 {
-                    return getType(child);
+                    name=access->getName();
+                    access=(ClassAccessAST*)access->getChild();
+                    st=(StructExprAST*)st->getMember(name);
                 }
 
-                auto* struct_type=getType(access->getParent());
-
-                if(struct_type->getType()!=types::TypeNames::Void)
-                {
-                    std::cout << "Struct type is not defined" << std::endl;
-                    return nullptr;
-                }
-
-                auto* struct_=getStruct(((types::Void*)struct_type)->getName());
-
-                return struct_->getMember(child->getName())->getType();
+                return st->getMember(access->getChild()->getName())->getType();
             }
 
             default:
