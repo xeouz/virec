@@ -15,17 +15,17 @@ public:
         setToken(std::move(name));
     }
 
-    virtual std::string const& getName() const
+    virtual std::string const getName() const
     {
         return name;
-    }
-    virtual Viretoken* const getToken() const
-    {
-        return token.get();
     }
     virtual std::unique_ptr<Viretoken> moveToken()
     {
         return std::move(token);
+    }
+    virtual void setName(std::string const& _name)
+    {
+        name=_name;
     }
 };
 
@@ -39,6 +39,40 @@ public:
     {
         this->name=this->getToken()->value;
     } 
+};
+
+class ClassAccessAST : public IdentifierExprAST
+{
+    std::unique_ptr<ExprAST> parent;
+    std::unique_ptr<IdentifierExprAST> child;
+public:
+    ClassAccessAST(std::unique_ptr<ExprAST> _parent, std::unique_ptr<IdentifierExprAST> _child)
+    : parent(std::move(_parent)), child(std::move(_child)), 
+    IdentifierExprAST(Viretoken::construct(""), ast_class_access)
+    {
+        if(child->asttype==ast_class_access)
+        {
+            auto* cast_child=(ClassAccessAST*)child.get();
+            auto* cast_child_child=(VariableExprAST*)cast_child->getParent();
+            setName(cast_child_child->getName());
+            setToken(Viretoken::construct(cast_child_child->getName()));
+        }
+        else
+        {
+            setName(child->getName());
+            setToken(Viretoken::construct(child->getName()));
+        }
+    }
+
+    ExprAST* const getParent() const
+    {
+        return parent.get();
+    }
+    IdentifierExprAST* const getChild() const
+    {
+        return child.get();
+    }
+
 };
 
 }

@@ -32,17 +32,24 @@ public:
         return type.get(); 
     }
 
-    virtual void setType(std::unique_ptr<types::Base> t) 
+    virtual void refreshType()
+    {
+        refreshType(this->getType());
+    }
+    virtual void refreshType(types::Base* t)
     {
         if(t->getType()==types::TypeNames::Void)
         {
-            auto* voidty=(types::Void*)t.get();
+            auto* voidty=(types::Void*)t;
             if(types::isTypeinMap(voidty->getName()))
             {
-                t=types::construct(voidty->getName(), true);
+                type=types::construct(voidty->getName(), true);
             }
         }
-        
+    }
+    virtual void setType(std::unique_ptr<types::Base> t) 
+    {
+        refreshType(t.get());
         this->type=std::move(t);
     }
     virtual void setType(std::string const& newtype) 
@@ -65,6 +72,10 @@ public:
     virtual void setToken(std::unique_ptr<Viretoken> token) 
     {
         this->token.reset(); this->token=std::move(token);
+    }
+    virtual Viretoken* const getToken()     const
+    {
+        return token.get();
     }
 };
 

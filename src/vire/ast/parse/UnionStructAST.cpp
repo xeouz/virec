@@ -23,6 +23,10 @@ public:
     {
         return name->value;
     }
+    virtual void setName(std::string new_name)
+    {
+        name->value=new_name;
+    }
 
     virtual std::unordered_map<std::string, std::unique_ptr<ExprAST>> const& getMembers()
     {

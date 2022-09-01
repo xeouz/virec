@@ -2,14 +2,17 @@ extern putd(c:int) returns int;
 
 struct foo
 {
-    int x;
+    struct t
+    {
+        int x;
+    }
 }
 
 func main() returns int
 {
-    let a=10;
-    let b:int;
-    b=a;
+    let a:foo;
+
+    let b:int=a.t.x;
 
     return 0;
 }

@@ -96,22 +96,4 @@ public:
     std::string const& getName() const {return varName->value;}
 };
 
-class ClassAccessAST : public ExprAST
-{
-    std::unique_ptr<ExprAST> parent;
-    std::unique_ptr<IdentifierExprAST> child;
-public:
-    ClassAccessAST(std::unique_ptr<ExprAST> parent, std::unique_ptr<IdentifierExprAST> child)
-    : parent(std::move(parent)), child(std::move(child)), ExprAST("",ast_class_access) {}
-
-    ExprAST* const getParent()
-    {
-        return parent.get();
-    }
-    IdentifierExprAST* const getChild()
-    {
-        return child.get();
-    }
-};
-
 }

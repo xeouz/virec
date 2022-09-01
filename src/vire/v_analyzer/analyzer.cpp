@@ -154,7 +154,7 @@ namespace vire
             case ast_binop: return getType(((BinaryExprAST*)expr)->getLHS());
 
             case ast_varincrdecr: 
-            return getVar(((VariableExprAST*)expr)->getName())->getType();
+                return getVar(((VariableExprAST*)expr)->getName())->getType();
             case ast_var:
             {
                 auto* var=getVar(((VariableExprAST*)expr)->getName());
@@ -312,6 +312,7 @@ namespace vire
 
             if(value==nullptr)
             {
+                var->refreshType();
                 addVar(var);
                 return true;
             }
@@ -323,6 +324,11 @@ namespace vire
                 std::cout << "`any` type not implement yet" << std::endl;
             }
  
+            if(!verifyExpr(value))
+            {
+                return false;
+            }
+
             value_type=getType(value);
             if(value_type->getType()==types::TypeNames::Array && value->asttype!=ast_array)
             {
@@ -736,7 +742,15 @@ namespace vire
             }
             else if(expr->asttype==ast_struct)
             {
-                if(!verifyStruct((StructExprAST*)expr))
+                auto* struct_=(StructExprAST*)expr;
+                struct_->setName("_"+struct_->getName());
+
+                if(scope.count(struct_->getName())>0)
+                {
+                    std::cout << "Redeclaration of struct-variable in struct" << std::endl;
+                    is_valid=false;
+                }
+                if(!verifyUnionStructBody(struct_->getMembersValues()))
                 {
                     // Struct is not valid
                     is_valid=false;
@@ -744,7 +758,15 @@ namespace vire
             }
             else if(expr->asttype==ast_union)
             {
-                if(!verifyUnion((UnionExprAST*)expr))
+                auto* union_=(UnionExprAST*)expr;
+                union_->setName("_"+union_->getName());
+
+                if(scope.count(union_->getName())>0)
+                {
+                    std::cout << "Redeclaration of union-variable in struct" << std::endl;
+                    is_valid=false;
+                }
+                if(!verifyUnionStructBody(union_->getMembersValues()))
                 {
                     // Union is not valid
                     is_valid=false;
@@ -798,33 +820,57 @@ namespace vire
 
         return is_valid;
     }
-    bool VAnalyzer::verifyTypeAccess(ClassAccessAST* const& access)
+    bool VAnalyzer::verifyTypeAccess(ClassAccessAST* const& access, StructExprAST* struct_)
     {
-        std::cout << "Here" << std::endl;
         bool is_valid=true;
-        auto* ptype=getType(access->getParent());
 
-        if(ptype->getType() != types::TypeNames::Custom)
+        StructExprAST* st;
+        if(!struct_)
         {
-            std::cout << "Parent is not a type" << std::endl;
-            is_valid=false;
-        }
-
-        auto* ptype_custom=(types::Custom*)ptype;
-
-        if(!types::isTypeinMap(ptype_custom->getName()))
-        {
-            std::cout << "Type " << ptype_custom << " is not defined" << std::endl;
-        }
-
-        auto* st=getStruct(ptype_custom->getName());
-
-        auto name=access->getChild()->getName();
+            auto* ptype=getType(access->getParent());
         
+            if(ptype->getType() != types::TypeNames::Custom)
+            {
+                std::cout << "Parent is not a type" << std::endl;
+                is_valid=false;
+            }
+            auto* ptype_custom=(types::Custom*)ptype;
+            if(!types::isTypeinMap(ptype_custom->getName()))
+            {
+                std::cout << "Type " << ptype_custom << " is not defined" << std::endl;
+            }
+
+            st=getStruct(ptype_custom->getName());
+        }
+        else
+        {
+            st=struct_;
+        }
+        
+        auto name=access->getName();
         if(!st->isMember(name))
         {
             std::cout << "No member as " << name << " in struct" << std::endl;
             is_valid=false;
+
+            return is_valid;
+        }
+        
+        auto* member=st->getMember(name);
+
+        if(access->getChild()->asttype==ast_class_access)
+        {
+            auto* child=(ClassAccessAST*)access->getChild();
+            
+            if(member->asttype!=ast_struct)
+            {
+                std::cout << "`" << name << "` is not a struct" << std::endl;
+                is_valid=false;
+            }
+            else
+            {
+                is_valid=verifyTypeAccess(child, (StructExprAST*)member);
+            }
         }
 
         return is_valid;
@@ -1116,6 +1162,8 @@ namespace vire
             case ast_vardef: return verifyVarDef((VariableDefAST*const&)expr);
             case ast_varassign: return verifyVarAssign((VariableAssignAST*const&)expr);
             case ast_array_access: return verifyVarArrayAccess((VariableArrayAccessAST*const&)expr);
+
+            case ast_class_access: return verifyTypeAccess((ClassAccessAST*const&)expr);
 
             case ast_call: return verifyCall((CallExprAST*const&)expr);
 

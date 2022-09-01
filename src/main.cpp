@@ -15,7 +15,7 @@ int main(int argc, char ** argv)
     auto analyzer=std::make_unique<vire::VAnalyzer>(builder.get(), code);
 
     auto ast=parser->ParseCode();
-
+ 
     std::cout << "Parsed Code" << std::endl;
 
     bool success=analyzer->verifyCode(std::move(ast));
