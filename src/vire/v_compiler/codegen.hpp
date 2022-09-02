@@ -51,6 +51,8 @@ public:
     {
         Module = std::make_unique<llvm::Module>(name, CTX);
     }
+
+    // Compilation Functions
     
     llvm::Type* getLLVMType(types::Base* type);
 

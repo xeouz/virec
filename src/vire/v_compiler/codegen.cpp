@@ -16,6 +16,8 @@ namespace vire
                 return llvm::Type::getInt32Ty(CTX);
             case types::TypeNames::Float:
                 return llvm::Type::getFloatTy(CTX);
+            case types::TypeNames::Double:
+                return llvm::Type::getDoubleTy(CTX);
             case types::TypeNames::Array:
                 return llvm::ArrayType::get
                 (getLLVMType(((types::Array*)type)->getChild()), ((types::Array*)type)->getLength());
@@ -314,38 +316,40 @@ namespace vire
     {
         if(cast_expr->isNonUserDefined())
         {
-            bool is_zext=false;
             
             auto* const& dest_type=cast_expr->getDestType();
-            auto* const& target_type=cast_expr->getSourceType();
+            auto* const& src_type=cast_expr->getSourceType();
 
-            if(dest_type->getSize() > target_type->getSize())
-            {
-                is_zext=true;
-            }
-            else 
-            {
-                is_zext=false;
-                std::cout << "Warning, conversion from " << (int)target_type->getSize() << " to " << (int)dest_type->getSize() << " is a truncation" << std::endl;
-            }
+            bool is_dest_fp=types::isTypeFloatingPoint(dest_type);
+            bool is_src_fp=types::isTypeFloatingPoint(src_type);
 
             auto* expr=compileExpr(cast_expr->getExpr());
 
-            if(is_zext)
-            {   
-                // No direct return for debugging purposes
-
-                // `target_type` is used since this is a truncation
-                auto* zext=Builder.CreateZExt(expr, getLLVMType(dest_type));
-                return zext;
+            if(is_dest_fp xor is_src_fp)
+            {
+                if(is_dest_fp)
+                {
+                    auto* si_to_fp=Builder.CreateSIToFP(expr, getLLVMType(dest_type));
+                    return si_to_fp;
+                }
+                else
+                {
+                    auto* fp_to_si=Builder.CreateFPToSI(expr, getLLVMType(dest_type));
+                    return fp_to_si;
+                }
             }
             else
             {
-                // No direct return for debugging purposes
-
-                // `source_type` is used since this is a truncation
-                auto* trunc=Builder.CreateTrunc(expr, getLLVMType(dest_type));
-                return trunc;
+                if(dest_type->getSize() > src_type->getSize())
+                {
+                    auto* zext=Builder.CreateZExt(expr, getLLVMType(dest_type));
+                    return zext;
+                }
+                else
+                {
+                    auto* trunc=Builder.CreateTrunc(expr, getLLVMType(dest_type));
+                    return trunc;
+                }
             }
         }
         else

@@ -422,6 +422,14 @@ inline bool isUserDefined(Base* _type)
     TypeNames type=_type->getType();
     return isUserDefined(type);
 }
+inline bool isTypeFloatingPoint(TypeNames type)
+{
+    return (type==TypeNames::Double) || (type==TypeNames::Float);
+}
+inline bool isTypeFloatingPoint(Base* type)
+{
+    return isTypeFloatingPoint(type->getType());
+}
 
 inline void addTypeToMap(std::string name)
 {
