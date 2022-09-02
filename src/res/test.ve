@@ -1,12 +1,10 @@
-extern put(c:int) returns int;
+extern put(c:char) returns int;
 
 func main() returns int
 {
-    let a:double = 10.10d;
+    let a='x';
 
-    let b:int = a;
-
-    put(b);
+    put(a);
 
     return 0;
 }

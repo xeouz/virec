@@ -136,6 +136,17 @@ public:
         return makeTokenInplace(numstr,ttype);
     }
 
+    std::unique_ptr<Viretoken> gatherChar()
+    {
+        std::string ch;
+        advanceNext();
+        
+        ch+=this->cur;
+
+        advanceNext();
+
+        return makeTokenInplace(ch, tok_char);
+    }
     std::unique_ptr<Viretoken> gatherStr()
     {
         std::string str="";
@@ -155,13 +166,12 @@ public:
 
         advanceNext(); // consume the end d-quote
 
-        auto tok=std::make_unique<Viretoken>(str.c_str(),tok_str);
-        return std::move(tok);
+        return makeTokenInplace(str, tok_str);
     }
 
     std::unique_ptr<Viretoken> makeTokenInplace(std::string value, int type)
     {
-        auto tok=std::make_unique<Viretoken>(value,type,this->line,this->charpos);
+        auto tok=std::make_unique<Viretoken>(value, type, this->line, this->charpos);
         return std::move(tok);
     }
 
@@ -372,7 +382,8 @@ public:
 
             case '.': return makeToken(".",tok_dot);
 
-            case '"': return gatherStr();
+            case '\'': return gatherChar();
+            case '"':  return gatherStr();
 
             case EOF: return makeToken("",tok_eof);
 

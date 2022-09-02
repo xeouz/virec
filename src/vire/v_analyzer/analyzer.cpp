@@ -312,12 +312,10 @@ namespace vire
             }
 
             bool is_auto=(type->getType()==types::TypeNames::Void);
-
             if(is_auto && is_var)
             {
                 std::cout << "`any` type not implement yet" << std::endl;
             }
-
             
             if(!verifyExpr(value))
             {
