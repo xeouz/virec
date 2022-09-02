@@ -57,6 +57,10 @@ public:
         
         return this->code.at(this->indx);
     }
+    void advanceNext(char move_amt=0)
+    {
+        this->cur=getNext(move_amt);
+    }
 
     char peekNext(char amt)
     {
@@ -74,7 +78,7 @@ public:
             if(this->cur==EOF)
                 break;
             id+=this->cur;
-            this->cur=getNext();   
+            advanceNext();   
         }
 
         return id;
@@ -83,47 +87,64 @@ public:
     std::unique_ptr<Viretoken> gatherNum()
     {
         std::string numstr;
-        char type=0; // 0=int, 1=float, 2=double
+        int ttype;
 
-        do
+        while(isdigit(this->cur))
         {
             numstr+=this->cur;
-            this->cur=getNext();
+            advanceNext();
+        }
 
-            if(this->cur=='.' && type==0)
-            {
-                type=1;
-                numstr+=this->cur;
-                this->cur=getNext();
-            }
-            else if(this->cur=='.' && type==1)
-            {
-                builder->addError<errors::lex_unknown_char>(code, this->cur, '\0', line, charpos);
-                break;
-            }
-            
-        } while (isdigit(this->cur) || this->cur=='.');
-        
-        int ttype=0;
-        if(type==0)
-            ttype=tok_int;
-        else if(type==1)
+        ttype=tok_int;
+
+        if(this->cur=='.')
+        {
+            advanceNext();
+            numstr+=".";
+        }
+        else
+        {
+            return makeTokenInplace(numstr, ttype);
+        }
+
+        if(!isdigit(this->cur))
+        {
+            std::cout << "Expected integer literal after decimal point" << std::endl;
+        }
+
+        while(isdigit(this->cur))
+        {
+            numstr+=this->cur;
+            advanceNext();
+        }
+
+        if(this->cur=='f' || this->cur=='F')
+        {
             ttype=tok_float;
-        else if(type==2)
+            advanceNext();
+        }
+        else if(this->cur=='d' || this->cur=='D')
+        {
             ttype=tok_double;
+            advanceNext();
+        }
+        else
+        {
+            ttype=tok_float;
+        }
 
-        return nomove_makeToken(numstr,ttype);
+        return makeTokenInplace(numstr,ttype);
     }
 
     std::unique_ptr<Viretoken> gatherStr()
     {
         std::string str="";
-        this->cur=getNext(); // consume the start d-quote
+        advanceNext(); // consume the start d-quote
 
         while(this->cur!='\"')
         {
             str+=this->cur;
-            this->cur=getNext();
+            advanceNext();
 
             if(this->cur==EOF)
             {
@@ -132,13 +153,13 @@ public:
             }
         }
 
-        this->cur=getNext(); // consume the end d-quote
+        advanceNext(); // consume the end d-quote
 
         auto tok=std::make_unique<Viretoken>(str.c_str(),tok_str);
         return std::move(tok);
     }
 
-    std::unique_ptr<Viretoken> nomove_makeToken(std::string value, int type)
+    std::unique_ptr<Viretoken> makeTokenInplace(std::string value, int type)
     {
         auto tok=std::make_unique<Viretoken>(value,type,this->line,this->charpos);
         return std::move(tok);
@@ -147,7 +168,7 @@ public:
     std::unique_ptr<Viretoken> makeToken(std::string value, int type, char move=0)
     {
         this->cur=this->getNext(move);
-        auto tok=this->nomove_makeToken(value,type);
+        auto tok=this->makeTokenInplace(value,type);
 
         return std::move(tok);
     }
@@ -155,7 +176,7 @@ public:
     std::unique_ptr<Viretoken> makeToken(const char* value, int type, char move=0)
     {
         this->cur=this->getNext(move);
-        auto tok=this->nomove_makeToken(std::string(value),type);
+        auto tok=this->makeTokenInplace(std::string(value),type);
 
         return std::move(tok);
     }
@@ -175,7 +196,7 @@ public:
                 ++this->charpos;
             }
             
-            this->cur=getNext();
+            advanceNext();
         }
         // Checks
         if(isalpha(this->cur))
@@ -284,7 +305,7 @@ public:
                 toktype=tok_id;
             }
 
-            tok=nomove_makeToken(id_str,toktype);
+            tok=makeTokenInplace(id_str,toktype);
             return std::move(tok);
         }
 
@@ -357,7 +378,7 @@ public:
 
             default: {
                 builder->addError<errors::lex_unknown_char>(this->code,this->cur,'\0',this->line,this->charpos);
-                this->cur=getNext();
+                advanceNext();
                 return nullptr;
             }
         }

@@ -264,11 +264,13 @@ namespace vire
         {
             auto result=std::make_unique<FloatExprAST>(std::stof(CurTok->value),std::move(token));
             getNextToken(tok_float);
+            return std::move(result);
         }
         else if(token->type==tok_double)
         {
             auto result=std::make_unique<DoubleExprAST>(std::stod(CurTok->value),std::move(token));
             getNextToken(tok_double);
+            return std::move(result);
         }
 
         return nullptr;

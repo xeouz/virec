@@ -14,6 +14,8 @@ set(CMAKE_BUILD_TYPE Debug)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED true)
 
+message(STATUS CMAKE_SOURCE_DIR)
+
 set(CXX_COMPILE_FLAGS "-I${CMAKE_SOURCE_DIR}/src")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CXX_COMPILE_FLAGS}")
 
@@ -52,5 +54,5 @@ add_custom_command(
 # -- Run the program
 add_custom_command(
     TARGET VIRELANG POST_BUILD
-    COMMAND valgrind --leak-check=full ./VIRELANG
+    COMMAND ./VIRELANG
 )
