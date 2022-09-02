@@ -2,9 +2,9 @@ extern put(c:char) returns int;
 
 func main() returns int
 {
-    let a='x';
+    let a:int = 10;
 
-    put(a);
+    let b:char = a;
 
     return 0;
 }

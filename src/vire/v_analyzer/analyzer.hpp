@@ -58,6 +58,7 @@ public:
 
     // Verification functions
     ReturnExprAST* const getReturnStatement(std::vector<std::unique_ptr<ExprAST>> const& block);
+    std::unique_ptr<ExprAST> createImplicitCast(types::Base* t1, types::Base* t2, std::unique_ptr<ExprAST> expr);
 
     bool verifyVar(VariableExprAST* const& var);
     bool verifyIncrDecr(VariableIncrDecrAST* const& var);

@@ -230,7 +230,7 @@ namespace vire
     }
 
     // Helper functions
-    ReturnExprAST* const getReturnStatement(std::vector<std::unique_ptr<ExprAST>> const& block)
+    ReturnExprAST* const VAnalyzer::getReturnStatement(std::vector<std::unique_ptr<ExprAST>> const& block)
     {
         for(auto const& expr : block)
         {
@@ -239,6 +239,21 @@ namespace vire
         }
 
         return nullptr;
+    }
+    std::unique_ptr<ExprAST> VAnalyzer::createImplicitCast(types::Base* t1, types::Base* t2, std::unique_ptr<ExprAST> expr)
+    {
+        if(!types::isUserDefined(t1) && !types::isUserDefined(t2))
+        {
+            auto src_type=types::copyType(t2);
+            auto dst_type=types::copyType(t1);
+            auto new_cast_value=std::make_unique<CastExprAST>(std::move(expr), std::move(dst_type), true);
+            new_cast_value->setSourceType(std::move(src_type));
+            return std::move(new_cast_value);
+        }
+        else
+        {
+            return nullptr;
+        }
     }
 
     // Verification Functions
@@ -333,21 +348,17 @@ namespace vire
             {
                 if(!types::isSame(type, value_type))    
                 {
-                    if(!types::isUserDefined(type) && !types::isUserDefined(value_type))
+                    auto new_cast_value=createImplicitCast(type, value_type, var->moveValue());
+                        
+                    if(!new_cast_value)
                     {
-                        auto src_type=types::copyType(value_type);
-                        auto dst_type=types::copyType(type);
-                        auto new_value=var->moveValue();
-                        auto new_cast_value=std::make_unique<CastExprAST>(std::move(new_value), std::move(dst_type), true);
-                        new_cast_value->setSourceType(std::move(src_type));
-
-                        var->setValue(std::move(new_cast_value));
+                        std::cout << "Error: VarDef Type Mismatch: " << *type << " and " << *value_type << std::endl;
+                        return false;
                     }
                     else
                     {
-                        std::cout << "Error: Type mismatch: " << *type << " " << *value_type << std::endl;
-                        return false;
-                    } 
+                        var->setValue(std::move(new_cast_value));
+                    }
                 }
             }
             else
