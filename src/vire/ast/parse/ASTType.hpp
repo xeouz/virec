@@ -17,6 +17,7 @@ enum asttype
     ast_double,
     ast_char,
     ast_str,
+    ast_bool,
 
     ast_call,
     ast_proto,

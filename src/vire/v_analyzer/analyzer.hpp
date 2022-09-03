@@ -72,6 +72,7 @@ public:
     bool verifyDouble(DoubleExprAST* const& double_);
     bool verifyChar(CharExprAST* const& char_);
     bool verifyStr(StrExprAST* const& str);
+    bool verifyBool(BoolExprAST* const& bool_);
     bool verifyArray(ArrayExprAST* const& array);
     
     // Loop verifications

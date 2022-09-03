@@ -60,6 +60,7 @@ public:
 
     std::unique_ptr<ExprAST> ParseNumberExpr();
     std::unique_ptr<ExprAST> ParseStrExpr();
+    std::unique_ptr<ExprAST> ParseBoolExpr();
     std::unique_ptr<ExprAST> ParseArrayExpr();
 
     std::unique_ptr<ExprAST> ParseParenExpr();

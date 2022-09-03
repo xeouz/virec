@@ -30,7 +30,8 @@ class FloatExprAST: public ExprAST
 {
     float val;
 public:
-    FloatExprAST(float val, std::unique_ptr<Viretoken> token=nullptr) : val(val), ExprAST("float",ast_float, std::move(token)) {}
+    FloatExprAST(float val, std::unique_ptr<Viretoken> token=nullptr) : val(val), 
+    ExprAST(types::construct(types::TypeNames::Float),ast_float, std::move(token)) {}
 
     const float& getValue() const {return val;}
 };
@@ -40,7 +41,8 @@ class DoubleExprAST: public ExprAST
 {
     double val;
 public:
-    DoubleExprAST(double val, std::unique_ptr<Viretoken> token) : val(val), ExprAST("double",ast_double,std::move(token)) {}
+    DoubleExprAST(double val, std::unique_ptr<Viretoken> token) : val(val), 
+    ExprAST(types::construct(types::TypeNames::Double),ast_double,std::move(token)) {}
 
     const double& getValue() const {return val;}
 };
@@ -50,9 +52,25 @@ class CharExprAST : public ExprAST
 {
     char val;
 public:
-    CharExprAST(char val, std::unique_ptr<Viretoken> token=nullptr) : val(val), ExprAST("char",ast_char,std::move(token)) {}
+    CharExprAST(char val, std::unique_ptr<Viretoken> token=nullptr) : val(val), 
+    ExprAST(types::construct(types::TypeNames::Char),ast_char,std::move(token)) {}
 
     const char& getValue() const {return val;}
+};
+
+// BoolExprAST - Class for representing booleans, eg - `true`
+class BoolExprAST : public ExprAST
+{
+    bool val;
+public:
+    BoolExprAST(bool val, std::unique_ptr<Viretoken> token) : val(val),
+    ExprAST(types::construct(types::TypeNames::Bool), ast_bool, std::move(token))
+    {}
+
+    bool const getValue() const
+    {
+        return val;
+    }
 };
 
 // StrExprAST - Class for representing strings, eg - "abc"

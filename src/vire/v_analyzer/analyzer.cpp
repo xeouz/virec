@@ -150,6 +150,7 @@ namespace vire
             case ast_float: return expr->getType();
             case ast_double: return expr->getType();
             case ast_char: return expr->getType();
+            case ast_bool: return expr->getType();
 
             case ast_binop: return getType(((BinaryExprAST*)expr)->getLHS());
 
@@ -300,6 +301,7 @@ namespace vire
                     }
                     else
                     {
+                        
                         type_is_given=false;
                     }
                 }
@@ -343,7 +345,7 @@ namespace vire
                 std::cout << "Error: Cannot assign arrays to variables without array literal" << std::endl;
                 return false;
             }
-
+            
             if(!is_auto)
             {
                 if(!types::isSame(type, value_type))    
@@ -465,6 +467,7 @@ namespace vire
     bool VAnalyzer::verifyDouble(DoubleExprAST* const& double_) { return true; }
     bool VAnalyzer::verifyChar(CharExprAST* const& char_) { return true; }
     bool VAnalyzer::verifyStr(StrExprAST* const& str) { return true; }
+    bool VAnalyzer::verifyBool(BoolExprAST* const& bool_) { return true; }
     bool VAnalyzer::verifyArray(ArrayExprAST* const& array)
     {
         const auto& elems=array->getElements();
@@ -1156,6 +1159,7 @@ namespace vire
             case ast_float: return verifyFloat((FloatExprAST*const&)expr);
             case ast_double: return verifyDouble((DoubleExprAST*const&)expr);
             case ast_str: return verifyStr((StrExprAST*const&)expr);
+            case ast_bool: return verifyBool((BoolExprAST*const&)expr);
             case ast_char: return verifyChar((CharExprAST*const&)expr);
 
             case ast_binop: return verifyBinop((BinaryExprAST*const&)expr);

@@ -87,6 +87,9 @@ enum token
 
     tok_nequal=-59,
     tok_not=-60,
+
+    tok_true=-61,
+    tok_false=-62,
 };
 
 static const char* tokToStr(int tok);

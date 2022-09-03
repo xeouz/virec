@@ -238,6 +238,14 @@ public:
             {
                 toktype=tok_const;
             }
+            else if(id_str=="true")
+            {
+                toktype=tok_true;
+            }
+            else if(id_str=="false")
+            {
+                toktype=tok_false;
+            }
             else if(id_str=="new")
             {
                 toktype=tok_new;

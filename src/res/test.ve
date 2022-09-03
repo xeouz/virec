@@ -1,10 +1,8 @@
-extern put(c:char) returns int;
+extern put(c:int) returns int;
 
-func main() returns int
+func main() returns int 
 {
-    let a:int = 10;
-
-    let b:char = a;
+    let a:bool = true;
 
     return 0;
 }

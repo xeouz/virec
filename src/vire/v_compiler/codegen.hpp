@@ -67,6 +67,7 @@ public:
     llvm::Constant* compileConstantExpr(DoubleExprAST* const& expr);
     llvm::Constant* compileConstantExpr(CharExprAST* const& expr);
     llvm::Constant* compileConstantExpr(StrExprAST* const& expr);
+    llvm::Constant* compileConstantExpr(BoolExprAST* const& expr);
     llvm::Constant* compileConstantExpr(ArrayExprAST* const& expr, bool create_global_variable=true);
 
     llvm::Value* compileBinopExpr(BinaryExprAST* const& expr);

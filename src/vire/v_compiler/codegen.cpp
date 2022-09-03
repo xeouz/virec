@@ -68,6 +68,8 @@ namespace vire
                 return compileConstantExpr((DoubleExprAST* const&)expr);
             case ast_char:
                 return compileConstantExpr((CharExprAST* const&)expr);
+            case ast_bool: 
+                return compileConstantExpr((BoolExprAST* const&)expr);
             case ast_array:
                 return compileConstantExpr((ArrayExprAST* const&)expr);
 
@@ -130,7 +132,6 @@ namespace vire
     }
     llvm::Constant* VCompiler::compileConstantExpr(IntExprAST* const& expr)
     {
-        
         return llvm::ConstantInt::get(CTX, llvm::APInt(32, expr->getValue(), true));
     }
     llvm::Constant* VCompiler::compileConstantExpr(FloatExprAST* const& expr)
@@ -149,7 +150,10 @@ namespace vire
     {
         return nullptr;
     }
-
+    llvm::Constant* VCompiler::compileConstantExpr(BoolExprAST* const& expr)
+    {
+        return llvm::ConstantInt::get(CTX, llvm::APInt(1, expr->getValue()));
+    }
     llvm::Constant* VCompiler::compileConstantExpr(ArrayExprAST* const& expr, bool create_global_variable)
     {
         auto* type=getLLVMType(expr->getType());

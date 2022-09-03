@@ -127,6 +127,8 @@ namespace vire
             case tok_double: return ParseNumberExpr();
             case tok_char: return ParseStrExpr();
             case tok_str: return ParseStrExpr();
+            case tok_true: return ParseBoolExpr();
+            case tok_false: return ParseBoolExpr();
             case tok_lbrack: return ParseArrayExpr();
 
             case tok_lparen: return ParseParenExpr();
@@ -289,6 +291,20 @@ namespace vire
             auto result=std::make_unique<StrExprAST>(std::string(CurTok->value),std::move(token));
             getNextToken(tok_str);
             return result;
+        }
+    }
+    std::unique_ptr<ExprAST> Vireparse::ParseBoolExpr()
+    {
+        auto token=copyCurrentToken();
+        if(CurTok->type==tok_true)
+        {
+            getNextToken();
+            return std::make_unique<BoolExprAST>(true, std::move(token));
+        }
+        else
+        {
+            getNextToken(tok_false);
+            return std::make_unique<BoolExprAST>(false, std::move(token));
         }
     }
     std::unique_ptr<ExprAST> Vireparse::ParseArrayExpr()
