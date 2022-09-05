@@ -2,7 +2,10 @@ extern put(c:int) returns int;
 
 func main() returns int 
 {
-    let a:bool = true;
+    let a=1;
+    let b=a;
+
+    put(b);
 
     return 0;
 }

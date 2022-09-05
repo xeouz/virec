@@ -301,7 +301,6 @@ namespace vire
                     }
                     else
                     {
-                        
                         type_is_given=false;
                     }
                 }
@@ -338,7 +337,7 @@ namespace vire
             {
                 return false;
             }
-
+            
             value_type=getType(value);
             if(value_type->getType()==types::TypeNames::Array && value->asttype!=ast_array)
             {
@@ -372,6 +371,8 @@ namespace vire
             }
             
             addVar(var);
+
+            std::cout << "Verified var" << std::endl;
             
             return true;
         }
@@ -437,7 +438,7 @@ namespace vire
                 for(auto const& index : indices)
                 {
                     auto* index_type=getType(index.get());
-                    if(index->asttype==ast_int)
+                    if(index_type->getType() == types::TypeNames::Int)
                     {
                         auto* index_cast=(IntExprAST*)index.get();
                         if(index_cast->getValue() >= child_array_type->getLength())
@@ -448,16 +449,17 @@ namespace vire
                     }
                     else
                     {
-                        std::cout << "Error: Array index is not an integer" << std::endl;
+                        std::cout << "Error: Array index is not an integer, and not " << *index_type << std::endl;
                         return false;
                     }
+                    index->setType(types::copyType(index_type));
 
                     child_array_type=(types::Array*)child_array_type->getChild();
                 }
             }
         }
         
-        access->setType(type);
+        access->setType(types::copyType(type));
 
         return true;
     }

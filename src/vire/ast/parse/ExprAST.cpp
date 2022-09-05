@@ -34,11 +34,12 @@ public:
         return type.get(); 
     }
 
-    virtual void refreshType()
+    virtual bool refreshType()
     {
-        refreshType(this->getType());
+        bool refreshed=refreshType(this->getType());
+        return refreshed;
     }
-    virtual void refreshType(types::Base* t)
+    virtual bool refreshType(types::Base* t)
     {
         if(t->getType()==types::TypeNames::Void)
         {
@@ -46,13 +47,19 @@ public:
             if(types::isTypeinMap(voidty->getName()))
             {
                 type=types::construct(voidty->getName(), true);
+                return true;
             }
         }
+
+        return false;
     }
     virtual void setType(std::unique_ptr<types::Base> t) 
     {
-        refreshType(t.get());
-        this->type=std::move(t);
+        bool refreshed=refreshType(t.get());
+        if(!refreshed)
+        {
+            type=std::move(t);
+        }
     }
     virtual void setType(std::string const& newtype) 
     {

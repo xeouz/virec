@@ -19,8 +19,13 @@ namespace vire
             case types::TypeNames::Double:
                 return llvm::Type::getDoubleTy(CTX);
             case types::TypeNames::Array:
-                return llvm::ArrayType::get
-                (getLLVMType(((types::Array*)type)->getChild()), ((types::Array*)type)->getLength());
+            {
+                auto* array=(types::Array*)type;
+
+                std::cout << (array->getChild()==nullptr) << std::endl;
+
+                return llvm::ArrayType::get(getLLVMType(array->getChild()), array->getLength());
+            }
             
             default:
                 std::cout << "Unknown type: " << (int)type->getType() << std::endl;
@@ -305,11 +310,8 @@ namespace vire
                 throw std::runtime_error("Array index must be an int expression, WIP");
             }
             
-            auto* indx_expr=(IntExprAST*)elem.get();
-            int indx=indx_expr->getValue();
-
-            llvm::Value* indx_val=llvm::ConstantInt::get(CTX, llvm::APInt(32, indx, false));
-            expr=Builder.CreateInBoundsGEP(ty, expr, {llvm::ConstantInt::get(CTX, llvm::APInt(32, 0, false)), indx_val});
+            auto* indx=compileExpr(elem.get());
+            expr=Builder.CreateInBoundsGEP(ty, expr, {llvm::ConstantInt::get(CTX, llvm::APInt(32, 0, false)), indx});
             
             ty=ty->getArrayElementType();
         }
@@ -380,6 +382,8 @@ namespace vire
                 return Builder.CreateMul(lhs, rhs, "multmp");
             case tok_div:
                 return Builder.CreateSDiv(lhs, rhs, "divtmp");
+            case tok_mod:
+                return Builder.CreateSRem(lhs, rhs, "modtmp");
             
             case tok_lessthan:
                 return Builder.CreateICmpSLT(lhs, rhs, "cmptmp");
@@ -644,5 +648,7 @@ namespace vire
 
         pass.run(*Module);
         os.flush();
+
+        delete target_machine;
     }
 }
