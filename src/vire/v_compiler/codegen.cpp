@@ -22,8 +22,6 @@ namespace vire
             {
                 auto* array=(types::Array*)type;
 
-                std::cout << (array->getChild()==nullptr) << std::endl;
-
                 return llvm::ArrayType::get(getLLVMType(array->getChild()), array->getLength());
             }
             
@@ -311,6 +309,7 @@ namespace vire
             }
             
             auto* indx=compileExpr(elem.get());
+            std::cout << (elem->asttype==ast_int) << std::endl;
             expr=Builder.CreateInBoundsGEP(ty, expr, {llvm::ConstantInt::get(CTX, llvm::APInt(32, 0, false)), indx});
             
             ty=ty->getArrayElementType();
@@ -459,11 +458,11 @@ namespace vire
         Builder.CreateBr(forbool);
         Builder.SetInsertPoint(forbool);
         auto* cond=compileExpr(forexpr->getCond());
-        auto* incr=compileExpr(forexpr->getIncr());
         auto* br=Builder.CreateCondBr(cond, forloop, forcont);
 
         Builder.SetInsertPoint(forloop);
         compileBlock(forexpr->getBody());
+        auto* incr=compileExpr(forexpr->getIncr());
         createBrIfNoTerminator(forbool);
 
         Builder.SetInsertPoint(forcont);
@@ -633,7 +632,7 @@ namespace vire
 
         llvm::TargetOptions opt;
         auto rm=llvm::Optional<llvm::Reloc::Model>();
-        auto target_machine=target->createTargetMachine(target_triple, cpu, features, opt, rm);
+        auto* target_machine=target->createTargetMachine(target_triple, cpu, features, opt, rm);
 
         Module->setDataLayout(target_machine->createDataLayout());
         Module->setTargetTriple(target_triple);

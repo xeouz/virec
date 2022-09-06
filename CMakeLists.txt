@@ -54,5 +54,5 @@ add_custom_command(
 # -- Run the program
 add_custom_command(
     TARGET VIRELANG POST_BUILD
-    COMMAND valgrind --leak-check=full ./VIRELANG
+    COMMAND ./VIRELANG
 )

@@ -22,7 +22,7 @@ int main(int argc, char ** argv)
 
     std::cout << "Analyzing Success: " << success << std::endl;
 
-    if(!success) return success;
+    if(!success) return 1;
 
     std::cout << "\n\n";
 
@@ -32,7 +32,8 @@ int main(int argc, char ** argv)
     std::cout << "Generating Code" << std::endl; 
     auto compiler=std::make_unique<vire::VCompiler>(std::move(analyzer), "test");
 
-    compiler->compileExtern("put");
+    compiler->compileExtern("put"); 
+    compiler->compileFunction("is_prime");
     compiler->compileFunction("main");  
 
     std::cout << "Compiling Success\n---\n" << std::endl;

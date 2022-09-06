@@ -64,6 +64,7 @@ public:
         size = 0;
     }
 
+    virtual ~Base()=default;
     virtual TypeNames getType() const { return type; }
     virtual int8_t getSize() const { return size; }
 
