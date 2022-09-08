@@ -1,31 +1,8 @@
 extern put(c:int) returns int;
 
-func is_prime(num:int) returns bool
-{
-    let div=false;
-
-    if(num>1)
-    {
-        for(let i=2; i<num; i=i+1)
-        {
-            if(num%i==0)
-            {
-                put(i);
-                div=true;
-                break;
-            }
-        }
-    }
-
-    return div;
-}
-
 func main() returns int 
 {
-    for(let i=0; i<10; i=i+1)
-    {
-        put(i);
-    }
+    let a=5+2;
 
     return 0;
 }

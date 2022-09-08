@@ -58,6 +58,8 @@ protected:
     TypeNames type;
     int8_t size;
 public:
+    int8_t precedence;
+    
     Base()
     {
         type = TypeNames::Void;
@@ -101,6 +103,7 @@ public:
     {
         type = TypeNames::Void;
         size = 0;
+        precedence = 0;
         this->name = name;
     }
 
@@ -117,6 +120,7 @@ public:
     {
         type = TypeNames::Char;
         size = 1;
+        precedence = 2;
     }
 };
 
@@ -126,7 +130,8 @@ public:
     Int()
     {
         type = TypeNames::Int;
-        size = 4;
+        size = 4; 
+        precedence = 4;
     }
 };
 
@@ -136,7 +141,8 @@ public:
     Float()
     {
         type = TypeNames::Float;
-        size = 4;
+        size = 4; 
+        precedence = 5;
     }
 };
 
@@ -147,6 +153,7 @@ public:
     {
         type = TypeNames::Double;
         size = 8;
+        precedence = 8;
     }
 };
 
@@ -194,7 +201,6 @@ public:
         child.release();
         child = std::move(new_child);
     }
-
 
     unsigned int getDepth() const
     {

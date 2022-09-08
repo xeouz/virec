@@ -33,7 +33,6 @@ int main(int argc, char ** argv)
     auto compiler=std::make_unique<vire::VCompiler>(std::move(analyzer), "test");
 
     compiler->compileExtern("put"); 
-    compiler->compileFunction("is_prime");
     compiler->compileFunction("main");  
 
     std::cout << "Compiling Success\n---\n" << std::endl;

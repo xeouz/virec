@@ -152,7 +152,41 @@ namespace vire
             case ast_char: return expr->getType();
             case ast_bool: return expr->getType();
 
-            case ast_binop: return getType(((BinaryExprAST*)expr)->getLHS());
+            case ast_binop:
+            {
+                auto* binop=((BinaryExprAST*)expr);
+                auto* t=binop->getOpType();
+
+                if(t==nullptr)
+                {
+                    auto* lhs=getType(binop->getLHS());
+                    auto* rhs=getType(binop->getRHS());
+
+                    if(binop->getOp()->type==tok_div)
+                    {
+                        bool lhs_double=lhs->getType()==types::TypeNames::Double;
+                        bool rhs_double=rhs->getType()==types::TypeNames::Double;
+
+                        if(lhs_double || rhs_double)
+                        {
+                            binop->setType(types::construct(types::TypeNames::Double));
+                            return binop->getType();
+                        }
+                        else
+                        {
+                            binop->setType(types::construct(types::TypeNames::Float));
+                            std::cout << *binop->getType() << std::endl;
+                            return binop->getType();
+                        }
+                    }
+                    else
+                    {
+                        return (lhs->precedence>rhs->precedence)?lhs:rhs;
+                    }
+                }
+
+                return t;
+            }
 
             case ast_varincrdecr: 
                 return getVar(((VariableExprAST*)expr)->getName())->getType();
@@ -347,9 +381,11 @@ namespace vire
             
             if(!is_auto)
             {
+                std::cout << *type << " : " << *value_type << std::endl;
                 if(!types::isSame(type, value_type))    
                 {
                     auto new_cast_value=createImplicitCast(type, value_type, var->moveValue());
+                    std::cout << "Type: " << *new_cast_value->getType() << std::endl;
                         
                     if(!new_cast_value)
                     {
@@ -371,8 +407,6 @@ namespace vire
             }
             
             addVar(var);
-
-            std::cout << "Verified var" << std::endl;
             
             return true;
         }
@@ -626,18 +660,26 @@ namespace vire
         const auto& left=binop->getLHS();
         const auto& right=binop->getRHS();
 
+        bool is_valid=true;
+
         if(!verifyExpr(left))
         {
             // Left is not valid
-            return false;
+            is_valid=false;;
         }
         if(!verifyExpr(right))
         {
             // Right is not valid
-            return false;
+            is_valid=false;
         }
         
-        return true;
+        if(is_valid)
+        {
+            auto* type=getType(binop);
+            binop->setType(types::copyType(type));
+        }
+        
+        return is_valid;
     }
     bool VAnalyzer::verifyUnop(UnaryExprAST* const& unop)
     {
@@ -891,11 +933,24 @@ namespace vire
         const auto& cond=if_then->getCondition();
         const auto& then_block=if_then->getThenBlock();
         
-        if(cond->asttype!=ast_var && cond->asttype!=ast_unop && cond->asttype!=ast_binop)
+        auto* cond_type=getType(cond);
+
+        if(cond_type->getType()!=types::TypeNames::Bool)
         {
-            // Cond is not a boolean expression
-            is_valid=false;
+            auto bool_type=types::construct(types::TypeNames::Bool);
+            auto cast=createImplicitCast(bool_type.get(), cond_type, if_then->moveCondition());
+
+            if(!cast)
+            {
+                std::cout << "Condition needs to be of a boolean type or a numeric type";
+                is_valid=false;
+            }
+            else
+            {
+                if_then->setCondition(std::move(cast));
+            }
         }
+
         if(!verifyExpr(cond))
         {
             // Cond is not valid

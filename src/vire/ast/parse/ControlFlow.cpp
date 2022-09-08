@@ -11,15 +11,30 @@ namespace vire
 
 class IfThenExpr : public ExprAST
 {
-    std::unique_ptr<ExprAST> Condition;
+    std::unique_ptr<ExprAST> condition;
     std::vector<std::unique_ptr<ExprAST>> ThenBlock;
 public:
     IfThenExpr(std::unique_ptr<ExprAST> Condition, std::vector<std::unique_ptr<ExprAST>> ThenBlock)
-    : Condition(std::move(Condition)), ThenBlock(std::move(ThenBlock)), ExprAST("",ast_if)
+    : condition(std::move(Condition)), ThenBlock(std::move(ThenBlock)), ExprAST("",ast_if)
     {}
 
-    ExprAST* const getCondition() {return Condition.get();}
-    std::vector<std::unique_ptr<ExprAST>> const& getThenBlock() {return ThenBlock;}
+    ExprAST* const getCondition() 
+    {
+        return condition.get();
+    }
+    std::unique_ptr<ExprAST> moveCondition()
+    {
+        return std::move(condition);
+    }
+    void setCondition(std::unique_ptr<ExprAST> Condition)
+    {
+        condition=std::move(Condition);
+    }
+    
+    std::vector<std::unique_ptr<ExprAST>> const& getThenBlock() 
+    {
+        return ThenBlock;
+    }
 };
 
 class IfExprAST : public ExprAST
