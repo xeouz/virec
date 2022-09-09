@@ -87,20 +87,6 @@ public:
     void setUseValueType(bool use_value_type) {this->use_value_type=use_value_type;}
 };
 
-class VariableIncrDecrAST : public ExprAST
-{
-    std::string name;
-    bool isincr, ispre;
-public:
-    VariableIncrDecrAST(std::unique_ptr<Viretoken> name, bool isincr, bool ispre)
-    : name(name->value), ExprAST("void",ast_varincrdecr), isincr(isincr), ispre(ispre)
-    {setToken(std::move(name));}
-    
-    std::string const& getName() const {return name;}
-    bool isIncr() const {return isincr;}
-    bool isPre() const {return ispre;}
-};
-
 class CastExprAST : public ExprAST
 {
     std::unique_ptr<ExprAST> expr;

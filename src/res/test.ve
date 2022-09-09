@@ -2,7 +2,7 @@ extern put(c:int) returns int;
 
 func main() returns int 
 {
-    let a=5+2;
+    let a=10;
 
-    return 0;
+    return a++;
 }

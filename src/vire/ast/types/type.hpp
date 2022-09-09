@@ -457,5 +457,21 @@ inline void addTypeSizeToMap(std::string name, unsigned int size)
     custom_type_sizes.insert(std::make_pair(name,size));
 }
 
+inline bool isNumericType(TypeNames type)
+{
+    if(type==TypeNames::Int
+    || type==TypeNames::Char
+    || type==TypeNames::Float
+    || type==TypeNames::Double)
+    {
+        return true;
+    }
+    return false;
+}
+inline bool isNumericType(Base* type)
+{
+    return isNumericType(type->getType());
+}
+
 } // namespace types
 } // namespace vire

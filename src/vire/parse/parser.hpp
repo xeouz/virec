@@ -18,26 +18,26 @@ class Vireparse
     std::unique_ptr<Virelex> lexer;
     std::unique_ptr<Config> config;
 public:
-    std::unique_ptr<Viretoken> CurTok;
+    std::unique_ptr<Viretoken> current_token;
     std::string current_func_name;
 
     Vireparse(Virelex* lexer) 
-    : lexer(lexer), CurTok() {
+    : lexer(lexer), current_token() {
         config=std::make_unique<Config>();
         config->installDefaultBinops();
     }
     Vireparse(std::unique_ptr<Virelex> lexer) 
-    : lexer(std::move(lexer)), CurTok(std::make_unique<Viretoken>("",tok_eof)) {
+    : lexer(std::move(lexer)), current_token(std::make_unique<Viretoken>("",tok_eof)) {
         config=std::make_unique<Config>();
         config->installDefaultBinops();
     }
     
     Vireparse(Virelex* lexer, Config* config)
-    : lexer(lexer), config(config), CurTok(std::make_unique<Viretoken>("",tok_eof)) {}
+    : lexer(lexer), config(config), current_token(std::make_unique<Viretoken>("",tok_eof)) {}
     Vireparse(std::unique_ptr<Virelex> lexer, Config* config)
-    : lexer(std::move(lexer)), config(config), CurTok(std::make_unique<Viretoken>("",tok_eof)) {}
+    : lexer(std::move(lexer)), config(config), current_token(std::make_unique<Viretoken>("",tok_eof)) {}
     Vireparse(std::unique_ptr<Virelex> lexer, std::unique_ptr<Config> config)
-    : lexer(std::move(lexer)), config(std::move(config)), CurTok(std::make_unique<Viretoken>("",tok_eof)) {}
+    : lexer(std::move(lexer)), config(std::move(config)), current_token(std::make_unique<Viretoken>("",tok_eof)) {}
 
     std::unique_ptr<ExprAST> LogError(const char* str,...);
     std::unique_ptr<PrototypeAST> LogErrorP(const char* str,...);
@@ -52,11 +52,11 @@ public:
 
     std::vector<std::unique_ptr<ExprAST>> ParseBlock();
 
-    std::unique_ptr<FunctionAST> ParseTopLevelExpr();
     std::unique_ptr<ExprAST> ParsePrimary();
     std::unique_ptr<ExprAST> ParseExpression();
 
     std::unique_ptr<ExprAST> ParseIdExpr();
+    std::unique_ptr<ExprAST> ParseIncrementDecrementExpr();
 
     std::unique_ptr<ExprAST> ParseNumberExpr();
     std::unique_ptr<ExprAST> ParseStrExpr();
@@ -69,7 +69,6 @@ public:
 
     std::unique_ptr<ExprAST> ParseVariableDef();
     std::unique_ptr<ExprAST> ParseVariableAssign(std::unique_ptr<Viretoken> varName);
-    std::unique_ptr<ExprAST> ParseIncrDecrAST();
 
     std::unique_ptr<ExprAST> ParseForExpr();
     std::unique_ptr<ExprAST> ParseWhileExpr();

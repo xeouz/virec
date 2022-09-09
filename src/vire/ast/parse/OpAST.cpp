@@ -52,4 +52,30 @@ public:
     }
 };
 
+class IncrementDecrementAST : public ExprAST
+{
+    std::unique_ptr<ExprAST> expr;
+    bool is_pre;
+    bool is_increment;
+public:
+    IncrementDecrementAST(std::unique_ptr<ExprAST> expr, bool is_pre, bool is_increment)
+    : expr(std::move(expr)), is_pre(is_pre), is_increment(is_increment), ExprAST("void", ast_incrdecr)
+    {
+    }
+
+    ExprAST* const getExpr() const
+    {
+        return expr.get();
+    }
+
+    bool isPre() const
+    {
+        return is_pre;
+    }
+    bool isIncrement() const
+    {
+        return is_increment;
+    }
+};
+
 }

@@ -61,7 +61,7 @@ public:
     std::unique_ptr<ExprAST> createImplicitCast(types::Base* t1, types::Base* t2, std::unique_ptr<ExprAST> expr);
 
     bool verifyVar(VariableExprAST* const& var);
-    bool verifyIncrDecr(VariableIncrDecrAST* const& var);
+    bool verifyIncrementDecrement(IncrementDecrementAST* const& incrdecr);
     bool verifyVarDef(VariableDefAST* const& var, bool check_globally_only=false);
     bool verifyVarAssign(VariableAssignAST* const& var);
     bool verifyVarArrayAccess(VariableArrayAccessAST* const& access);

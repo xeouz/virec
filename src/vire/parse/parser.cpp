@@ -65,22 +65,22 @@ namespace vire
 
     void Vireparse::getNextToken()
     {
-        CurTok.reset();
-        CurTok=lexer->getToken();
+        current_token.reset();
+        current_token=lexer->getToken();
 
-        if(CurTok==nullptr) CurTok=lexer->getToken();
+        if(current_token==nullptr) current_token=lexer->getToken();
     }
     void Vireparse::getNextToken(int toktype)
     {
-        if(CurTok->type!=toktype)
+        if(current_token->type!=toktype)
         {
-            LogError("Current token type %s does not match type %s, Current token: `%s`",tokToStr(CurTok->type),tokToStr(toktype),CurTok->value.c_str());
+            LogError("Current token type %s does not match type %s, Current token: `%s`",tokToStr(current_token->type),tokToStr(toktype),current_token->value.c_str());
         }
         getNextToken();
     }
     std::unique_ptr<Viretoken> Vireparse::copyCurrentToken()
     {
-        return std::make_unique<Viretoken>(CurTok->value,CurTok->type,CurTok->line,CurTok->charpos);
+        return std::make_unique<Viretoken>(current_token->value,current_token->type,current_token->line,current_token->charpos);
     }
 
     std::vector<std::unique_ptr<ExprAST>> Vireparse::ParseBlock()
@@ -88,9 +88,9 @@ namespace vire
         getNextToken(tok_lbrace); // consume '}'
 
         std::vector<std::unique_ptr<ExprAST>> Stms;
-        while(CurTok->type!=tok_rbrace)
+        while(current_token->type!=tok_rbrace)
         {
-            if(CurTok->type==tok_eof)
+            if(current_token->type==tok_eof)
                 return LogErrorVP("Expected '}' found end of file");
             auto stm=ParsePrimary();
             if(!stm) continue;
@@ -115,12 +115,14 @@ namespace vire
 
     std::unique_ptr<ExprAST> Vireparse::ParsePrimary()
     {
-        switch(CurTok->type)
+        switch(current_token->type)
         {
             default: 
-                return LogError("Unknown token `%s` found when expecting statement,value: %s",tokToStr(CurTok->type),CurTok->value.c_str());
+                return LogError("Unknown token `%s` found when expecting statement,value: %s",tokToStr(current_token->type),current_token->value.c_str());
             
             case tok_id: return ParseIdExpr();
+            case tok_incr: return ParseIncrementDecrementExpr();
+            case tok_decr: return ParseIncrementDecrementExpr();
 
             case tok_int: return ParseNumberExpr();
             case tok_float: return ParseNumberExpr();
@@ -175,29 +177,25 @@ namespace vire
         getNextToken(tok_id);
         
         std::unique_ptr<ExprAST> expr;
-        if(CurTok->type != tok_lparen) // if it is not a function call
+        if(current_token->type != tok_lparen) // if it is not a function call
         {
-            if(CurTok->type == tok_equal)
+            if(current_token->type == tok_equal)
             {
                 expr=ParseVariableAssign(std::move(id_name));
-            }
-            else if(CurTok->type == tok_incr || CurTok->type==tok_decr)
-            {
-                expr=std::make_unique<VariableIncrDecrAST>(std::move(id_name),CurTok->type==tok_incr,false);
             }
             else
             {    
                 expr=std::make_unique<VariableExprAST>(std::move(id_name));
 
-                if(CurTok->type == tok_dot)
+                if(current_token->type == tok_dot)
                 {
                     expr=ParseClassAccess(std::move(expr));
                 }
                 
-                if(CurTok->type == tok_lbrack)
+                if(current_token->type == tok_lbrack)
                 {
                     std::vector<std::unique_ptr<ExprAST>> indices;
-                    while(CurTok->type == tok_lbrack)
+                    while(current_token->type == tok_lbrack)
                     {
                         getNextToken();
                         auto index=ParseExpression();
@@ -213,6 +211,13 @@ namespace vire
                     expr=std::make_unique<VariableArrayAccessAST>(std::move(expr),std::move(indices));
                 }
             }
+
+            if(current_token->type==tok_incr || current_token->type==tok_decr)
+            {
+                bool is_increment=(current_token->type=tok_incr);
+                getNextToken();
+                expr=std::make_unique<IncrementDecrementAST>(std::move(expr), false, is_increment);
+            }
             
             return std::move(expr);
         }
@@ -223,7 +228,7 @@ namespace vire
         getNextToken(tok_lparen); // consume '('
 
         std::vector<std::unique_ptr<ExprAST>> args;
-        if(CurTok->type != tok_rparen)
+        if(current_token->type != tok_rparen)
         {
             while(1)
             {
@@ -234,10 +239,10 @@ namespace vire
                 else
                     return nullptr;
                 
-                if(CurTok->type==tok_rparen)
+                if(current_token->type==tok_rparen)
                     break;
                 
-                if(CurTok->type!=tok_comma)
+                if(current_token->type!=tok_comma)
                     return LogError("Expected ')' or ',' in function call arg list");
                 
                 getNextToken(tok_comma);
@@ -249,6 +254,15 @@ namespace vire
         expr=std::make_unique<CallExprAST>(std::move(id_name),std::move(args));
         
         return std::move(expr);
+    }
+    std::unique_ptr<ExprAST> Vireparse::ParseIncrementDecrementExpr()
+    {
+        bool is_increment=(current_token->type==tok_incr);
+        getNextToken();
+
+        auto expr=ParsePrimary();
+
+        return std::make_unique<IncrementDecrementAST>(std::move(expr), true, is_increment);
     }
 
     std::unique_ptr<ExprAST> Vireparse::ParseNumberExpr()
@@ -264,13 +278,13 @@ namespace vire
         }
         else if(token->type==tok_float)
         {
-            auto result=std::make_unique<FloatExprAST>(std::stof(CurTok->value),std::move(token));
+            auto result=std::make_unique<FloatExprAST>(std::stof(current_token->value),std::move(token));
             getNextToken(tok_float);
             return std::move(result);
         }
         else if(token->type==tok_double)
         {
-            auto result=std::make_unique<DoubleExprAST>(std::stod(CurTok->value),std::move(token));
+            auto result=std::make_unique<DoubleExprAST>(std::stod(current_token->value),std::move(token));
             getNextToken(tok_double);
             return std::move(result);
         }
@@ -280,15 +294,15 @@ namespace vire
     std::unique_ptr<ExprAST> Vireparse::ParseStrExpr()
     {
         auto token=copyCurrentToken();
-        if(CurTok->type==tok_char)
+        if(current_token->type==tok_char)
         {
-            auto result=std::make_unique<CharExprAST>(CurTok->value.at(0),std::move(token));
+            auto result=std::make_unique<CharExprAST>(current_token->value.at(0),std::move(token));
             getNextToken(tok_char);
             return std::move(result);
         }
         else // assume the tok is tok_str
         {
-            auto result=std::make_unique<StrExprAST>(std::string(CurTok->value),std::move(token));
+            auto result=std::make_unique<StrExprAST>(std::string(current_token->value),std::move(token));
             getNextToken(tok_str);
             return result;
         }
@@ -296,7 +310,7 @@ namespace vire
     std::unique_ptr<ExprAST> Vireparse::ParseBoolExpr()
     {
         auto token=copyCurrentToken();
-        if(CurTok->type==tok_true)
+        if(current_token->type==tok_true)
         {
             getNextToken();
             return std::make_unique<BoolExprAST>(true, std::move(token));
@@ -313,17 +327,17 @@ namespace vire
 
         std::vector<std::unique_ptr<ExprAST>> Elements;
         
-        if(CurTok->type!=tok_rbrack)
+        if(current_token->type!=tok_rbrack)
         {
             while(1)
             {
                 auto elm=ParseExpression();
                 Elements.push_back(std::move(elm));
 
-                if(CurTok->type==tok_rbrack)
+                if(current_token->type==tok_rbrack)
                     break;
                 
-                if(CurTok->type!=tok_comma)
+                if(current_token->type!=tok_comma)
                     return LogError("Expected ']' or ',' in array def");
                 
                 getNextToken(tok_comma);
@@ -341,7 +355,7 @@ namespace vire
 
         if(!stm)
             return nullptr;
-        if(CurTok->type!=tok_rparen)
+        if(current_token->type!=tok_rparen)
             return LogError("Expected ')' left-parenthesis");
         
         getNextToken(tok_rparen); // consume ')'
@@ -352,10 +366,10 @@ namespace vire
     {
         while(1)
         {  
-            int prec=config->getBinopPrecedence(CurTok->value);
+            int prec=config->getBinopPrecedence(current_token->value);
 
             //Debug line, uncomment to use:
-            //std::cout << *CurTok << std::to_string(prec) << std::endl;
+            //std::cout << *current_token << std::to_string(prec) << std::endl;
  
             if(prec<ExprPrec)
                 return LHS;
@@ -367,7 +381,7 @@ namespace vire
             if(!RHS)
                 return nullptr;
             
-            int nextprec=config->getBinopPrecedence(CurTok->value.c_str());
+            int nextprec=config->getBinopPrecedence(current_token->value.c_str());
             if(prec<nextprec)
             {
                 RHS=ParseBinopExpr(prec+1,std::move(RHS));
@@ -376,7 +390,7 @@ namespace vire
             }
 
             LHS=std::make_unique<BinaryExprAST>(std::move(Binop),std::move(LHS),std::move(RHS));
-            if(CurTok->type==tok_eof)
+            if(current_token->type==tok_eof)
             {
                 return std::move(LHS);
             }
@@ -387,9 +401,9 @@ namespace vire
     { 
         bool isconst=false;
         bool islet=true;
-        if(CurTok->type==tok_const)
+        if(current_token->type==tok_const)
             isconst=true;
-        if(CurTok->type==tok_let)
+        if(current_token->type==tok_let)
             islet=true;
         
         if(!isconst && !islet) 
@@ -405,18 +419,18 @@ namespace vire
         std::unique_ptr<types::Base> type;
         types::Array* type_ref;
 
-        if(CurTok->type==tok_lbrack)
+        if(current_token->type==tok_lbrack)
         {
             is_array=true;
             getNextToken(tok_lbrack);
-            type=std::make_unique<types::Array>(std::make_unique<types::Void>(), std::stoi(CurTok->value));
+            type=std::make_unique<types::Array>(std::make_unique<types::Void>(), std::stoi(current_token->value));
             type_ref=(types::Array*)type.get();
             getNextToken(tok_int);
             getNextToken(tok_rbrack);
-            while(CurTok->type==tok_lbrack)
+            while(current_token->type==tok_lbrack)
             {
                 getNextToken(tok_lbrack);
-                type=std::make_unique<types::Array>(std::move(type), std::stoi(CurTok->value));
+                type=std::make_unique<types::Array>(std::move(type), std::stoi(current_token->value));
                 getNextToken(tok_int);
                 getNextToken(tok_rbrack);
             }
@@ -424,10 +438,10 @@ namespace vire
 
         if(is_array)
         {
-            if(CurTok->type==tok_colon)
+            if(current_token->type==tok_colon)
             {
                 getNextToken(tok_colon);
-                type_ref->setChild(types::construct(CurTok->value));
+                type_ref->setChild(types::construct(current_token->value));
                 getNextToken(tok_id);
             }
             else
@@ -438,10 +452,10 @@ namespace vire
         }
         else
         {
-            if(CurTok->type==tok_colon)
+            if(current_token->type==tok_colon)
             {
                 getNextToken(tok_colon);
-                type=types::construct(CurTok->value);
+                type=types::construct(current_token->value);
                 getNextToken(tok_id);
             }
             else
@@ -452,7 +466,7 @@ namespace vire
         }
 
         std::unique_ptr<ExprAST> value=nullptr;
-        if(CurTok->type==tok_equal)
+        if(current_token->type==tok_equal)
         {
             getNextToken(tok_equal);
             if(is_array)
@@ -514,13 +528,13 @@ namespace vire
     std::unique_ptr<ExprAST> Vireparse::ParseBreakContinue()
     {
         bool is_break=1;
-        if(CurTok->type==tok_continue) is_break=0;
+        if(current_token->type==tok_continue) is_break=0;
 
         getNextToken();
 
         bool has_stm=0;
         std::unique_ptr<ExprAST> stm;
-        if(CurTok->type!=tok_semicol)
+        if(current_token->type!=tok_semicol)
         {
             has_stm=1;
             stm=ParsePrimary();
@@ -540,39 +554,39 @@ namespace vire
 
     std::unique_ptr<PrototypeAST> Vireparse::ParsePrototype()
     {
-        if(CurTok->type!=tok_id)
+        if(current_token->type!=tok_id)
             return LogErrorP("Expected function name in prototype");
         
         std::unique_ptr<Viretoken> fn_name=copyCurrentToken();
         getNextToken(tok_id);
 
-        if(CurTok->type!=tok_lparen)
+        if(current_token->type!=tok_lparen)
             return LogErrorP("Expected '(' in prototype after name");
         getNextToken(); // consume '('
 
         std::vector<std::unique_ptr<VariableDefAST>> args;
-        while(CurTok->type==tok_id)
+        while(current_token->type==tok_id)
         {
             std::unique_ptr<Viretoken> var_name=copyCurrentToken();
             var_name->value="_"+var_name->value;
             getNextToken(tok_id); // consume id
-            if(CurTok->type!=tok_colon) 
+            if(current_token->type!=tok_colon) 
                 return LogErrorP("Expected ':' for type specifier after arg name");
             getNextToken(tok_colon); // consume colon
 
             unsigned char isconst=0;
-            if(CurTok->type==tok_const)
+            if(current_token->type==tok_const)
             {
                 isconst=1;
                 getNextToken();
             }
 
-            auto type=types::construct(CurTok->value);
+            auto type=types::construct(current_token->value);
             getNextToken(); // consume typename
             auto var=std::make_unique<VariableDefAST>(std::move(var_name),std::move(type),nullptr,isconst,!isconst);
             args.push_back(std::move(var));
 
-            if(CurTok->type!=tok_comma)
+            if(current_token->type!=tok_comma)
             {
                 break;
             }
@@ -582,7 +596,7 @@ namespace vire
         getNextToken(tok_rparen);
 
         std::unique_ptr<Viretoken> return_type;
-        if(CurTok->type==tok_rarrow || CurTok->type==tok_returns)
+        if(current_token->type==tok_rarrow || current_token->type==tok_returns)
         {
             getNextToken();
             return_type=copyCurrentToken();
@@ -636,10 +650,10 @@ namespace vire
         auto mthenStm=ParseBlock();
 
         std::vector<std::unique_ptr<IfThenExpr>> elseStms;
-        while(CurTok->type==tok_else)
+        while(current_token->type==tok_else)
         {
             getNextToken(tok_else);
-            if(CurTok->type==tok_if)
+            if(current_token->type==tok_if)
             {
                 getNextToken(tok_if);
                 getNextToken(tok_lparen);
@@ -666,20 +680,20 @@ namespace vire
         getNextToken(tok_id);
 
         std::unique_ptr<Viretoken> Parent;
-        if(CurTok->type==tok_lparen)
+        if(current_token->type==tok_lparen)
         {
             getNextToken(tok_lparen);
             Parent=copyCurrentToken();
             getNextToken(tok_id);
             getNextToken(tok_rparen);
         }
-        else if(CurTok->type==tok_colon)
+        else if(current_token->type==tok_colon)
         {
             getNextToken(tok_colon);
             Parent=copyCurrentToken();
             getNextToken(tok_id);
         }
-        else if(CurTok->type==tok_extends)
+        else if(current_token->type==tok_extends)
         {
             getNextToken(tok_extends);
             Parent=copyCurrentToken();
@@ -690,22 +704,22 @@ namespace vire
 
         std::vector<std::unique_ptr<FunctionBaseAST>> funcs;
         std::vector<std::unique_ptr<VariableDefAST>> vars;
-        while(CurTok->type!=tok_rbrace)
+        while(current_token->type!=tok_rbrace)
         {
-            if(CurTok->type==tok_eof) return LogErrorC("Expected '}' found end of file");
+            if(current_token->type==tok_eof) return LogErrorC("Expected '}' found end of file");
 
-            if(CurTok->type==tok_func)
+            if(current_token->type==tok_func)
             {
                 auto func=ParseFunction();
                 funcs.push_back(std::move(func));
             }
-            else if(CurTok->type==tok_proto)
+            else if(current_token->type==tok_proto)
             {
                 auto proto=ParseFunction();
                 funcs.push_back(std::move(proto));
                 getNextToken(tok_semicol);
             }
-            else if(CurTok->type==tok_vardef || CurTok->type==tok_const || CurTok->type==tok_let)
+            else if(current_token->type==tok_vardef || current_token->type==tok_const || current_token->type==tok_let)
             {
                 auto var=ParseVariableDef();
                 auto varCast=cast_static<VariableDefAST>(std::move(var));
@@ -770,23 +784,23 @@ namespace vire
         getNextToken(tok_lbrace);
         std::unordered_map<std::string, std::unique_ptr<ExprAST>> members;
 
-        while(CurTok->type!=tok_rbrace)
+        while(current_token->type!=tok_rbrace)
         {
-            if(CurTok->type==tok_eof) return LogErrorPB("Expected '}' found end of file");
+            if(current_token->type==tok_eof) return LogErrorPB("Expected '}' found end of file");
 
             std::unique_ptr<ExprAST> member;
             std::string member_name;
-            if(CurTok->type==tok_union)
+            if(current_token->type==tok_union)
             {
                 member=ParseUnion();
                 member_name=((UnionExprAST*)member.get())->getName();
             }
-            else if(CurTok->type==tok_struct)
+            else if(current_token->type==tok_struct)
             {
                 member=ParseStruct();
                 member_name=((StructExprAST*)member.get())->getName();
             }
-            else if(CurTok->type==tok_id)
+            else if(current_token->type==tok_id)
             {
                 auto type=copyCurrentToken();
                 getNextToken(tok_id);
@@ -801,7 +815,7 @@ namespace vire
             }
             else
             {
-                std::cout << "Invalid Token: " << CurTok->value << std::endl;
+                std::cout << "Invalid Token: " << current_token->value << std::endl;
                 break;
             }
             
@@ -819,7 +833,7 @@ namespace vire
 
         char is_anonymous=1;
         std::unique_ptr<Viretoken> name;
-        if(CurTok->type==tok_id)
+        if(current_token->type==tok_id)
         {
             is_anonymous=0;
             name=copyCurrentToken();
@@ -835,7 +849,7 @@ namespace vire
 
         char is_anonymous=1;
         std::unique_ptr<Viretoken> name;
-        if(CurTok->type==tok_id)
+        if(current_token->type==tok_id)
         {
             is_anonymous=0;
             name=copyCurrentToken();
@@ -870,36 +884,36 @@ namespace vire
         std::vector<std::unique_ptr<FunctionBaseAST>> Functions;
         std::vector<std::unique_ptr<ClassAST>> Classes;
         std::vector<std::unique_ptr<ExprAST>> StructUnionDefs;
-        while(CurTok->type!=tok_eof)
+        while(current_token->type!=tok_eof)
         {
-            if(CurTok->type==tok_class)
+            if(current_token->type==tok_class)
             {
                 auto class_ast=ParseClass();
                 Classes.push_back(std::move(class_ast));
             }
-            else if(CurTok->type==tok_func)
+            else if(current_token->type==tok_func)
             {
                 auto func_ast=ParseFunction();
                 Functions.push_back(std::move(func_ast));
             }
-            else if(CurTok->type==tok_proto)
+            else if(current_token->type==tok_proto)
             {
                 auto proto_ast=ParseProto();
                 getNextToken(tok_semicol);
                 Functions.push_back(std::move(proto_ast));
             }
-            else if(CurTok->type==tok_extern)
+            else if(current_token->type==tok_extern)
             {
                 auto extern_ast=ParseExtern();
                 getNextToken(tok_semicol);
                 Functions.push_back(std::move(extern_ast));
             }
-            else if(CurTok->type==tok_struct)
+            else if(current_token->type==tok_struct)
             {
                 auto struct_ast=ParseStruct();
                 StructUnionDefs.push_back(std::move(struct_ast));
             }
-            else if(CurTok->type==tok_union)
+            else if(current_token->type==tok_union)
             {
                 auto union_ast=ParseUnion();
                 StructUnionDefs.push_back(std::move(union_ast));

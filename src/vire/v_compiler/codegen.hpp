@@ -74,7 +74,7 @@ public:
 
     llvm::AllocaInst* createEntryBlockAlloca(llvm::Function* function, std::string const& varname, llvm::Type* type);
     
-    llvm::Value* compileIncrDecr(VariableIncrDecrAST* const& expr);
+    llvm::Value* compileIncrementDecrement(IncrementDecrementAST* const& expr);
     llvm::Value* compileVariableExpr(VariableExprAST* const& expr);
     llvm::Value* compileVariableDef(VariableDefAST* const& var);
     llvm::Value* compileVariableAssign(VariableAssignAST* const& var);

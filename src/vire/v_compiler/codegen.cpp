@@ -76,8 +76,8 @@ namespace vire
             case ast_array:
                 return compileConstantExpr((ArrayExprAST* const&)expr);
 
-            case ast_varincrdecr:
-                return compileIncrDecr((VariableIncrDecrAST* const&)expr);
+            case ast_incrdecr:
+                return compileIncrementDecrement((IncrementDecrementAST* const&)expr);
             case ast_var:
                 return compileVariableExpr((VariableExprAST* const&)expr);
             case ast_vardef:
@@ -193,26 +193,50 @@ namespace vire
         return gbl;
     }
 
-    llvm::Value* VCompiler::compileIncrDecr(VariableIncrDecrAST* const& expr)
+    llvm::Value* VCompiler::compileIncrementDecrement(IncrementDecrementAST* const& incrdecr)
     {
-        llvm::AllocaInst* val=namedValues[expr->getName()];
-        llvm::Type* valtype=val->getAllocatedType();
-        llvm::LoadInst* load=Builder.CreateLoad(valtype,val,expr->getName());
+        auto const& target=incrdecr->getExpr();
+        auto expr=compileExpr(target);
 
-        // Currently only pre increment and decrement is supported.
         llvm::StoreInst* store;
-        if(expr->isIncr())
+
+        if(incrdecr->isIncrement())
         {
-            store=Builder.CreateStore
-            (Builder.CreateAdd(load, llvm::ConstantInt::get(valtype, 1)), val);
+            llvm::Value* addinst;
+            if(!types::isTypeFloatingPoint(target->getType()))
+            {
+                addinst=Builder.CreateAdd(expr, llvm::ConstantInt::get(CTX, llvm::APInt(32, 1, false)));
+            }
+            else
+            {
+                addinst=Builder.CreateFAdd(expr, llvm::ConstantFP::get(CTX, llvm::APFloat(1.0f)));
+            }
+
+            store=Builder.CreateStore(addinst, expr);
         }
         else
         {
-            store=Builder.CreateStore
-            (Builder.CreateSub(load, llvm::ConstantInt::get(valtype, 1)), val);
+            llvm::Value* subinst;
+            if(!types::isTypeFloatingPoint(target->getType()))
+            {
+                subinst=Builder.CreateSub(expr, llvm::ConstantInt::get(CTX, llvm::APInt(32, 1, false)));
+            }
+            else
+            {
+                subinst=Builder.CreateFSub(expr, llvm::ConstantFP::get(CTX, llvm::APFloat(1.0f)));
+            }
+
+            store=Builder.CreateStore(subinst, expr);
         }
 
-        return load;
+        if(incrdecr->isPre())
+        {
+            return store;
+        }
+        else
+        {
+            return expr;
+        }
     }
     llvm::Value* VCompiler::compileVariableExpr(VariableExprAST* const& expr)
     {
@@ -374,13 +398,49 @@ namespace vire
         switch(expr->getOp()->type)
         {
             case tok_plus:
-                return Builder.CreateAdd(lhs, rhs, "addtmp");
+            {
+                if(!types::isTypeFloatingPoint(expr->getType()))
+                {
+                    return Builder.CreateAdd(lhs, rhs, "addtmp");
+                }
+                else
+                {
+                    return Builder.CreateFAdd(lhs, rhs, "addtmp");
+                }
+            }
             case tok_minus:
-                return Builder.CreateSub(lhs, rhs, "subtmp");
+            {
+                if(!types::isTypeFloatingPoint(expr->getType()))
+                {
+                    return Builder.CreateSub(lhs, rhs, "subtmp");
+                }
+                else
+                {
+                    return Builder.CreateFSub(lhs, rhs, "subtmp");
+                }
+            }
             case tok_mul:
-                return Builder.CreateMul(lhs, rhs, "multmp");
+            {
+                if(!types::isTypeFloatingPoint(expr->getType()))
+                {
+                    return Builder.CreateMul(lhs, rhs, "multmp");
+                }
+                else
+                {
+                    return Builder.CreateFMul(lhs, rhs, "multmp");
+                }
+            }
             case tok_div:
-                return Builder.CreateSDiv(lhs, rhs, "divtmp");
+            {
+                if(!types::isTypeFloatingPoint(expr->getType()))
+                {
+                    return Builder.CreateSDiv(lhs, rhs, "divtmp");
+                }
+                else
+                {
+                    return Builder.CreateFDiv(lhs, rhs, "divtmp");
+                }
+            }
             case tok_mod:
                 return Builder.CreateSRem(lhs, rhs, "modtmp");
             

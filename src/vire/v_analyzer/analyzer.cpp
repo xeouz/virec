@@ -188,8 +188,11 @@ namespace vire
                 return t;
             }
 
-            case ast_varincrdecr: 
-                return getVar(((VariableExprAST*)expr)->getName())->getType();
+            case ast_incrdecr: 
+            {
+                auto* incrdecr=(IncrementDecrementAST*)expr;
+                return getType(incrdecr->getExpr());
+            }
             case ast_var:
             {
                 auto* var=getVar(((VariableExprAST*)expr)->getName());
@@ -303,12 +306,18 @@ namespace vire
         
         return true;
     }
-    bool VAnalyzer::verifyIncrDecr(VariableIncrDecrAST* const& var)
+    bool VAnalyzer::verifyIncrementDecrement(IncrementDecrementAST* const& incrdecr)
     {
         // Check if it is defined
-        if(!isVarDefined(var->getName()))
+        auto const& expr=incrdecr->getExpr();
+
+        if(!verifyExpr(expr))
         {
-            // Var is not defined
+            return false;
+        }
+
+        if(!types::isNumericType(getType(expr)))
+        {
             return false;
         }
         
@@ -536,7 +545,7 @@ namespace vire
             // Cond is not a boolean expression
             is_valid=false;
         }
-        if(!(incr->asttype==ast_var || incr->asttype==ast_varassign || incr->asttype==ast_varincrdecr))
+        if(!(incr->asttype==ast_var || incr->asttype==ast_varassign || incr->asttype==ast_incrdecr))
         {
             // Incr is not a step operation
             is_valid=false;
@@ -1222,7 +1231,7 @@ namespace vire
             case ast_binop: return verifyBinop((BinaryExprAST*const&)expr);
             case ast_unop: return verifyUnop((UnaryExprAST*const&)expr);
 
-            case ast_varincrdecr: return verifyIncrDecr((VariableIncrDecrAST*const&)expr);
+            case ast_incrdecr: return verifyIncrementDecrement((IncrementDecrementAST*const&)expr);
             case ast_var: return verifyVar((VariableExprAST*const&)expr);
             case ast_vardef: return verifyVarDef((VariableDefAST*const&)expr);
             case ast_varassign: return verifyVarAssign((VariableAssignAST*const&)expr);
