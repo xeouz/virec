@@ -62,7 +62,7 @@ public:
 
     bool verifyVar(VariableExprAST* const& var);
     bool verifyIncrementDecrement(IncrementDecrementAST* const& incrdecr);
-    bool verifyVarDef(VariableDefAST* const& var, bool check_globally_only=false);
+    bool verifyVarDef(VariableDefAST* const& var, bool check_globally_only=false, bool add_to_scope=true);
     bool verifyVarAssign(VariableAssignAST* const& var);
     bool verifyVarArrayAccess(VariableArrayAccessAST* const& access);
 

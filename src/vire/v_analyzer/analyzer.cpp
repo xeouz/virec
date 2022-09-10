@@ -323,11 +323,12 @@ namespace vire
         
         return true;
     }
-    bool VAnalyzer::verifyVarDef(VariableDefAST* const& var, bool check_globally_only)
+    bool VAnalyzer::verifyVarDef(VariableDefAST* const& var, bool check_globally_only, bool add_to_scope)
     {
-        if(!isVarDefined(var->getName(),check_globally_only))
+        if(!isVarDefined(var->getName(), check_globally_only))
         {
             bool is_var=!(var->isLet() || var->isConst());
+
             if(!is_var)
             {
                 bool type_is_void=false;
@@ -366,7 +367,10 @@ namespace vire
             if(value==nullptr)
             {
                 var->refreshType();
-                addVar(var);
+
+                if(add_to_scope)
+                    addVar(var);
+
                 return true;
             }
 
@@ -415,11 +419,13 @@ namespace vire
                 var->setUseValueType(true);
             }
             
-            addVar(var);
+            if(add_to_scope)
+                addVar(var);
             
             return true;
         }
-        std::cout << "Variable already defined" << std::endl;
+        
+        std::cout << "Variable " << var->getName() << " already defined" << std::endl;
         // Variable is already defined
         return false;
     }
@@ -729,9 +735,10 @@ namespace vire
                 is_valid=false;
             }
 
-            if(!verifyVarDef(arg.get(),true))
+            if(!verifyVarDef(arg.get(), true))
             {
                 std::cout << "Argument is not valid" << std::endl;
+
                 // Argument is not valid
                 is_valid=false;
             }
