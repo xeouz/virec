@@ -2,10 +2,10 @@ extern put(c:int) returns int;
 
 func main() returns int 
 {
-    let a=10.0;
-    let x:int=++a;
+    let a=10;
+    a+=100;
 
-    put(x);
+    put(a);
 
     return 0;
 }

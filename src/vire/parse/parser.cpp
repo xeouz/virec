@@ -172,16 +172,26 @@ namespace vire
 
     std::unique_ptr<ExprAST> Vireparse::ParseIdExpr()
     {
-        std::unique_ptr<Viretoken> id_name=copyCurrentToken();
+        auto id_name=copyCurrentToken();
+
         id_name->value="_"+id_name->value;
         getNextToken(tok_id);
         
         std::unique_ptr<ExprAST> expr;
         if(current_token->type != tok_lparen) // if it is not a function call
         {
-            if(current_token->type == tok_equal)
+            if(current_token->type==tok_equal)
             {
-                expr=ParseVariableAssign(std::move(id_name));
+                return ParseVariableAssign(std::move(id_name));
+            }
+            else if(current_token->type==tok_plus 
+                 || current_token->type==tok_minus
+                 || current_token->type==tok_mul
+                 || current_token->type==tok_div
+                 || current_token->type==tok_mod
+            )
+            {
+                return ParseShorthandVariableAssign(std::move(id_name));
             }
             else
             {    
@@ -495,6 +505,19 @@ namespace vire
         auto value=ParseExpression();
 
         return std::make_unique<VariableAssignAST>(std::move(varName), std::move(value));
+    }
+    std::unique_ptr<ExprAST> Vireparse::ParseShorthandVariableAssign(std::unique_ptr<Viretoken> varName)
+    {
+        auto token=copyCurrentToken();
+        getNextToken();
+        getNextToken(tok_equal);
+
+        auto expr=ParseExpression();
+        auto var=std::make_unique<VariableExprAST>(Viretoken::construct(varName.get()));
+
+        auto op=std::make_unique<BinaryExprAST>(std::move(token), std::move(var), std::move(expr));
+
+        return std::make_unique<VariableAssignAST>(std::move(varName), std::move(op));
     }
 
     std::unique_ptr<ExprAST> Vireparse::ParseForExpr()

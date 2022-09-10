@@ -37,7 +37,11 @@ public:
 
     static std::unique_ptr<Viretoken> construct(std::string _name, int _type=tok_id, std::size_t _line=0, std::size_t _charpos=0)
     {
-        return std::make_unique<Viretoken>(_name,_type,_line,_charpos);
+        return std::make_unique<Viretoken>(_name, _type, _line, _charpos);
+    }
+    static std::unique_ptr<Viretoken> construct(Viretoken* token)
+    {
+        return construct(token->value, token->type, token->line, token->charpos);
     }
 
     inline friend std::ostream& operator<<(std::ostream& os, const Viretoken& tok);
