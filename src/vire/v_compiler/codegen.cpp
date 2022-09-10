@@ -200,39 +200,37 @@ namespace vire
         auto* expr=compileExpr(target);
 
         llvm::StoreInst* store;
+        llvm::Value* inst;
 
         if(incrdecr->isIncrement())
         {
-            llvm::Value* addinst;
-            if(!types::isTypeFloatingPoint(target->getType()))
+            if(!expr->getType()->isFloatingPointTy())
             {
-                addinst=Builder.CreateAdd(expr, llvm::ConstantInt::get(CTX, llvm::APInt(32, 1, false)), "", false, true);
+                inst=Builder.CreateAdd(expr, llvm::ConstantInt::get(CTX, llvm::APInt(32, 1, false)), "", false, true);
             }
             else
             {
-                addinst=Builder.CreateFAdd(expr, llvm::ConstantFP::get(CTX, llvm::APFloat(1.0f)));
+                std::cout << "Hello There" << std::endl;
+                inst=Builder.CreateFAdd(expr, llvm::ConstantFP::get(CTX, llvm::APFloat(1.0f)));
             }
-
-            store=Builder.CreateStore(addinst, getValueAsAlloca(compileExpr(target)));
         }
         else
         {
-            llvm::Value* subinst;
             if(!types::isTypeFloatingPoint(target->getType()))
             {
-                subinst=Builder.CreateSub(expr, llvm::ConstantInt::get(CTX, llvm::APInt(32, 1, false)));
+                inst=Builder.CreateSub(expr, llvm::ConstantInt::get(CTX, llvm::APInt(32, 1, false)));
             }
             else
             {
-                subinst=Builder.CreateFSub(expr, llvm::ConstantFP::get(CTX, llvm::APFloat(1.0f)));
+                inst=Builder.CreateFSub(expr, llvm::ConstantFP::get(CTX, llvm::APFloat(1.0f)));
             }
-
-            store=Builder.CreateStore(subinst, getValueAsAlloca(compileExpr(target)));
         }
+
+        store=Builder.CreateStore(inst, getValueAsAlloca(compileExpr(target)));
 
         if(incrdecr->isPre())
         {
-            return store;
+            return inst;
         }
         else
         {

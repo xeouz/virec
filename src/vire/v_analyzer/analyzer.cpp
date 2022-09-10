@@ -59,7 +59,7 @@ namespace vire
         return false;
     }
 
-    void VAnalyzer::addVar(VariableDefAST* const& var)
+    void VAnalyzer::defineVariable(VariableDefAST* const& var)
     {
         scope.insert(std::make_pair(var->getName(), var));
         
@@ -68,10 +68,15 @@ namespace vire
             scope_varref->push_back(var);
         }
     }
-    void VAnalyzer::removeVar(VariableDefAST* const& var)
+    void VAnalyzer::undefineVariable(VariableDefAST* const& var)
     {
-        scope.erase(var->getName());
+        undefineVariable(var->getName());
     }
+    void VAnalyzer::undefineVariable(std::string const& name)
+    {
+        scope.erase(name);
+    }
+
     void VAnalyzer::addFunction(std::unique_ptr<FunctionBaseAST> func)
     {
         codeast->addFunction(std::move(func));
@@ -369,7 +374,7 @@ namespace vire
                 var->refreshType();
 
                 if(add_to_scope)
-                    addVar(var);
+                    defineVariable(var);
 
                 return true;
             }
@@ -394,11 +399,9 @@ namespace vire
             
             if(!is_auto)
             {
-                std::cout << *type << " : " << *value_type << std::endl;
                 if(!types::isSame(type, value_type))    
                 {
                     auto new_cast_value=createImplicitCast(type, value_type, var->moveValue());
-                    std::cout << "Type: " << *new_cast_value->getType() << std::endl;
                         
                     if(!new_cast_value)
                     {
@@ -420,7 +423,7 @@ namespace vire
             }
             
             if(add_to_scope)
-                addVar(var);
+                defineVariable(var);
             
             return true;
         }
@@ -735,7 +738,7 @@ namespace vire
                 is_valid=false;
             }
 
-            if(!verifyVarDef(arg.get(), true))
+            if(!verifyVarDef(arg.get(), true, false))
             {
                 std::cout << "Argument is not valid" << std::endl;
 
@@ -777,12 +780,22 @@ namespace vire
             is_valid=false;
         }
 
+        for(auto const& var: func->getArgs())
+        {
+            defineVariable(var.get());
+        }
+
         if(!verifyBlock(func->getBody()))
         {
             // Block is not valid
             is_valid=false;
         }
         
+        for(auto const& var: func->getArgs())
+        {
+            undefineVariable(var.get());
+        }
+
         return is_valid;
     }
 
@@ -1104,7 +1117,7 @@ namespace vire
         }
         for(const auto& var : *refscope)
         {
-            removeVar(var);
+            undefineVariable(var);
         }
 
         this->scope_varref=nullptr;

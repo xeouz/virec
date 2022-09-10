@@ -28,8 +28,10 @@ class VAnalyzer
     std::map<std::string, ExprAST*> types;
 
     // Functions
-    void addVar(VariableDefAST* const& var);
-    void removeVar(VariableDefAST* const& var);
+    void defineVariable(VariableDefAST* const& var);
+    void undefineVariable(VariableDefAST* const& var);
+    void undefineVariable(std::string const& var);
+
     void addFunction(std::unique_ptr<FunctionBaseAST> func);
     void addClass(std::unique_ptr<ClassAST> class_);
     bool isVarDefined(std::string const& name, bool check_globally_only=false);
