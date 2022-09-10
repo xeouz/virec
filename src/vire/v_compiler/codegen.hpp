@@ -57,7 +57,8 @@ public:
     llvm::Type* getLLVMType(types::Base* type);
 
     llvm::BranchInst* createBrIfNoTerminator(llvm::BasicBlock* block);
-    llvm::Value* getAsPtrForGEP(llvm::Value* value);
+    llvm::Value* getValueAsAlloca(llvm::Value* value);
+    llvm::Value* getOrigin(llvm::Value* value);
 
     llvm::Value* compileExpr(ExprAST* const& expr);
 

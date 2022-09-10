@@ -42,13 +42,14 @@ namespace vire
             return nullptr;
         }
     }
-    llvm::Value* VCompiler::getAsPtrForGEP(llvm::Value* expr)
+    llvm::Value* VCompiler::getValueAsAlloca(llvm::Value* expr)
     {
         // Check if expr is llvm::LoadInst
-        if (llvm::LoadInst* load = llvm::dyn_cast<llvm::LoadInst>(expr))
+        if (llvm::LoadInst* load=llvm::dyn_cast<llvm::LoadInst>(expr))
         {
             // remove the expr from the block
             load->getParent()->getInstList().remove(load);
+
             // return the alloca
             return namedValues[load->getPointerOperand()->getName()];
         }
@@ -196,7 +197,7 @@ namespace vire
     llvm::Value* VCompiler::compileIncrementDecrement(IncrementDecrementAST* const& incrdecr)
     {
         auto const& target=incrdecr->getExpr();
-        auto expr=compileExpr(target);
+        auto* expr=compileExpr(target);
 
         llvm::StoreInst* store;
 
@@ -205,14 +206,14 @@ namespace vire
             llvm::Value* addinst;
             if(!types::isTypeFloatingPoint(target->getType()))
             {
-                addinst=Builder.CreateAdd(expr, llvm::ConstantInt::get(CTX, llvm::APInt(32, 1, false)));
+                addinst=Builder.CreateAdd(expr, llvm::ConstantInt::get(CTX, llvm::APInt(32, 1, false)), "", false, true);
             }
             else
             {
                 addinst=Builder.CreateFAdd(expr, llvm::ConstantFP::get(CTX, llvm::APFloat(1.0f)));
             }
 
-            store=Builder.CreateStore(addinst, expr);
+            store=Builder.CreateStore(addinst, getValueAsAlloca(compileExpr(target)));
         }
         else
         {
@@ -226,7 +227,7 @@ namespace vire
                 subinst=Builder.CreateFSub(expr, llvm::ConstantFP::get(CTX, llvm::APFloat(1.0f)));
             }
 
-            store=Builder.CreateStore(subinst, expr);
+            store=Builder.CreateStore(subinst, getValueAsAlloca(compileExpr(target)));
         }
 
         if(incrdecr->isPre())
@@ -322,7 +323,7 @@ namespace vire
         auto* expr=compileExpr(access->getExpr());
         auto* ty=expr->getType();
 
-        expr=getAsPtrForGEP(expr);
+        expr=getValueAsAlloca(expr);
 
         for(auto const& elem : access->getIndices())
         {
@@ -577,7 +578,7 @@ namespace vire
     llvm::Value* VCompiler::compileReturnExpr(ReturnExprAST* const& expr)
     {
         auto* expr_val=compileExpr(expr->getValue());
-        auto* value=Builder.CreateStore(expr_val,namedValues["retval"]);
+        auto* value=Builder.CreateStore(expr_val, namedValues["retval"]);
         Builder.CreateBr(currentFunctionEndBB);
 
         return value;
