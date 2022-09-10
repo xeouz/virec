@@ -210,7 +210,6 @@ namespace vire
             }
             else
             {
-                std::cout << "Hello There" << std::endl;
                 inst=Builder.CreateFAdd(expr, llvm::ConstantFP::get(CTX, llvm::APFloat(1.0f)));
             }
         }
