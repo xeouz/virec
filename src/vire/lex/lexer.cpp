@@ -139,11 +139,12 @@ public:
     std::unique_ptr<Viretoken> gatherChar()
     {
         std::string ch;
-        advanceNext();
+        advanceNext(); // eat `'`
         
-        ch+=this->cur;
-
-        advanceNext();
+        ch+=this->cur; // set ch to char
+        
+        advanceNext(); // eat the char
+        advanceNext(); // eat the `'`
 
         return makeTokenInplace(ch, tok_char);
     }

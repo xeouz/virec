@@ -74,7 +74,8 @@ namespace vire
     {
         if(current_token->type!=toktype)
         {
-            LogError("Current token type %s does not match type %s, Current token: `%s`",tokToStr(current_token->type),tokToStr(toktype),current_token->value.c_str());
+            LogError("Current token type %s does not match type %s, Current token: `%s`\n",
+            tokToStr(current_token->type), tokToStr(toktype), current_token->value.c_str());
         }
         getNextToken();
     }
@@ -184,11 +185,11 @@ namespace vire
             {
                 return ParseVariableAssign(std::move(id_name));
             }
-            else if(current_token->type==tok_plus 
-                 || current_token->type==tok_minus
-                 || current_token->type==tok_mul
-                 || current_token->type==tok_div
-                 || current_token->type==tok_mod
+            else if(current_token->type==tok_pluseq
+                 || current_token->type==tok_minuseq
+                 || current_token->type==tok_muleq
+                 || current_token->type==tok_diveq
+                 || current_token->type==tok_modeq
             )
             {
                 return ParseShorthandVariableAssign(std::move(id_name));
@@ -242,9 +243,9 @@ namespace vire
         {
             while(1)
             {
-                if(auto Arg=ParseExpression())
+                if(auto arg=ParseExpression())
                 {
-                    args.push_back(std::move(Arg));
+                    args.push_back(std::move(arg));
                 }
                 else
                     return nullptr;
@@ -510,12 +511,25 @@ namespace vire
     {
         auto token=copyCurrentToken();
         getNextToken();
-        getNextToken(tok_equal);
 
         auto expr=ParseExpression();
         auto var=std::make_unique<VariableExprAST>(Viretoken::construct(varName.get()));
 
-        auto op=std::make_unique<BinaryExprAST>(std::move(token), std::move(var), std::move(expr));
+        std::unique_ptr<Viretoken> sym;
+
+        switch(token->type)
+        {
+            case tok_pluseq: sym=Viretoken::construct("+", tok_plus, token->line, token->charpos+1);
+            case tok_minuseq: sym=Viretoken::construct("-", tok_minus, token->line, token->charpos+1);
+            case tok_muleq: sym=Viretoken::construct("*", tok_mul, token->line, token->charpos+1);
+            case tok_diveq: sym=Viretoken::construct("/", tok_div, token->line, token->charpos+1);
+            case tok_modeq: sym=Viretoken::construct("%", tok_mod, token->line, token->charpos+1);
+
+            default:
+                sym=nullptr;
+        }
+
+        auto op=std::make_unique<BinaryExprAST>(std::move(sym), std::move(var), std::move(expr));
 
         return std::make_unique<VariableAssignAST>(std::move(varName), std::move(op));
     }

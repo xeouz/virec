@@ -15,18 +15,37 @@ namespace vire
 // CallExprAST - Class for function calls, eg - `print()`
 class CallExprAST : public ExprAST
 {
-    std::unique_ptr<Viretoken> Callee;
-    std::vector<std::unique_ptr<ExprAST>> Args;
+    std::unique_ptr<Viretoken> callee;
+    std::vector<std::unique_ptr<ExprAST>> args;
 public:
-    CallExprAST(std::unique_ptr<Viretoken> Callee, std::vector<std::unique_ptr<ExprAST>> Args)
-    : Callee(std::move(Callee)), Args(std::move(Args)), ExprAST("void",ast_call){}
+    CallExprAST(std::unique_ptr<Viretoken> callee, std::vector<std::unique_ptr<ExprAST>> args)
+    : callee(std::move(callee)), args(std::move(args)), ExprAST("void",ast_call){}
 
-    std::string const& getName() const {return Callee->value;}
-    Viretoken* const getToken() const {return Callee.get();}
-    std::unique_ptr<Viretoken> moveToken() {return std::move(Callee);}
+    std::string const& getName() const
+    {
+        return callee->value;
+    }
+    Viretoken* const getToken() const
+    {
+        return callee.get();
+    }
+    std::unique_ptr<Viretoken> moveToken()
+    {
+        return std::move(callee);
+    }
 
-    std::vector<std::unique_ptr<ExprAST>> const& getArgs() const {return Args;}
-    std::vector<std::unique_ptr<ExprAST>> moveArgs() {return std::move(Args);}
+    std::vector<std::unique_ptr<ExprAST>> const& getArgs() const 
+    {
+        return args;
+    }
+    std::vector<std::unique_ptr<ExprAST>> moveArgs() 
+    {
+        return std::move(args);
+    }
+    void setArgs(std::vector<std::unique_ptr<ExprAST>> _args)
+    {
+        args=std::move(_args);
+    }
 };
 
 class FunctionBaseAST

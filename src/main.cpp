@@ -5,6 +5,7 @@
 
 int main(int argc, char ** argv)
 {
+    std::string filename="output";
     auto file=vire::proto::openFile("res/test.ve");
     auto code=vire::proto::readFile(file, 1);
 
@@ -16,32 +17,46 @@ int main(int argc, char ** argv)
 
     auto ast=parser->ParseCode();
  
-    std::cout << "Parsed Code" << std::endl;
+    // std::cout << "Parsed Code" << std::endl;
 
     bool success=analyzer->verifyCode(std::move(ast));
 
-    std::cout << "Analyzing Success: " << success << std::endl;
+    std::cout << "Analyzer Success: " << success << std::endl;
 
     if(!success) return 1;
 
-    std::cout << "\n\n";
+    // std::cout << "\n\n";
 
     // Analysis and Frontend are done.
     // Now we can use the AST to generate the code.
     
-    std::cout << "Generating Code" << std::endl; 
-    auto compiler=std::make_unique<vire::VCompiler>(std::move(analyzer), "test");
+    // std::cout << "Generating Code" << std::endl; 
+    auto compiler=std::make_unique<vire::VCompiler>(std::move(analyzer), filename);
 
-    compiler->compileExtern("put"); 
-    compiler->compileFunction("main");  
+    compiler->compileExtern("putd");
+    compiler->compileExtern("put");
+    compiler->compileFunction("main");
 
-    std::cout << "Compiling Success\n---\n" << std::endl;
-    std::cout << compiler->getCompiledOutput() << std::endl;
-    std::cout << "---\n" << std::endl;
+    // std::cout << "Compiling Success\n---\n" << std::endl;
+    // std::cout << compiler->getCompiledOutput() << std::endl;
+    // std::cout << "---\n" << std::endl;
 
-    compiler->compileToObjectFile("test.o"); 
+    compiler->compileToObjectFile(filename+".o"); 
     
-    std::cout << "\n";
+    // std::cout << "\n";
+    std::cout << "Compiled " << filename << ", Output: \n" << std::endl;
+    
+    std::string command="clang test.cpp ";
+    command.append(filename+".o");
+    command.append(" -o ");
+    command.append(filename);
 
-    return 1;
+    system(command.c_str());
+    
+    command="./";
+    command.append(filename);
+
+    system(command.c_str());
+
+    return 0;
 }

@@ -1,11 +1,16 @@
-extern put(c:int) returns int;
+extern putd(d:int)  returns int;
+extern put(c:char)  returns int;
 
 func main() returns int 
 {
-    let a=10;
-    a+=100;
+    for(let i=0; i<10; ++i)
+    {
+        for(let j=0; j<i; ++j)
+        {
+            put('#');
+        }
 
-    put(a);
-
-    return 0;
+        let nline:char = 10;
+        put(nline);
+    }
 }

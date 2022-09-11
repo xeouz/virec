@@ -621,7 +621,7 @@ namespace vire
             is_valid=false;
         }
 
-        const auto& args=call->getArgs();
+        auto args=call->moveArgs();
         const auto& func_args=getFunc(name)->getArgs();
 
         if(args.size() != func_args.size())
@@ -632,7 +632,7 @@ namespace vire
 
         for(unsigned int i=0; i<args.size(); ++i)
         {
-            const auto& arg=args[i];
+            auto arg=std::move(args[i]);
 
             if(!verifyExpr(arg.get()))
             {
@@ -641,11 +641,28 @@ namespace vire
             }
 
             auto* argtype=getType(arg.get());
+
             if(!types::isSame(func_args[i]->getType(), argtype))
             {
-                // Argument type mismatch
-                is_valid=false;
+                auto cast=createImplicitCast(func_args[i]->getType(), argtype, std::move(arg));
+
+                if(!cast)
+                {
+                    std::cout << "Error: Function call type mismatch, " << *func_args[i]->getType() << " : " << *argtype << std::endl;
+                    is_valid=false;
+                }
+                else
+                {
+                    arg=std::move(cast);
+                }
             }
+
+            args[i]=std::move(arg);
+        }
+        
+        if(is_valid)
+        {
+            call->setArgs(std::move(args));
         }
 
         return is_valid;
@@ -1113,7 +1130,6 @@ namespace vire
                 // Expr is not valid
                 return false;
             }
-
         }
         for(const auto& var : *refscope)
         {
