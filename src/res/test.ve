@@ -1,16 +1,14 @@
 extern putd(d:int)  returns int;
 extern put(c:char)  returns int;
 
-func main() returns int 
+struct foo
 {
-    for(let i=0; i<10; ++i)
-    {
-        for(let j=0; j<i; ++j)
-        {
-            put('#');
-        }
+    int a;
+    int b;
+}
 
-        let nline:char = 10;
-        put(nline);
-    }
+func main() returns int
+{
+
+    return 0;
 }

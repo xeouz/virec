@@ -580,7 +580,7 @@ namespace vire
 
         return value;
     }
-    llvm::Function* VCompiler::compilePrototype(const std::string& Name)
+    llvm::Function* VCompiler::compilePrototype(std::string const& Name)
     {
         auto const& base_ast=analyzer->getFunc(Name);
         auto const& proto=(std::unique_ptr<PrototypeAST> const&)base_ast;
@@ -605,7 +605,7 @@ namespace vire
 
         return func;
     }
-    llvm::Function* VCompiler::compileExtern(const std::string& Name)
+    llvm::Function* VCompiler::compileExtern(std::string const& Name)
     {
         llvm::Function* func=compilePrototype(Name);
 
@@ -613,7 +613,7 @@ namespace vire
         // func->print(llvm::errs());
         return func;
     }
-    llvm::Function* VCompiler::compileFunction(const std::string& Name)
+    llvm::Function* VCompiler::compileFunction(std::string const& Name)
     {
         llvm::Function* function=Module->getFunction(Name);
         if(!function)
@@ -649,10 +649,26 @@ namespace vire
         auto& bbend=function->getBasicBlockList().back();
         currentFunctionEndBB->moveAfter(&bbend); // Move the end block after the 
                                                  // last block of the function
-
         llvm::verifyFunction(*function);
 
         return function;
+    }
+
+    llvm::StructType* VCompiler::compileStruct(std::string const& name)
+    {
+        auto const& st=analyzer->getStruct(name);
+
+        std::vector<llvm::Type*> elements;
+
+        for(auto const& e: st->getMembersValues())
+        {
+            elements.push_back(getLLVMType(e->getType()));
+        }
+
+        auto struct_type=llvm::StructType::get(CTX, elements);
+        struct_type->setName("struct."+st->getName());
+
+        return struct_type;
     }
 
     llvm::Module* VCompiler::getModule()
@@ -675,10 +691,11 @@ namespace vire
         llvm::InitializeAllTargets();
         llvm::InitializeAllTargetMCs();
         llvm::InitializeAllAsmParsers();
-        llvm::InitializeAllAsmPrinters();    
+        llvm::InitializeAllAsmPrinters();
 
         std::string error;
         auto target=llvm::TargetRegistry::lookupTarget(target_triple, error);
+
         if(!target)
         {
             llvm::errs() << "Target not found:\n" << error;
