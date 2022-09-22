@@ -805,7 +805,7 @@ namespace vire
         getNextToken(tok_dot);
         auto child=ParseIdExpr();
 
-        if(!(child->asttype==ast_var || child->asttype==ast_call || child->asttype==ast_class_access))
+        if(!(child->asttype==ast_var || child->asttype==ast_call || child->asttype==ast_type_access))
         {
             std::cout << "Expected a class member during parsing" << std::endl;
             return nullptr;
@@ -813,7 +813,7 @@ namespace vire
 
         auto cast_child=cast_static<IdentifierExprAST>(std::move(child));
 
-        return std::make_unique<ClassAccessAST>(std::move(parent),std::move(cast_child));
+        return std::make_unique<TypeAccessAST>(std::move(parent),std::move(cast_child));
     }
 
     std::unordered_map<std::string, std::unique_ptr<ExprAST>> Vireparse::ParsePrimitiveBody()

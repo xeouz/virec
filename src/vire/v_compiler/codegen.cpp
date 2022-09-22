@@ -25,6 +25,12 @@ namespace vire
                 return llvm::ArrayType::get(getLLVMType(array->getChild()), array->getLength());
             }
             
+            case types::TypeNames::Custom:
+            {
+                auto* custom=(types::Custom*)type;
+                return definedStructs[custom->getName()];
+            }
+
             default:
                 std::cout << "Unknown type: " << (int)type->getType() << std::endl;
                 return llvm::Type::getVoidTy(CTX);
@@ -89,6 +95,9 @@ namespace vire
                 return compileVariableArrayAccess((VariableArrayAccessAST* const&)expr);
             case ast_cast:
                 return compileCastExpr((CastExprAST* const&)expr);
+
+            case ast_type_access:
+                return compileTypeAccess((TypeAccessAST* const&)expr);
 
             case ast_binop:
                 return compileBinopExpr((BinaryExprAST* const&)expr);
@@ -665,10 +674,25 @@ namespace vire
             elements.push_back(getLLVMType(e->getType()));
         }
 
-        auto struct_type=llvm::StructType::get(CTX, elements);
-        struct_type->setName("struct."+st->getName());
+        auto struct_type=llvm::StructType::create(CTX, elements);
+        auto struct_name="struct."+st->getName();
+        struct_type->setName(struct_name);
+
+        definedStructs[st->getName()]=struct_type;
 
         return struct_type;
+    }
+    llvm::Value* VCompiler::compileTypeAccess(TypeAccessAST* const& expr)
+    {
+        auto* st_type=(types::Custom*)expr->getParent()->getType();
+        auto* st_ltype=definedStructs[st_type->getName()];
+
+        auto* val=getValueAsAlloca(compileExpr(expr->getParent()));
+
+        auto* st=analyzer->getStruct(st_type->getName());
+        int indx=st->getMemberIndex(expr->getName());
+
+        return Builder.CreateStructGEP(st_ltype, val, indx, "sgep");
     }
 
     llvm::Module* VCompiler::getModule()

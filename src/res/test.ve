@@ -5,10 +5,15 @@ struct foo
 {
     int a;
     int b;
+    int c;
+    int d;
 }
 
 func main() returns int
 {
+    let a:foo;
+
+    putd(a.b);
 
     return 0;
 }

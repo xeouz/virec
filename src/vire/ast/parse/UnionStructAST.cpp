@@ -12,11 +12,18 @@ namespace vire
 class TypeAST : public ExprAST
 {
     std::unordered_map<std::string, std::unique_ptr<ExprAST>> members;
+    std::unordered_map<std::string, int> members_indx;
     std::unique_ptr<Viretoken> name;
 public:
     TypeAST(std::unordered_map<std::string, std::unique_ptr<ExprAST>> members, std::unique_ptr<Viretoken> name, int asttype=ast_type)
     : members(std::move(members)), name(std::move(name)), ExprAST("void", asttype)
     {
+        int i=this->members.size()-1;
+        for(auto& [str, ptr] : this->members)
+        {
+            this->members_indx[str]=i--;
+        }
+
     }
 
     virtual std::string const& getName() const
@@ -44,6 +51,10 @@ public:
 
         return values;
     }
+    virtual int const getMemberIndex(std::string const& name)
+    {
+        return members_indx.at(name);
+    }
 
     virtual bool isMember(std::string const& name)
     {
@@ -66,7 +77,6 @@ public:
     UnionExprAST(std::unordered_map<std::string, std::unique_ptr<ExprAST>> members, std::unique_ptr<Viretoken> name)
     : TypeAST(std::move(members), std::move(name), ast_union)
     {
-
     }
 };
 
@@ -76,7 +86,6 @@ public:
     StructExprAST(std::unordered_map<std::string, std::unique_ptr<ExprAST>> members, std::unique_ptr<Viretoken> name)
     : TypeAST(std::move(members), std::move(name), ast_struct)
     {
-
     }
 };
 

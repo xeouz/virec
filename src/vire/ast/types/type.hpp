@@ -314,6 +314,11 @@ inline std::unique_ptr<Base> copyType(Base* const& type)
         Array* array = static_cast<Array*>(type);
         return std::make_unique<Array>(copyType(array->getChild()), array->getLength());
     }
+    else if(type->getType() == TypeNames::Custom)
+    {
+        auto* ctype=(Custom*)type;
+        return construct(ctype->getName(), true);
+    }
     else
     {
         return construct(type->getType());

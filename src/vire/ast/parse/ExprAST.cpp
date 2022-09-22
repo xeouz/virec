@@ -53,7 +53,7 @@ public:
 
         return false;
     }
-    virtual void setType(std::unique_ptr<types::Base> t) 
+    virtual void setType(std::unique_ptr<types::Base> t)
     {
         bool refreshed=refreshType(t.get());
         if(!refreshed)

@@ -41,6 +41,7 @@ class VCompiler
 
     // Memory
     std::map<llvm::StringRef, llvm::AllocaInst*> namedValues;
+    std::map<std::string, llvm::StructType*> definedStructs;
     llvm::Function* currentFunction;
     llvm::BasicBlock* currentFunctionEndBB;
     llvm::BasicBlock* currentLoopEndBB;
@@ -99,6 +100,7 @@ public:
     llvm::Function* compileFunction(std::string const& name);
 
     llvm::StructType* compileStruct(std::string const& name);
+    llvm::Value* compileTypeAccess(TypeAccessAST* const& name);
 
     llvm::Module* getModule();
     std::string getCompiledOutput();

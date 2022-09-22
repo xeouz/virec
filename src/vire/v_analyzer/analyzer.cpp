@@ -125,6 +125,7 @@ namespace vire
     {
         if(!isStructDefined(name))
         {
+            std::cout << "Struct with name not defined: " << name << std::endl;
             return nullptr;
         }
 
@@ -141,6 +142,8 @@ namespace vire
                 }
             }
         }
+
+        std::cout << "Could not find struct with name: " << name << std::endl;
 
         return nullptr;
     }
@@ -221,17 +224,17 @@ namespace vire
 
             case ast_array: return getType((ArrayExprAST*)expr);
 
-            case ast_class_access:
+            case ast_type_access:
             {
-                auto* access=(ClassAccessAST*)expr;
+                auto* access=(TypeAccessAST*)expr;
                 
                 auto* st_type=getType(access->getParent());
                 auto name=((types::Void*)st_type)->getName();
                 auto* st=getStruct(name);
-                while(access->getChild()->asttype==ast_class_access)
+                while(access->getChild()->asttype==ast_type_access)
                 {
                     name=access->getName();
-                    access=(ClassAccessAST*)access->getChild();
+                    access=(TypeAccessAST*)access->getChild();
                     st=(StructExprAST*)st->getMember(name);
                 }
 
@@ -917,7 +920,7 @@ namespace vire
 
         return is_valid;
     }
-    bool VAnalyzer::verifyTypeAccess(ClassAccessAST* const& access, StructExprAST* struct_)
+    bool VAnalyzer::verifyTypeAccess(TypeAccessAST* const& access, StructExprAST* struct_)
     {
         bool is_valid=true;
 
@@ -934,9 +937,10 @@ namespace vire
             auto* ptype_custom=(types::Custom*)ptype;
             if(!types::isTypeinMap(ptype_custom->getName()))
             {
-                std::cout << "Type " << ptype_custom << " is not defined" << std::endl;
+                std::cout << "Type " << *ptype_custom << " is not defined" << std::endl;
             }
 
+            access->getParent()->setType(types::copyType(ptype_custom));
             st=getStruct(ptype_custom->getName());
         }
         else
@@ -955,9 +959,9 @@ namespace vire
         
         auto* member=st->getMember(name);
 
-        if(access->getChild()->asttype==ast_class_access)
+        if(access->getChild()->asttype==ast_type_access)
         {
-            auto* child=(ClassAccessAST*)access->getChild();
+            auto* child=(TypeAccessAST*)access->getChild();
             
             if(member->asttype!=ast_struct)
             {
@@ -969,6 +973,9 @@ namespace vire
                 is_valid=verifyTypeAccess(child, (StructExprAST*)member);
             }
         }
+
+        auto* type=getType(access);
+        access->setType(types::copyType(type));
 
         return is_valid;
     }
@@ -1273,7 +1280,7 @@ namespace vire
             case ast_varassign: return verifyVarAssign((VariableAssignAST*const&)expr);
             case ast_array_access: return verifyVarArrayAccess((VariableArrayAccessAST*const&)expr);
 
-            case ast_class_access: return verifyTypeAccess((ClassAccessAST*const&)expr);
+            case ast_type_access: return verifyTypeAccess((TypeAccessAST*const&)expr);
 
             case ast_call: return verifyCall((CallExprAST*const&)expr);
 

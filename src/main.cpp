@@ -35,25 +35,24 @@ int main(int argc, char ** argv)
 
     compiler->compileStruct("foo");
     compiler->compileExtern("putd");
-    compiler->compileExtern("put"); 
+    compiler->compileExtern("put");
     compiler->compileFunction("main");
 
-    std::cout << "Code Generated: \n\n" << std::endl;
+    std::cout << "Code Generated: \n" << std::endl;
     std::cout << compiler->getCompiledOutput() << std::endl;
+    return 0;
     // std::cout << "---\n" << std::endl;
 
-    std::cout << "\n" << std::endl;
-
-    return 0;
+    compiler->compileToObjectFile(filename+".o");
     
     // std::cout << "\n";
     std::cout << "Compiled " << filename << ", Output: \n" << std::endl;
     
     std::string command="clang test.cpp ";
-    command.append(filename+".o");
+    command.append(filename+".o"); 
     command.append(" -o ");
     command.append(filename);
-
+ 
     system(command.c_str());
     
     command="./";

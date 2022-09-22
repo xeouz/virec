@@ -41,18 +41,18 @@ public:
     } 
 };
 
-class ClassAccessAST : public IdentifierExprAST
+class TypeAccessAST : public IdentifierExprAST
 {
     std::unique_ptr<ExprAST> parent;
     std::unique_ptr<IdentifierExprAST> child;
 public:
-    ClassAccessAST(std::unique_ptr<ExprAST> _parent, std::unique_ptr<IdentifierExprAST> _child)
+    TypeAccessAST(std::unique_ptr<ExprAST> _parent, std::unique_ptr<IdentifierExprAST> _child)
     : parent(std::move(_parent)), child(std::move(_child)), 
-    IdentifierExprAST(Viretoken::construct(""), ast_class_access)
+    IdentifierExprAST(Viretoken::construct(""), ast_type_access)
     {
-        if(child->asttype==ast_class_access)
+        if(child->asttype==ast_type_access)
         {
-            auto* cast_child=(ClassAccessAST*)child.get();
+            auto* cast_child=(TypeAccessAST*)child.get();
             auto* cast_child_child=(VariableExprAST*)cast_child->getParent();
             setName(cast_child_child->getName());
             setToken(Viretoken::construct(cast_child_child->getName()));
