@@ -352,7 +352,6 @@ namespace vire
     {
         if(cast_expr->isNonUserDefined())
         {
-            
             auto* const& dest_type=cast_expr->getDestType();
             auto* const& src_type=cast_expr->getSourceType();
 
@@ -372,6 +371,19 @@ namespace vire
                 {
                     auto* fp_to_si=Builder.CreateFPToSI(expr, getLLVMType(dest_type));
                     return fp_to_si;
+                }
+            }
+            else if(is_dest_fp and is_src_fp)
+            {
+                if(dest_type->getSize() > src_type->getSize())
+                {
+                    auto* fpext=Builder.CreateFPExt(expr, getLLVMType(dest_type));
+                    return fpext;
+                }
+                else
+                {
+                    auto* fptrunc=Builder.CreateFPTrunc(expr, getLLVMType(src_type));
+                    return fptrunc;
                 }
             }
             else

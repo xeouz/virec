@@ -51,7 +51,7 @@ public:
 
     types::Base* getType(ExprAST* const& expr);
     types::Base* getType(ArrayExprAST* const& arr);
-    types::Base* getFuncReturnType(const std::string& name="");
+    std::unique_ptr<types::Base> moveFuncReturnType(const std::string& name="");
 
     FunctionBaseAST* const getFunc(const std::string& name);
     StructExprAST* const getStruct(const std::string& name);

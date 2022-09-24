@@ -33,14 +33,14 @@ int main(int argc, char ** argv)
     // std::cout << "Generating Code" << std::endl; 
     auto compiler=std::make_unique<vire::VCompiler>(std::move(analyzer), filename);
 
-    compiler->compileStruct("foo");
+    compiler->compileExtern("puti");
     compiler->compileExtern("putd");
+    compiler->compileExtern("putb");
     compiler->compileExtern("put");
+    compiler->compileFunction("test");
     compiler->compileFunction("main");
 
-    std::cout << "Code Generated: \n" << std::endl;
-    std::cout << compiler->getCompiledOutput() << std::endl;
-    return 0;
+    //std::cout << "Code Generated: \n" << std::endl;
     // std::cout << "---\n" << std::endl;
 
     compiler->compileToObjectFile(filename+".o");

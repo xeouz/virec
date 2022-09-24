@@ -98,13 +98,13 @@ namespace vire
             }
         }
 
+        if(current_func->getName()==name)
+        {
+            return current_func;
+        }
+        
         std::cout << "Function `" << name << "` not found" << std::endl;
         return nullptr;
-    }
-    types::Base* VAnalyzer::getFuncReturnType(const std::string& name)
-    {
-        auto* type=getFunc(name)->getReturnType();
-        return type;
     }
 
     CodeAST* const VAnalyzer::getCode()
@@ -220,7 +220,7 @@ namespace vire
                 return array_type;
             }
 
-            case ast_call: return getFuncReturnType(((CallExprAST*)expr)->getName());
+            case ast_call: return getFunc(((CallExprAST*)expr)->getName())->getReturnType();
 
             case ast_array: return getType((ArrayExprAST*)expr);
 
@@ -673,7 +673,7 @@ namespace vire
 
     bool VAnalyzer::verifyReturn(ReturnExprAST* const& ret)
     {
-        const auto& ret_type=getFuncReturnType();
+        auto const& ret_type=getFunc(ret->getName())->getReturnType();
         
         auto* ret_expr_type=getType(ret->getValue());
 
@@ -685,9 +685,18 @@ namespace vire
         
         if(!types::isSame(ret_type, ret_expr_type))
         {
-            std::cout << "Return type mismatch, expected " << *ret_type << " got " << *ret_expr_type << std::endl;
-            // Type mismatch
-            return false;
+            auto cast=createImplicitCast(ret_expr_type, ret_type, ret->moveValue());
+
+            if(!cast)
+            {
+                std::cout << "Error: Return type mismatch, " << *ret_expr_type << " : " << *ret_type << std::endl;
+                return false;
+            }
+            else
+            {
+                ret->setValue(std::move(cast));
+                std::cout << *ret->getValue()->getType() << std::endl;
+            }
         }
 
         return true;

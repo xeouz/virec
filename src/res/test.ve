@@ -1,19 +1,19 @@
-extern putd(d:int)  returns int;
-extern put(c:char)  returns int;
+extern puti(i:int)     returns int;
+extern putd(i:double)  returns int;
+extern putb(i:bool)    returns int;
+extern put(c:char)     returns int;
 
-struct foo
+func test() returns double
 {
-    int a;
-    int b;
-    int c;
-    int d;
+    return 1.43;
 }
 
 func main() returns int
 {
-    let a:foo;
-
-    putd(a.b);
+    putd(test());
+    puti(11.9);
+    putb(1);
+    putb(0);
 
     return 0;
 }

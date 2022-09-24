@@ -58,6 +58,9 @@ public:
     {}
     
     types::Base* getReturnType() const { return return_type.get(); }
+    std::unique_ptr<types::Base> moveReturnType() { return std::move(return_type); }
+    void setReturnType(std::unique_ptr<types::Base> t) { this->return_type=std::move(t); }
+
     virtual std::string      const getName()       const = 0;
     virtual std::string      const getReturnName() const = 0;
 
@@ -181,15 +184,17 @@ public:
 
 class ReturnExprAST : public ExprAST
 {
-    std::unique_ptr<ExprAST> Values;
+    std::unique_ptr<ExprAST> expr;
     std::string func_name;
 public:
-    ReturnExprAST(std::unique_ptr<ExprAST> Values) : Values(std::move(Values)), ExprAST("",ast_return)
+    ReturnExprAST(std::unique_ptr<ExprAST> expr) : expr(std::move(expr)), ExprAST("",ast_return)
     {}
 
     void setName(std::string name) {func_name = name;}
     std::string const& getName() const {return func_name;}
-    ExprAST* const getValue() const {return Values.get();}
+    ExprAST* const getValue() const {return expr.get();}
+    std::unique_ptr<ExprAST> const moveValue() { return std::move(expr); }
+    void setValue(std::unique_ptr<ExprAST> t) { expr=std::move(t); }
 };
 
 }
