@@ -179,7 +179,7 @@ public:
     // Variable-based Functions
     bool isVarDefined(std::string const& name)            const { return locals.count(name)>0; }
     VariableDefAST* const getVar(std::string const& name) const { return locals.at(name); }
-    void addVar(VariableDefAST* const& var) {locals[var->getName()] = var;}
+    void addVar(VariableDefAST* const var) {locals[var->getName()] = var;}
 };
 
 class ReturnExprAST : public ExprAST

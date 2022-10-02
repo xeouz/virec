@@ -32,14 +32,48 @@ public:
 
 class VariableAssignAST: public ExprAST
 {
-    std::string name;
-    std::unique_ptr<ExprAST> value;
-public: 
-    VariableAssignAST(std::unique_ptr<Viretoken> name, std::unique_ptr<ExprAST> value)
-    : name(name->value), value(std::move(value)), ExprAST("void",ast_varassign) {setToken(std::move(name));}
+    std::unique_ptr<ExprAST> lhs;
+    std::unique_ptr<ExprAST> rhs;
+    std::unique_ptr<Viretoken> shorthand_op;
+public:
+    bool is_shorthand;
 
-    std::string const& getName() const {return name;}
-    ExprAST* const getValue() const {return value.get();}
+    VariableAssignAST(std::unique_ptr<ExprAST> lhs, std::unique_ptr<ExprAST> rhs, std::unique_ptr<Viretoken> _shorthand_op=nullptr)
+    : lhs(std::move(lhs)), rhs(std::move(rhs)), ExprAST("void",ast_varassign)
+    {
+        if(_shorthand_op)
+        {
+            is_shorthand=true;
+            shorthand_op=std::move(_shorthand_op);
+        }
+        else
+        {
+            is_shorthand=false;
+        }
+    }
+
+    ExprAST* const getLHS() const
+    {
+        return lhs.get();
+    }
+    ExprAST* const getRHS() const
+    {
+        return rhs.get();
+    }
+    Viretoken* const getShorthandOperator()
+    {
+        return shorthand_op.get();
+    }
+
+    std::unique_ptr<ExprAST> const moveRHS()
+    {
+        return std::move(rhs);
+    }
+    
+    void setRHS(std::unique_ptr<ExprAST> _rhs)
+    {
+        rhs=std::move(_rhs);
+    }
 };
 
 class VariableDefAST : public ExprAST

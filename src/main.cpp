@@ -40,8 +40,9 @@ int main(int argc, char ** argv)
     compiler->compileFunction("test");
     compiler->compileFunction("main");
 
-    //std::cout << "Code Generated: \n" << std::endl;
-    // std::cout << "---\n" << std::endl;
+    std::cout << "Code Generated: \n" << std::endl;
+    //std::cout << compiler->getCompiledOutput() << std::endl;
+    //std::cout << "---\n" << std::endl;
 
     compiler->compileToObjectFile(filename+".o");
     

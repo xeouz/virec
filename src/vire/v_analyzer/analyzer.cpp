@@ -59,7 +59,7 @@ namespace vire
         return false;
     }
 
-    void VAnalyzer::defineVariable(VariableDefAST* const& var)
+    void VAnalyzer::defineVariable(VariableDefAST* const var)
     {
         scope.insert(std::make_pair(var->getName(), var));
         
@@ -68,7 +68,7 @@ namespace vire
             scope_varref->push_back(var);
         }
     }
-    void VAnalyzer::undefineVariable(VariableDefAST* const& var)
+    void VAnalyzer::undefineVariable(VariableDefAST* const var)
     {
         undefineVariable(var->getName());
     }
@@ -150,7 +150,7 @@ namespace vire
 
     // !!- CHANGES REQUIRED -!!
     // str to be implemented
-    types::Base* VAnalyzer::getType(ExprAST* const& expr)
+    types::Base* VAnalyzer::getType(ExprAST* const expr)
     {
         switch (expr->asttype)
         {
@@ -183,7 +183,6 @@ namespace vire
                         else
                         {
                             binop->setType(types::construct(types::TypeNames::Float));
-                            std::cout << *binop->getType() << std::endl;
                             return binop->getType();
                         }
                     }
@@ -251,7 +250,7 @@ namespace vire
     
     // !!- CHANGES REQUIRED -!!
     // unhandled dynamic array typing
-    types::Base* VAnalyzer::getType(ArrayExprAST* const& array)
+    types::Base* VAnalyzer::getType(ArrayExprAST* const array)
     {
         const auto& vec=array->getElements();
         auto type=types::copyType(getType(vec[0].get()));
@@ -286,12 +285,12 @@ namespace vire
 
         return nullptr;
     }
-    std::unique_ptr<ExprAST> VAnalyzer::createImplicitCast(types::Base* t1, types::Base* t2, std::unique_ptr<ExprAST> expr)
+    std::unique_ptr<ExprAST> VAnalyzer::tryCreateImplicitCast(types::Base* target, types::Base* base, std::unique_ptr<ExprAST> expr)
     {
-        if(!types::isUserDefined(t1) && !types::isUserDefined(t2))
+        if(!types::isUserDefined(target) && !types::isUserDefined(base))
         {
-            auto src_type=types::copyType(t2);
-            auto dst_type=types::copyType(t1);
+            auto src_type=types::copyType(base);
+            auto dst_type=types::copyType(target);
             auto new_cast_value=std::make_unique<CastExprAST>(std::move(expr), std::move(dst_type), true);
             new_cast_value->setSourceType(std::move(src_type));
             return std::move(new_cast_value);
@@ -303,7 +302,7 @@ namespace vire
     }
 
     // Verification Functions
-    bool VAnalyzer::verifyVar(VariableExprAST* const& var)
+    bool VAnalyzer::verifyVar(VariableExprAST* const var)
     {
         // Check if it is defined
         if(!isVarDefined(var->getName()))
@@ -314,7 +313,7 @@ namespace vire
         
         return true;
     }
-    bool VAnalyzer::verifyIncrementDecrement(IncrementDecrementAST* const& incrdecr)
+    bool VAnalyzer::verifyIncrementDecrement(IncrementDecrementAST* const incrdecr)
     {
         // Check if it is defined
         auto const& expr=incrdecr->getExpr();
@@ -331,7 +330,7 @@ namespace vire
         
         return true;
     }
-    bool VAnalyzer::verifyVarDef(VariableDefAST* const& var, bool check_globally_only, bool add_to_scope)
+    bool VAnalyzer::verifyVarDef(VariableDefAST* const var, bool check_globally_only, bool add_to_scope)
     {
         if(!isVarDefined(var->getName(), check_globally_only))
         {
@@ -404,7 +403,7 @@ namespace vire
             {
                 if(!types::isSame(type, value_type))    
                 {
-                    auto new_cast_value=createImplicitCast(type, value_type, var->moveValue());
+                    auto new_cast_value=tryCreateImplicitCast(type, value_type, var->moveValue());
                         
                     if(!new_cast_value)
                     {
@@ -435,35 +434,39 @@ namespace vire
         // Variable is already defined
         return false;
     }
-    bool VAnalyzer::verifyVarAssign(VariableAssignAST* const& assign)
+    bool VAnalyzer::verifyVarAssign(VariableAssignAST* const assign)
     {
         bool is_valid=true;
-        if(!isVarDefined(assign->getName()))
+        
+        if(!verifyExpr(assign->getLHS()))
         {
             // Var is not defined
             return false;
         }
 
-        auto const& var=getVar(assign->getName());
-        if(var->isConst())
+        auto* lhs_type=getType(assign->getLHS());
+        auto* rhs_type=getType(assign->getRHS());
+
+        if(!types::isSame(lhs_type, rhs_type))
         {
-            // Var is const
-            std::cout << "Var is const" << std::endl;
-            is_valid=false;
+            auto cast=tryCreateImplicitCast(lhs_type, rhs_type, assign->moveRHS());
+
+            if(!cast)
+            {
+                std::cout << "Error: Assigment: Variable and Value types do not match" << std::endl;
+                return false;
+            }
+            else
+            {
+                assign->setRHS(std::move(cast));
+            }
         }
 
-        auto* assign_type=getType(assign->getValue());
-
-        if(!types::isSame(var->getType(), assign_type))
-        {
-            // Type mismatch
-            std::cout << "Type mismatch in assignment, types are: " << *var->getType() << " and " << *assign_type << std::endl;
-            is_valid=false;
-        }
+        assign->getLHS()->setType(lhs_type);
         
         return is_valid;
     }
-    bool VAnalyzer::verifyVarArrayAccess(VariableArrayAccessAST* const& access)
+    bool VAnalyzer::verifyVarArrayAccess(VariableArrayAccessAST* const access)
     {
         if(!verifyExpr(access->getExpr()))
         {
@@ -519,13 +522,13 @@ namespace vire
         return true;
     }
 
-    bool VAnalyzer::verifyInt(IntExprAST* const& int_) { return true; }
-    bool VAnalyzer::verifyFloat(FloatExprAST* const& float_) { return true; }
-    bool VAnalyzer::verifyDouble(DoubleExprAST* const& double_) { return true; }
-    bool VAnalyzer::verifyChar(CharExprAST* const& char_) { return true; }
-    bool VAnalyzer::verifyStr(StrExprAST* const& str) { return true; }
-    bool VAnalyzer::verifyBool(BoolExprAST* const& bool_) { return true; }
-    bool VAnalyzer::verifyArray(ArrayExprAST* const& array)
+    bool VAnalyzer::verifyInt(IntExprAST* const int_) { return true; }
+    bool VAnalyzer::verifyFloat(FloatExprAST* const float_) { return true; }
+    bool VAnalyzer::verifyDouble(DoubleExprAST* const double_) { return true; }
+    bool VAnalyzer::verifyChar(CharExprAST* const char_) { return true; }
+    bool VAnalyzer::verifyStr(StrExprAST* const str) { return true; }
+    bool VAnalyzer::verifyBool(BoolExprAST* const bool_) { return true; }
+    bool VAnalyzer::verifyArray(ArrayExprAST* const array)
     {
         const auto& elems=array->getElements();
 
@@ -540,7 +543,7 @@ namespace vire
         return true;
     }
 
-    bool VAnalyzer::verifyFor(ForExprAST* const& for_)
+    bool VAnalyzer::verifyFor(ForExprAST* const for_)
     { 
         bool is_valid=true;
         const auto& init=for_->getInit();
@@ -588,7 +591,7 @@ namespace vire
         
         return is_valid;
     }
-    bool VAnalyzer::verifyWhile(WhileExprAST* const& while_)
+    bool VAnalyzer::verifyWhile(WhileExprAST* const while_)
     {
         const auto& cond=while_->getCond();
 
@@ -608,12 +611,13 @@ namespace vire
             // Block is not valid
             return false;
         }
+
         return true;
     }
-    bool VAnalyzer::verifyBreak(BreakExprAST* const& break_) { return true; }
-    bool VAnalyzer::verifyContinue(ContinueExprAST* const& continue_) { return true; }    
+    bool VAnalyzer::verifyBreak(BreakExprAST* const break_) { return true; }
+    bool VAnalyzer::verifyContinue(ContinueExprAST* const continue_) { return true; }    
 
-    bool VAnalyzer::verifyCall(CallExprAST* const& call)
+    bool VAnalyzer::verifyCall(CallExprAST* const call)
     {
         bool is_valid=true;
         auto name=call->getName();
@@ -643,15 +647,15 @@ namespace vire
                 is_valid=false;
             }
 
-            auto* argtype=getType(arg.get());
+            auto* arg_type=getType(arg.get());
 
-            if(!types::isSame(func_args[i]->getType(), argtype))
+            if(!types::isSame(func_args[i]->getType(), arg_type))
             {
-                auto cast=createImplicitCast(func_args[i]->getType(), argtype, std::move(arg));
+                auto cast=tryCreateImplicitCast(func_args[i]->getType(), arg_type, std::move(arg));
 
                 if(!cast)
                 {
-                    std::cout << "Error: Function call type mismatch, " << *func_args[i]->getType() << " : " << *argtype << std::endl;
+                    std::cout << "Error: Function call type mismatch, " << *func_args[i]->getType() << " : " << *arg_type << std::endl;
                     is_valid=false;
                 }
                 else
@@ -671,7 +675,7 @@ namespace vire
         return is_valid;
     }
 
-    bool VAnalyzer::verifyReturn(ReturnExprAST* const& ret)
+    bool VAnalyzer::verifyReturn(ReturnExprAST* const ret)
     {
         auto const& ret_type=getFunc(ret->getName())->getReturnType();
         
@@ -685,7 +689,7 @@ namespace vire
         
         if(!types::isSame(ret_type, ret_expr_type))
         {
-            auto cast=createImplicitCast(ret_expr_type, ret_type, ret->moveValue());
+            auto cast=tryCreateImplicitCast(ret_expr_type, ret_type, ret->moveValue());
 
             if(!cast)
             {
@@ -695,14 +699,13 @@ namespace vire
             else
             {
                 ret->setValue(std::move(cast));
-                std::cout << *ret->getValue()->getType() << std::endl;
             }
         }
 
         return true;
     }
 
-    bool VAnalyzer::verifyBinop(BinaryExprAST* const& binop)
+    bool VAnalyzer::verifyBinop(BinaryExprAST* const binop)
     {
         const auto& left=binop->getLHS();
         const auto& right=binop->getRHS();
@@ -728,7 +731,7 @@ namespace vire
         
         return is_valid;
     }
-    bool VAnalyzer::verifyUnop(UnaryExprAST* const& unop)
+    bool VAnalyzer::verifyUnop(UnaryExprAST* const unop)
     {
         const auto& expr=unop->getExpr();
 
@@ -741,7 +744,7 @@ namespace vire
         return true;
     }
 
-    bool VAnalyzer::verifyPrototype(PrototypeAST* const& proto)
+    bool VAnalyzer::verifyPrototype(PrototypeAST* const proto)
     {
         bool is_valid=true;
 
@@ -778,7 +781,7 @@ namespace vire
         
         return is_valid;
     }
-    bool VAnalyzer::verifyProto(PrototypeAST* const& proto)
+    bool VAnalyzer::verifyProto(PrototypeAST* const proto)
     {
         if(!verifyPrototype(proto))
         {
@@ -788,7 +791,7 @@ namespace vire
 
         return true;
     }
-    bool VAnalyzer::verifyExtern(ExternAST* const& extern_)
+    bool VAnalyzer::verifyExtern(ExternAST* const extern_)
     {
         if(!verifyPrototype(extern_->getProto()))
         {
@@ -798,7 +801,7 @@ namespace vire
         
         return true;
     }
-    bool VAnalyzer::verifyFunction(FunctionAST* const& func)
+    bool VAnalyzer::verifyFunction(FunctionAST* const func)
     {
         //std::cout << ("Verifying function " + func->getNameToken()->value) << std::endl;
         bool is_valid=true;
@@ -885,7 +888,7 @@ namespace vire
 
         return is_valid;
     }
-    bool VAnalyzer::verifyUnion(UnionExprAST* const& union_)
+    bool VAnalyzer::verifyUnion(UnionExprAST* const union_)
     {
         auto const& members=union_->getMembersValues();
         
@@ -897,7 +900,7 @@ namespace vire
 
         return true;
     }
-    bool VAnalyzer::verifyStruct(StructExprAST* const& struct_)
+    bool VAnalyzer::verifyStruct(StructExprAST* const struct_)
     {
         bool is_valid=true;
 
@@ -929,7 +932,7 @@ namespace vire
 
         return is_valid;
     }
-    bool VAnalyzer::verifyTypeAccess(TypeAccessAST* const& access, StructExprAST* struct_)
+    bool VAnalyzer::verifyTypeAccess(TypeAccessAST* const access, StructExprAST* struct_)
     {
         bool is_valid=true;
 
@@ -989,7 +992,7 @@ namespace vire
         return is_valid;
     }
 
-    bool VAnalyzer::verifyIfThen(IfThenExpr* const& if_then)
+    bool VAnalyzer::verifyIfThen(IfThenExpr* const if_then)
     {
         bool is_valid=true;
         const auto& cond=if_then->getCondition();
@@ -1000,7 +1003,7 @@ namespace vire
         if(cond_type->getType()!=types::TypeNames::Bool)
         {
             auto bool_type=types::construct(types::TypeNames::Bool);
-            auto cast=createImplicitCast(bool_type.get(), cond_type, if_then->moveCondition());
+            auto cast=tryCreateImplicitCast(bool_type.get(), cond_type, if_then->moveCondition());
 
             if(!cast)
             {
@@ -1026,7 +1029,7 @@ namespace vire
 
         return is_valid;
     }
-    bool VAnalyzer::verifyIf(IfExprAST* const& if_)
+    bool VAnalyzer::verifyIf(IfExprAST* const if_)
     {
         bool is_valid=true;
 
@@ -1058,7 +1061,7 @@ namespace vire
         return is_valid;
     }
 
-    bool VAnalyzer::verifyUnsafe(UnsafeExprAST* const& unsafe)
+    bool VAnalyzer::verifyUnsafe(UnsafeExprAST* const unsafe)
     {
         const auto& block=unsafe->getBody();
         if(!verifyBlock(block))
@@ -1068,7 +1071,7 @@ namespace vire
         }
         return true;
     }
-    bool VAnalyzer::verifyReference(ReferenceExprAST* const& reference)
+    bool VAnalyzer::verifyReference(ReferenceExprAST* const reference)
     {
         const auto& expr=reference->getVar();
         if(!verifyExpr(expr))
@@ -1079,7 +1082,7 @@ namespace vire
         return true;
     }
 
-    bool VAnalyzer::verifyClass(ClassAST* const& cls)
+    bool VAnalyzer::verifyClass(ClassAST* const cls)
     {
         if(isClassDefined(cls->getName()))
         {
@@ -1269,7 +1272,7 @@ namespace vire
         return is_valid;
     }
 
-    bool VAnalyzer::verifyExpr(ExprAST* const& expr)
+    bool VAnalyzer::verifyExpr(ExprAST* const expr)
     {
         switch(expr->asttype)
         {

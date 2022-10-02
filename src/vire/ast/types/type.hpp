@@ -59,11 +59,13 @@ protected:
     int8_t size;
 public:
     int8_t precedence;
+    bool is_const;
     
-    Base()
+    Base(bool _is_const=true)
     {
         type = TypeNames::Void;
         size = 0;
+        is_const = _is_const;
     }
 
     virtual ~Base()=default;
@@ -72,7 +74,7 @@ public:
 
     virtual unsigned int getDepth() const { return 0; }
     
-    virtual bool isSame(Base* const& other) const
+    virtual bool isSame(Base* const other) const
     {
         return (getType() == other->getType()); 
     }
@@ -82,12 +84,12 @@ public:
     }
 };
 
-inline bool isSame(Base* const& a, Base* const& b);
-inline bool isSame(Base* const& a, const char*  b);
+inline bool isSame(Base* const a, Base* const b);
+inline bool isSame(Base* const a, const char*  b);
 
 inline std::unique_ptr<Base> construct(std::string typestr, bool create_custom=false);
 inline std::unique_ptr<Base> construct(TypeNames type);
-inline Base* getArrayRootType(Base* const& type);
+inline Base* getArrayRootType(Base* const type);
 
 inline std::ostream& operator<<(std::ostream& os, Base const& type)
 {
@@ -99,11 +101,12 @@ class Void : public Base
 {
     std::string name;
 public:
-    Void(std::string name="")
+    Void(std::string name="", bool _is_const=true)
     {
         type = TypeNames::Void;
         size = 0;
         precedence = 0;
+        is_const=_is_const;
         this->name = name;
     }
 
@@ -116,54 +119,59 @@ public:
 class Char : public Base
 {
 public:
-    Char()
+    Char(bool _is_const=true)
     {
         type = TypeNames::Char;
         size = 1;
         precedence = 2;
+        is_const=_is_const;
     }
 };
 
 class Int : public Base
 {
 public:
-    Int()
+    Int(bool _is_const=true)
     {
         type = TypeNames::Int;
         size = 4; 
         precedence = 4;
+        is_const=_is_const;
     }
 };
 
 class Float : public Base
 {
 public:
-    Float()
+    Float(bool _is_const=true)
     {
         type = TypeNames::Float;
         size = 4; 
         precedence = 5;
+        is_const=_is_const;
     }
 };
 
 class Double : public Base
 {
 public:
-    Double()
+    Double(bool _is_const=true)
     {
         type = TypeNames::Double;
         size = 8;
         precedence = 8;
+        is_const=_is_const;
     }
 };
 
 class Bool : public Base
 {
 public:
-    Bool()
+    Bool(bool _is_const=true)
     {
         type = TypeNames::Bool;
         size = 1;
+        is_const=_is_const;
     }
 };
 
@@ -172,19 +180,21 @@ class Array : public Base
     std::unique_ptr<Base> child;
     unsigned int length;
 public:
-    Array(std::unique_ptr<Base> b, int length)
+    Array(std::unique_ptr<Base> b, int length, bool _is_const=true)
     {
         this->type = TypeNames::Array;
         this->child = std::move(b);
         this->length = length;
         this->size = child->getSize() * length;
+        is_const=_is_const;
     }
-    Array(Base* b, int length)
+    Array(Base* b, int length, bool _is_const=true)
     {
         this->type = TypeNames::Array;
         this->child = std::unique_ptr<Base>(b);
         this->length = length;
         this->size = child->getSize() * length;
+        is_const=_is_const;
     }
 
     Base* getChild() const 
@@ -216,7 +226,7 @@ public:
         size = child->getSize() * length;
     }
 
-    bool isSame(Base* const& other)
+    bool isSame(Base* const other)
     {
         if(other->getType() == TypeNames::Array)
         {
@@ -257,11 +267,12 @@ class Custom : public Base
 {
     std::string name;
 public:
-    Custom(std::string name, int size)
+    Custom(std::string name, int size, bool _is_const=true)
     : name(name)
     {
         this->type=TypeNames::Custom;
         this->size=size;
+        is_const=_is_const;
     }
 
     std::string const& getName() const 
@@ -276,7 +287,7 @@ public:
 };
 
 // Functions
-inline bool isSame(Base* const& a, Base* const& b)
+inline bool isSame(Base* const a, Base* const b)
 {
     if(a->getType() == b->getType())
     {
@@ -300,14 +311,14 @@ inline bool isSame(Base* const& a, Base* const& b)
     }
     return false;
 }
-inline bool isSame(Base* const& a, const char* b)
+inline bool isSame(Base* const a, const char* b)
 {
     auto t=construct(b);
     bool same=isSame(a, t.get());
     return same;
 }
 
-inline std::unique_ptr<Base> copyType(Base* const& type)
+inline std::unique_ptr<Base> copyType(Base* const type)
 {
     if(type->getType() == TypeNames::Array)
     {
@@ -325,13 +336,13 @@ inline std::unique_ptr<Base> copyType(Base* const& type)
     }
 }
 
-inline void printAsArray(Base* const& type)
+inline void printAsArray(Base* const type)
 {
     auto* a= static_cast<Array*>(type);
     std::cout << a->getChild() << "[" << a->getLength() << "]";
 }
 
-inline Base* getArrayRootType(Base* const& arr)
+inline Base* getArrayRootType(Base* const arr)
 {
     Base* t;
 

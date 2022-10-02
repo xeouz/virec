@@ -28,7 +28,12 @@ public:
     {}
 
     virtual ~ExprAST() = default;
-   
+
+    virtual std::unique_ptr<ExprAST> copyAST() const
+    {
+        return std::make_unique<ExprAST>(types::copyType(type.get()), asttype, Viretoken::construct(token.get()));
+    }
+
     virtual types::Base* getType() const 
     {
         return type.get(); 

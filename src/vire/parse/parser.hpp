@@ -68,8 +68,8 @@ public:
     std::unique_ptr<ExprAST> ParseBinopExpr(int ExprPrec, std::unique_ptr<ExprAST> LHS);
 
     std::unique_ptr<ExprAST> ParseVariableDef();
-    std::unique_ptr<ExprAST> ParseVariableAssign(std::unique_ptr<Viretoken> varName);
-    std::unique_ptr<ExprAST> ParseShorthandVariableAssign(std::unique_ptr<Viretoken> varName);
+    std::unique_ptr<ExprAST> ParseVariableAssign(std::unique_ptr<ExprAST> expr);
+    std::unique_ptr<ExprAST> ParseShorthandVariableAssign(std::unique_ptr<ExprAST> expr);
 
     std::unique_ptr<ExprAST> ParseForExpr();
     std::unique_ptr<ExprAST> ParseWhileExpr();

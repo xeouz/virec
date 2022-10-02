@@ -65,109 +65,109 @@ namespace vire
         }
     }
 
-    llvm::Value* VCompiler::compileExpr(ExprAST* const& expr)
+    llvm::Value* VCompiler::compileExpr(ExprAST* const expr)
     {
         if(!expr)   { return nullptr; }
         switch(expr->asttype)
         {
             case ast_int:
-                return compileConstantExpr((IntExprAST* const&)expr);
+                return compileConstantExpr((IntExprAST* const)expr);
             case ast_float:
-                return compileConstantExpr((FloatExprAST* const&)expr);
+                return compileConstantExpr((FloatExprAST* const)expr);
             case ast_double:
-                return compileConstantExpr((DoubleExprAST* const&)expr);
+                return compileConstantExpr((DoubleExprAST* const)expr);
             case ast_char:
-                return compileConstantExpr((CharExprAST* const&)expr);
+                return compileConstantExpr((CharExprAST* const)expr);
             case ast_bool: 
-                return compileConstantExpr((BoolExprAST* const&)expr);
+                return compileConstantExpr((BoolExprAST* const)expr);
             case ast_array:
-                return compileConstantExpr((ArrayExprAST* const&)expr);
+                return compileConstantExpr((ArrayExprAST* const)expr);
 
             case ast_incrdecr:
-                return compileIncrementDecrement((IncrementDecrementAST* const&)expr);
+                return compileIncrementDecrement((IncrementDecrementAST* const)expr);
             case ast_var:
-                return compileVariableExpr((VariableExprAST* const&)expr);
+                return compileVariableExpr((VariableExprAST* const)expr);
             case ast_vardef:
-                return compileVariableDef((VariableDefAST* const&)expr);
+                return compileVariableDef((VariableDefAST* const)expr);
             case ast_varassign:
-                return compileVariableAssign((VariableAssignAST* const&)expr);
+                return compileVariableAssign((VariableAssignAST* const)expr);
             case ast_array_access:
-                return compileVariableArrayAccess((VariableArrayAccessAST* const&)expr);
+                return compileVariableArrayAccess((VariableArrayAccessAST* const)expr);
             case ast_cast:
-                return compileCastExpr((CastExprAST* const&)expr);
+                return compileCastExpr((CastExprAST* const)expr);
 
             case ast_type_access:
-                return compileTypeAccess((TypeAccessAST* const&)expr);
+                return compileTypeAccess((TypeAccessAST* const)expr);
 
             case ast_binop:
-                return compileBinopExpr((BinaryExprAST* const&)expr);
+                return compileBinopExpr((BinaryExprAST* const)expr);
 
             case ast_call:
-                return compileCallExpr((CallExprAST* const&)expr);
+                return compileCallExpr((CallExprAST* const)expr);
 
             case ast_ifelse:
-                return compileIfElse((IfExprAST* const&)expr);
+                return compileIfElse((IfExprAST* const)expr);
             
             case ast_for:
-                return compileForExpr((ForExprAST* const&)expr);
+                return compileForExpr((ForExprAST* const)expr);
             case ast_while:
-                return compileWhileExpr((WhileExprAST* const&)expr);
+                return compileWhileExpr((WhileExprAST* const)expr);
             case ast_break:
-                return compileBreakExpr((BreakExprAST* const&)expr);
+                return compileBreakExpr((BreakExprAST* const)expr);
             case ast_continue:
-                return compileContinueExpr((ContinueExprAST* const&)expr);
+                return compileContinueExpr((ContinueExprAST* const)expr);
 
             case ast_return:
-                return compileReturnExpr((ReturnExprAST* const&)expr);
+                return compileReturnExpr((ReturnExprAST* const)expr);
             default:
                 std::cout << "Unknown expression type: " << (int)expr->asttype << std::endl;
                 return nullptr;
         }
     }
 
-    llvm::Constant* VCompiler::compileConstantExpr(ExprAST* const& expr)
+    llvm::Constant* VCompiler::compileConstantExpr(ExprAST* const expr)
     {
         switch(expr->getType()->getType())
         {
             case types::TypeNames::Int:
-                return compileConstantExpr((IntExprAST* const&)expr);
+                return compileConstantExpr((IntExprAST* const)expr);
             case types::TypeNames::Float:
-                return compileConstantExpr((FloatExprAST* const&)expr);
+                return compileConstantExpr((FloatExprAST* const)expr);
             case types::TypeNames::Double:
-                return compileConstantExpr((DoubleExprAST* const&)expr);
+                return compileConstantExpr((DoubleExprAST* const)expr);
             case types::TypeNames::Char:
-                return compileConstantExpr((CharExprAST* const&)expr);
+                return compileConstantExpr((CharExprAST* const)expr);
             case types::TypeNames::Array:
-                return compileConstantExpr((ArrayExprAST* const&)expr);
+                return compileConstantExpr((ArrayExprAST* const)expr);
             default:
                 return nullptr;
         }
     }
-    llvm::Constant* VCompiler::compileConstantExpr(IntExprAST* const& expr)
+    llvm::Constant* VCompiler::compileConstantExpr(IntExprAST* const expr)
     {
         return llvm::ConstantInt::get(CTX, llvm::APInt(32, expr->getValue(), true));
     }
-    llvm::Constant* VCompiler::compileConstantExpr(FloatExprAST* const& expr)
+    llvm::Constant* VCompiler::compileConstantExpr(FloatExprAST* const expr)
     {
         return llvm::ConstantFP::get(CTX, llvm::APFloat(expr->getValue()));
     }
-    llvm::Constant* VCompiler::compileConstantExpr(DoubleExprAST* const& expr)
+    llvm::Constant* VCompiler::compileConstantExpr(DoubleExprAST* const expr)
     {
         return llvm::ConstantFP::get(CTX, llvm::APFloat(expr->getValue()));
     }
-    llvm::Constant* VCompiler::compileConstantExpr(CharExprAST* const& expr)
+    llvm::Constant* VCompiler::compileConstantExpr(CharExprAST* const expr)
     {
         return llvm::ConstantInt::get(CTX, llvm::APInt(8, expr->getValue(), true));
     }
-    llvm::Constant* VCompiler::compileConstantExpr(StrExprAST* const& expr)
+    llvm::Constant* VCompiler::compileConstantExpr(StrExprAST* const expr)
     {
         return nullptr;
     }
-    llvm::Constant* VCompiler::compileConstantExpr(BoolExprAST* const& expr)
+    llvm::Constant* VCompiler::compileConstantExpr(BoolExprAST* const expr)
     {
         return llvm::ConstantInt::get(CTX, llvm::APInt(1, expr->getValue()));
     }
-    llvm::Constant* VCompiler::compileConstantExpr(ArrayExprAST* const& expr, bool create_global_variable)
+    llvm::Constant* VCompiler::compileConstantExpr(ArrayExprAST* const expr, bool create_global_variable)
     {
         auto* type=getLLVMType(expr->getType());
 
@@ -177,11 +177,11 @@ namespace vire
             llvm::Constant* constant;
             if(elem->getType()->getType() == types::TypeNames::Array)
             {
-                constant=compileConstantExpr((ArrayExprAST* const&)elem, false);
+                constant=compileConstantExpr((ArrayExprAST* const)elem.get(), false);
             }
             else
             {
-                constant=compileConstantExpr((ExprAST* const&)elem);
+                constant=compileConstantExpr((ExprAST* const)elem.get());
             }
             constants.push_back(constant);
         }
@@ -203,7 +203,7 @@ namespace vire
         return gbl;
     }
 
-    llvm::Value* VCompiler::compileIncrementDecrement(IncrementDecrementAST* const& incrdecr)
+    llvm::Value* VCompiler::compileIncrementDecrement(IncrementDecrementAST* const incrdecr)
     {
         auto const& target=incrdecr->getExpr();
         auto* expr=compileExpr(target);
@@ -245,13 +245,13 @@ namespace vire
             return expr;
         }
     }
-    llvm::Value* VCompiler::compileVariableExpr(VariableExprAST* const& expr)
+    llvm::Value* VCompiler::compileVariableExpr(VariableExprAST* const expr)
     {
         llvm::AllocaInst* val=namedValues[expr->getName()];
         llvm::Type* ty=val->getAllocatedType();
         return Builder.CreateLoad(ty, val, expr->getName());
     }
-    llvm::Value* VCompiler::compileVariableDef(VariableDefAST* const& def)
+    llvm::Value* VCompiler::compileVariableDef(VariableDefAST* const def)
     {
         auto* var_type=getLLVMType(def->getType());
         auto* current_blk=Builder.GetInsertBlock();
@@ -274,7 +274,7 @@ namespace vire
         }
         else
         {
-            auto* val=compileConstantExpr((ArrayExprAST* const&)value);
+            auto* val=compileConstantExpr((ArrayExprAST* const)value);
 
             // Create an i8*
             auto* ptr=Builder.CreateBitCast(alloca, llvm::IntegerType::getInt8PtrTy(CTX));
@@ -283,7 +283,7 @@ namespace vire
             auto align=alloca->getAlign();
 
             // Set the size of the array
-            auto* array_ast=(ArrayExprAST* const&)value;
+            auto* array_ast=(ArrayExprAST* const)value;
             auto elems=array_ast->getElements().size();
             auto elem_size=array_ast->getElements()[0]->getType()->getSize();
             auto size=elems*elem_size;
@@ -296,16 +296,29 @@ namespace vire
 
         return alloca;
     }
-    llvm::Value* VCompiler::compileVariableAssign(VariableAssignAST* const& assign)
+    llvm::Value* VCompiler::compileVariableAssign(VariableAssignAST* const assign)
     {
-        auto* var=namedValues[assign->getName()];
-        auto* val=compileExpr(assign->getValue());
+        auto* lhs=compileExpr(assign->getLHS());
+        auto* value=compileExpr(assign->getRHS());
 
-        Builder.CreateStore(val, var);
+        llvm::Value* ptr;
 
-        return val;
+        if(assign->getLHS()->asttype==ast_array_access || assign->getLHS()->asttype==ast_type_access)
+        {
+            auto* load_inst=llvm::dyn_cast<llvm::LoadInst>(lhs);
+
+            load_inst->getParent()->getInstList().remove(load_inst);
+
+            ptr=load_inst->getPointerOperand();
+        }
+        else
+        {
+            ptr=getValueAsAlloca(lhs);
+        }
+
+        return Builder.CreateStore(value, ptr);
     }
-    llvm::Value* VCompiler::compileVariableArrayAccess(VariableArrayAccessAST* const& access)
+    llvm::Value* VCompiler::compileVariableArrayAccess(VariableArrayAccessAST* const access)
     {
         /* Single index access, kept for reference */
         /*
@@ -340,7 +353,6 @@ namespace vire
             }
             
             auto* indx=compileExpr(elem.get());
-            std::cout << (elem->asttype==ast_int) << std::endl;
             expr=Builder.CreateInBoundsGEP(ty, expr, {llvm::ConstantInt::get(CTX, llvm::APInt(32, 0, false)), indx});
             
             ty=ty->getArrayElementType();
@@ -348,12 +360,12 @@ namespace vire
 
         return Builder.CreateLoad(ty, expr);
     }
-    llvm::Value* VCompiler::compileCastExpr(CastExprAST* const& cast_expr)
+    llvm::Value* VCompiler::compileCastExpr(CastExprAST* const cast_expr)
     {
         if(cast_expr->isNonUserDefined())
         {
-            auto* const& dest_type=cast_expr->getDestType();
-            auto* const& src_type=cast_expr->getSourceType();
+            auto* const dest_type=cast_expr->getDestType();
+            auto* const src_type=cast_expr->getSourceType();
 
             bool is_dest_fp=types::isTypeFloatingPoint(dest_type);
             bool is_src_fp=types::isTypeFloatingPoint(src_type);
@@ -406,7 +418,7 @@ namespace vire
         }
     }
 
-    llvm::Value* VCompiler::compileBinopExpr(BinaryExprAST* const& expr)
+    llvm::Value* VCompiler::compileBinopExpr(BinaryExprAST* const expr)
     {
         auto lhs = compileExpr(expr->getLHS());
         auto rhs = compileExpr(expr->getRHS());
@@ -489,7 +501,7 @@ namespace vire
         return values;
     }
 
-    llvm::Value* VCompiler::compileIfThen(IfThenExpr* const& ifthen)
+    llvm::Value* VCompiler::compileIfThen(IfThenExpr* const ifthen)
     {
         auto* cond=compileExpr(ifthen->getCondition());
         
@@ -504,7 +516,7 @@ namespace vire
 
         return br;
     }
-    llvm::Value* VCompiler::compileIfElse(IfExprAST* const& ifelse)
+    llvm::Value* VCompiler::compileIfElse(IfExprAST* const ifelse)
     {
         auto* ifthen=compileIfThen(ifelse->getIfThen());
 
@@ -524,7 +536,7 @@ namespace vire
         return ifthen;
     }
 
-    llvm::Value* VCompiler::compileForExpr(ForExprAST* const& forexpr)
+    llvm::Value* VCompiler::compileForExpr(ForExprAST* const forexpr)
     {
         auto* init=compileExpr(forexpr->getInit());
 
@@ -547,7 +559,7 @@ namespace vire
         Builder.SetInsertPoint(forcont);
         return br;
     }
-    llvm::Value* VCompiler::compileWhileExpr(WhileExprAST* const& whileexpr)
+    llvm::Value* VCompiler::compileWhileExpr(WhileExprAST* const whileexpr)
     {
         auto whilebool=llvm::BasicBlock::Create(CTX, "whileb", currentFunction);
         auto whileloop=llvm::BasicBlock::Create(CTX, "whilel", currentFunction);
@@ -568,20 +580,20 @@ namespace vire
 
         return br;
     }
-    llvm::Value* VCompiler::compileBreakExpr(BreakExprAST* const& breakexpr)
+    llvm::Value* VCompiler::compileBreakExpr(BreakExprAST* const breakexpr)
     {
         compileExpr(breakexpr->getAfterBreak());
 
         return Builder.CreateBr(currentLoopEndBB);
     }
-    llvm::Value* VCompiler::compileContinueExpr(ContinueExprAST* const& continueexpr)
+    llvm::Value* VCompiler::compileContinueExpr(ContinueExprAST* const continueexpr)
     {
         compileExpr(continueexpr->getAfterCont());
 
         return Builder.CreateBr(currentLoopBodyBB);
     }
 
-    llvm::Value* VCompiler::compileCallExpr(CallExprAST* const& expr)
+    llvm::Value* VCompiler::compileCallExpr(CallExprAST* const expr)
     {
         auto func=Module->getFunction(expr->getName());
 
@@ -593,7 +605,7 @@ namespace vire
 
         return Builder.CreateCall(func, args, "calltmp");
     }
-    llvm::Value* VCompiler::compileReturnExpr(ReturnExprAST* const& expr)
+    llvm::Value* VCompiler::compileReturnExpr(ReturnExprAST* const expr)
     {
         auto* expr_val=compileExpr(expr->getValue());
         auto* value=Builder.CreateStore(expr_val, namedValues["retval"]);
@@ -694,7 +706,7 @@ namespace vire
 
         return struct_type;
     }
-    llvm::Value* VCompiler::compileTypeAccess(TypeAccessAST* const& expr)
+    llvm::Value* VCompiler::compileTypeAccess(TypeAccessAST* const expr)
     {
         auto* st_type=(types::Custom*)expr->getParent()->getType();
         auto* st_ltype=definedStructs[st_type->getName()];
@@ -748,7 +760,6 @@ namespace vire
         Module->setDataLayout(target_machine->createDataLayout());
         Module->setTargetTriple(target_triple);
 
-        llvm::legacy::PassManager pass_manager;
         std::error_code ec;
         llvm::raw_fd_ostream os(filename, ec, llvm::sys::fs::OF_None);
 

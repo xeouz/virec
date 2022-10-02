@@ -10,10 +10,8 @@ func test() returns double
 
 func main() returns int
 {
-    putd(test());
-    puti(11.9);
-    putb(1);
-    putb(0);
+    let a=[1,34,55];
+    a[0]=20.6;
 
     return 0;
 }

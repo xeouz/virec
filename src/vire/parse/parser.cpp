@@ -181,29 +181,16 @@ namespace vire
         std::unique_ptr<ExprAST> expr;
         if(current_token->type != tok_lparen) // if it is not a function call
         {
-            if(current_token->type==tok_equal)
+            expr=std::make_unique<VariableExprAST>(std::move(id_name));
+            
+            while(current_token->type==tok_dot || current_token->type==tok_lbrack)
             {
-                return ParseVariableAssign(std::move(id_name));
-            }
-            else if(current_token->type==tok_pluseq
-                 || current_token->type==tok_minuseq
-                 || current_token->type==tok_muleq
-                 || current_token->type==tok_diveq
-                 || current_token->type==tok_modeq
-            )
-            {
-                return ParseShorthandVariableAssign(std::move(id_name));
-            }
-            else
-            {    
-                expr=std::make_unique<VariableExprAST>(std::move(id_name));
-
-                if(current_token->type == tok_dot)
+                if(current_token->type==tok_dot)
                 {
                     expr=ParseClassAccess(std::move(expr));
                 }
                 
-                if(current_token->type == tok_lbrack)
+                if(current_token->type==tok_lbrack)
                 {
                     std::vector<std::unique_ptr<ExprAST>> indices;
                     while(current_token->type == tok_lbrack)
@@ -221,6 +208,20 @@ namespace vire
 
                     expr=std::make_unique<VariableArrayAccessAST>(std::move(expr),std::move(indices));
                 }
+            }
+
+            if(current_token->type==tok_equal)
+            {
+                return ParseVariableAssign(std::move(expr));
+            }
+            else if(current_token->type==tok_pluseq
+                 || current_token->type==tok_minuseq
+                 || current_token->type==tok_muleq
+                 || current_token->type==tok_diveq
+                 || current_token->type==tok_modeq
+            )
+            {
+                return ParseShorthandVariableAssign(std::move(expr));
             }
 
             if(current_token->type==tok_incr || current_token->type==tok_decr)
@@ -500,38 +501,35 @@ namespace vire
 
         return std::make_unique<VariableDefAST>(std::move(var_name),std::move(type),std::move(value),isconst,islet);
     }
-    std::unique_ptr<ExprAST> Vireparse::ParseVariableAssign(std::unique_ptr<Viretoken> varName)
+    std::unique_ptr<ExprAST> Vireparse::ParseVariableAssign(std::unique_ptr<ExprAST> expr)
     {
         getNextToken(tok_equal);
         auto value=ParseExpression();
 
-        return std::make_unique<VariableAssignAST>(std::move(varName), std::move(value));
+        return std::make_unique<VariableAssignAST>(std::move(expr), std::move(value));
     }
-    std::unique_ptr<ExprAST> Vireparse::ParseShorthandVariableAssign(std::unique_ptr<Viretoken> varName)
+    std::unique_ptr<ExprAST> Vireparse::ParseShorthandVariableAssign(std::unique_ptr<ExprAST> var)
     {
         auto token=copyCurrentToken();
         getNextToken();
 
         auto expr=ParseExpression();
-        auto var=std::make_unique<VariableExprAST>(Viretoken::construct(varName.get()));
 
         std::unique_ptr<Viretoken> sym;
 
         switch(token->type)
         {
-            case tok_pluseq: sym=Viretoken::construct("+", tok_plus, token->line, token->charpos+1);
-            case tok_minuseq: sym=Viretoken::construct("-", tok_minus, token->line, token->charpos+1);
-            case tok_muleq: sym=Viretoken::construct("*", tok_mul, token->line, token->charpos+1);
-            case tok_diveq: sym=Viretoken::construct("/", tok_div, token->line, token->charpos+1);
-            case tok_modeq: sym=Viretoken::construct("%", tok_mod, token->line, token->charpos+1);
+            case tok_pluseq: sym=Viretoken::construct("+", tok_plus, token->line, token->charpos);
+            case tok_minuseq: sym=Viretoken::construct("-", tok_minus, token->line, token->charpos);
+            case tok_muleq: sym=Viretoken::construct("*", tok_mul, token->line, token->charpos);
+            case tok_diveq: sym=Viretoken::construct("/", tok_div, token->line, token->charpos);
+            case tok_modeq: sym=Viretoken::construct("%", tok_mod, token->line, token->charpos);
 
             default:
                 sym=nullptr;
         }
 
-        auto op=std::make_unique<BinaryExprAST>(std::move(sym), std::move(var), std::move(expr));
-
-        return std::make_unique<VariableAssignAST>(std::move(varName), std::move(op));
+        return std::make_unique<VariableAssignAST>(std::move(var), std::move(expr), std::move(sym));
     }
 
     std::unique_ptr<ExprAST> Vireparse::ParseForExpr()

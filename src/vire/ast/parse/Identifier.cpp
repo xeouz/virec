@@ -10,7 +10,9 @@ class IdentifierExprAST : public ExprAST
 {
     std::string name;
 public:
-    IdentifierExprAST(std::unique_ptr<Viretoken> name, int asttype=ast_var) : name(name->value), ExprAST("", asttype)
+    bool is_const;
+    IdentifierExprAST(std::unique_ptr<Viretoken> name, bool is_const=false, int asttype=ast_var) 
+    : name(name->value), ExprAST("", asttype), is_const(is_const)
     {
         setToken(std::move(name));
     }

@@ -61,46 +61,46 @@ public:
     llvm::Value* getValueAsAlloca(llvm::Value* value);
     llvm::Value* getOrigin(llvm::Value* value);
 
-    llvm::Value* compileExpr(ExprAST* const& expr);
+    llvm::Value* compileExpr(ExprAST* const expr);
 
-    llvm::Constant* compileConstantExpr(ExprAST* const& expr);
-    llvm::Constant* compileConstantExpr(IntExprAST* const& expr);
-    llvm::Constant* compileConstantExpr(FloatExprAST* const& expr);
-    llvm::Constant* compileConstantExpr(DoubleExprAST* const& expr);
-    llvm::Constant* compileConstantExpr(CharExprAST* const& expr);
-    llvm::Constant* compileConstantExpr(StrExprAST* const& expr);
-    llvm::Constant* compileConstantExpr(BoolExprAST* const& expr);
-    llvm::Constant* compileConstantExpr(ArrayExprAST* const& expr, bool create_global_variable=true);
+    llvm::Constant* compileConstantExpr(ExprAST* const expr);
+    llvm::Constant* compileConstantExpr(IntExprAST* const expr);
+    llvm::Constant* compileConstantExpr(FloatExprAST* const expr);
+    llvm::Constant* compileConstantExpr(DoubleExprAST* const expr);
+    llvm::Constant* compileConstantExpr(CharExprAST* const expr);
+    llvm::Constant* compileConstantExpr(StrExprAST* const expr);
+    llvm::Constant* compileConstantExpr(BoolExprAST* const expr);
+    llvm::Constant* compileConstantExpr(ArrayExprAST* const expr, bool create_global_variable=true);
 
-    llvm::Value* compileBinopExpr(BinaryExprAST* const& expr);
+    llvm::Value* compileBinopExpr(BinaryExprAST* const expr);
 
     llvm::AllocaInst* createEntryBlockAlloca(llvm::Function* function, std::string const& varname, llvm::Type* type);
     
-    llvm::Value* compileIncrementDecrement(IncrementDecrementAST* const& expr);
-    llvm::Value* compileVariableExpr(VariableExprAST* const& expr);
-    llvm::Value* compileVariableDef(VariableDefAST* const& var);
-    llvm::Value* compileVariableAssign(VariableAssignAST* const& var);
-    llvm::Value* compileVariableArrayAccess(VariableArrayAccessAST* const& var);
-    llvm::Value* compileCastExpr(CastExprAST* const& var);
+    llvm::Value* compileIncrementDecrement(IncrementDecrementAST* const expr);
+    llvm::Value* compileVariableExpr(VariableExprAST* const expr);
+    llvm::Value* compileVariableDef(VariableDefAST* const var);
+    llvm::Value* compileVariableAssign(VariableAssignAST* const var);
+    llvm::Value* compileVariableArrayAccess(VariableArrayAccessAST* const var);
+    llvm::Value* compileCastExpr(CastExprAST* const var);
 
     std::vector<llvm::Value*> compileBlock(std::vector<std::unique_ptr<ExprAST>> const& block);
 
-    llvm::Value* compileIfThen(IfThenExpr* const& ifthen);
-    llvm::Value* compileIfElse(IfExprAST* const& ifelse);
+    llvm::Value* compileIfThen(IfThenExpr* const ifthen);
+    llvm::Value* compileIfElse(IfExprAST* const ifelse);
 
-    llvm::Value* compileForExpr(ForExprAST* const& forexpr);
-    llvm::Value* compileWhileExpr(WhileExprAST* const& whileexpr);
-    llvm::Value* compileBreakExpr(BreakExprAST* const& breakexpr);
-    llvm::Value* compileContinueExpr(ContinueExprAST* const& continueexpr);
+    llvm::Value* compileForExpr(ForExprAST* const forexpr);
+    llvm::Value* compileWhileExpr(WhileExprAST* const whileexpr);
+    llvm::Value* compileBreakExpr(BreakExprAST* const breakexpr);
+    llvm::Value* compileContinueExpr(ContinueExprAST* const continueexpr);
 
-    llvm::Value* compileCallExpr(CallExprAST* const& expr);
-    llvm::Value* compileReturnExpr(ReturnExprAST* const& expr);
+    llvm::Value* compileCallExpr(CallExprAST* const expr);
+    llvm::Value* compileReturnExpr(ReturnExprAST* const expr);
     llvm::Function* compilePrototype(std::string const& name);
     llvm::Function* compileExtern(std::string const& name);
     llvm::Function* compileFunction(std::string const& name);
 
     llvm::StructType* compileStruct(std::string const& name);
-    llvm::Value* compileTypeAccess(TypeAccessAST* const& name);
+    llvm::Value* compileTypeAccess(TypeAccessAST* const name);
 
     llvm::Module* getModule();
     std::string getCompiledOutput();
