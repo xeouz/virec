@@ -443,6 +443,10 @@ namespace vire
             // Var is not defined
             return false;
         }
+        if(!verifyExpr(assign->getRHS()))
+        {
+            return false;
+        }
 
         auto* lhs_type=getType(assign->getLHS());
         auto* rhs_type=getType(assign->getRHS());
@@ -462,7 +466,8 @@ namespace vire
             }
         }
 
-        assign->getLHS()->setType(lhs_type);
+        assign->getLHS()->setType(types::copyType(lhs_type));
+        assign->getRHS()->setType(types::copyType(rhs_type));
         
         return is_valid;
     }

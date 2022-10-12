@@ -53,11 +53,12 @@ namespace vire
         // Check if expr is llvm::LoadInst
         if (llvm::LoadInst* load=llvm::dyn_cast<llvm::LoadInst>(expr))
         {
+            auto* alloca=namedValues[load->getPointerOperand()->getName()];
             // remove the expr from the block
-            load->getParent()->getInstList().remove(load);
+            load->eraseFromParent();
 
             // return the alloca
-            return namedValues[load->getPointerOperand()->getName()];
+            return alloca;
         }
         else
         {
@@ -306,10 +307,8 @@ namespace vire
         if(assign->getLHS()->asttype==ast_array_access || assign->getLHS()->asttype==ast_type_access)
         {
             auto* load_inst=llvm::dyn_cast<llvm::LoadInst>(lhs);
-
-            load_inst->getParent()->getInstList().remove(load_inst);
-
             ptr=load_inst->getPointerOperand();
+            load_inst->eraseFromParent();
         }
         else
         {
@@ -366,6 +365,8 @@ namespace vire
         {
             auto* const dest_type=cast_expr->getDestType();
             auto* const src_type=cast_expr->getSourceType();
+
+            std::cout << *dest_type << " : " << *src_type << std::endl;
 
             bool is_dest_fp=types::isTypeFloatingPoint(dest_type);
             bool is_src_fp=types::isTypeFloatingPoint(src_type);
