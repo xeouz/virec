@@ -57,6 +57,7 @@ public:
     
     llvm::Type* getLLVMType(types::Base* type);
 
+    llvm::Value* createBinaryOperation(llvm::Value* lhs, llvm::Value* rhs, Viretoken* const op, bool expr_is_fp);
     llvm::BranchInst* createBrIfNoTerminator(llvm::BasicBlock* block);
     llvm::Value* getValueAsAlloca(llvm::Value* value);
     llvm::Value* getOrigin(llvm::Value* value);

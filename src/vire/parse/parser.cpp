@@ -179,7 +179,7 @@ namespace vire
         getNextToken(tok_id);
         
         std::unique_ptr<ExprAST> expr;
-        if(current_token->type != tok_lparen) // if it is not a function call
+        if(current_token->type!=tok_lparen) // if it is not a function call
         {
             expr=std::make_unique<VariableExprAST>(std::move(id_name));
             
@@ -519,14 +519,36 @@ namespace vire
 
         switch(token->type)
         {
-            case tok_pluseq: sym=Viretoken::construct("+", tok_plus, token->line, token->charpos);
-            case tok_minuseq: sym=Viretoken::construct("-", tok_minus, token->line, token->charpos);
-            case tok_muleq: sym=Viretoken::construct("*", tok_mul, token->line, token->charpos);
-            case tok_diveq: sym=Viretoken::construct("/", tok_div, token->line, token->charpos);
-            case tok_modeq: sym=Viretoken::construct("%", tok_mod, token->line, token->charpos);
+            case tok_pluseq: 
+            {
+                sym=Viretoken::construct("+", tok_plus, token->line, token->charpos);
+                break;
+            }
+            case tok_minuseq:
+            {
+                sym=Viretoken::construct("-", tok_minus, token->line, token->charpos);
+                break;
+            }
+            case tok_muleq:
+            {
+                sym=Viretoken::construct("*", tok_mul, token->line, token->charpos);
+                break;
+            }
+            case tok_diveq:
+            {
+                sym=Viretoken::construct("/", tok_div, token->line, token->charpos);
+                break;
+            }
+            case tok_modeq:
+            {
+                sym=Viretoken::construct("%", tok_mod, token->line, token->charpos);
+                break;
+            }
 
             default:
+            {
                 sym=nullptr;
+            }
         }
 
         return std::make_unique<VariableAssignAST>(std::move(var), std::move(expr), std::move(sym));

@@ -353,18 +353,27 @@ public:
 
             case '+': {
                 if(peek=='+') return makeToken("++",tok_incr,1);
+                else if(peek=='=') return makeToken("+=",tok_pluseq,1);
                 return makeToken("+",tok_plus);
             }
-
             case '-': {
                 if(peek=='-') return makeToken("--",tok_decr,1);
                 else if(peek=='>') return makeToken("->",tok_rarrow,1);
+                else if(peek=='=') return makeToken("-=",tok_minuseq,1);
                 return makeToken("-",tok_minus);
             }
-
-            case '*': return makeToken("*",tok_mul);
-            case '/': return makeToken("/",tok_div);
-            case '%': return makeToken("%",tok_mod);
+            case '*': {
+                if(peek=='=') return makeToken("*=",tok_muleq,1);
+                return makeToken("*",tok_mul);
+            }
+            case '/': {
+                if(peek=='=') return makeToken("/=",tok_diveq,1);
+                return makeToken("/",tok_div);
+            }
+            case '%': {
+                if(peek=='=') return makeToken("%=",tok_modeq,1);
+                return makeToken("%",tok_mod);
+            }
 
             case '|': {
                 if(peek=='|') return makeToken("||",tok_or,1);

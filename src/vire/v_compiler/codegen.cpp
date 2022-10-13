@@ -65,6 +65,71 @@ namespace vire
             return expr;
         }
     }
+    llvm::Value* VCompiler::createBinaryOperation(llvm::Value* lhs, llvm::Value* rhs, Viretoken* const op, bool expr_is_fp)
+    {
+        switch(op->type)
+        {
+            case tok_plus:
+            {
+                if(!expr_is_fp)
+                {
+                    return Builder.CreateAdd(lhs, rhs, "addtmp");
+                }
+                else
+                {
+                    return Builder.CreateFAdd(lhs, rhs, "addtmp");
+                }
+            }
+            case tok_minus:
+            {
+                if(!expr_is_fp)
+                {
+                    return Builder.CreateSub(lhs, rhs, "subtmp");
+                }
+                else
+                {
+                    return Builder.CreateFSub(lhs, rhs, "subtmp");
+                }
+            }
+            case tok_mul:
+            {
+                if(!expr_is_fp)
+                {
+                    return Builder.CreateMul(lhs, rhs, "multmp");
+                }
+                else
+                {
+                    return Builder.CreateFMul(lhs, rhs, "multmp");
+                }
+            }
+            case tok_div:
+            {
+                if(!expr_is_fp)
+                {
+                    return Builder.CreateSDiv(lhs, rhs, "divtmp");
+                }
+                else
+                {
+                    return Builder.CreateFDiv(lhs, rhs, "divtmp");
+                }
+            }
+            case tok_mod:
+                return Builder.CreateSRem(lhs, rhs, "modtmp");
+            
+            case tok_lessthan:
+                return Builder.CreateICmpSLT(lhs, rhs, "cmptmp");
+            case tok_morethan:
+                return Builder.CreateICmpSGT(lhs, rhs, "cmptmp");
+            case tok_dequal:
+                return Builder.CreateICmpEQ(lhs, rhs, "cmptmp");
+            case tok_nequal:
+                return Builder.CreateICmpNE(lhs, rhs, "cmptmp");
+            
+            default:
+                std::cout << "Unhandled binary operator" << std::endl;
+                return nullptr;
+        }
+    }
 
     llvm::Value* VCompiler::compileExpr(ExprAST* const expr)
     {
@@ -315,6 +380,23 @@ namespace vire
             ptr=getValueAsAlloca(lhs);
         }
 
+        if(assign->is_shorthand)
+        {
+            auto* sym=assign->getShorthandOperator();
+            bool expr_is_fp=false;
+
+            auto* lhs_type=assign->getLHS()->getType();
+            auto* rhs_type=assign->getRHS()->getType();
+
+            if(types::isTypeFloatingPoint(lhs_type) || types::isTypeFloatingPoint(rhs_type))
+            {
+                expr_is_fp=true;
+            }
+            
+            auto* load=Builder.CreateLoad(getLLVMType(lhs_type), ptr);
+            value=createBinaryOperation(load, value, sym, expr_is_fp);
+        }
+
         return Builder.CreateStore(value, ptr);
     }
     llvm::Value* VCompiler::compileVariableArrayAccess(VariableArrayAccessAST* const access)
@@ -421,74 +503,15 @@ namespace vire
 
     llvm::Value* VCompiler::compileBinopExpr(BinaryExprAST* const expr)
     {
-        auto lhs = compileExpr(expr->getLHS());
-        auto rhs = compileExpr(expr->getRHS());
+        auto* lhs=compileExpr(expr->getLHS());
+        auto* rhs=compileExpr(expr->getRHS());
 
         if(!lhs || !rhs)
             return nullptr;
         
-        switch(expr->getOp()->type)
-        {
-            case tok_plus:
-            {
-                if(!types::isTypeFloatingPoint(expr->getType()))
-                {
-                    return Builder.CreateAdd(lhs, rhs, "addtmp");
-                }
-                else
-                {
-                    return Builder.CreateFAdd(lhs, rhs, "addtmp");
-                }
-            }
-            case tok_minus:
-            {
-                if(!types::isTypeFloatingPoint(expr->getType()))
-                {
-                    return Builder.CreateSub(lhs, rhs, "subtmp");
-                }
-                else
-                {
-                    return Builder.CreateFSub(lhs, rhs, "subtmp");
-                }
-            }
-            case tok_mul:
-            {
-                if(!types::isTypeFloatingPoint(expr->getType()))
-                {
-                    return Builder.CreateMul(lhs, rhs, "multmp");
-                }
-                else
-                {
-                    return Builder.CreateFMul(lhs, rhs, "multmp");
-                }
-            }
-            case tok_div:
-            {
-                if(!types::isTypeFloatingPoint(expr->getType()))
-                {
-                    return Builder.CreateSDiv(lhs, rhs, "divtmp");
-                }
-                else
-                {
-                    return Builder.CreateFDiv(lhs, rhs, "divtmp");
-                }
-            }
-            case tok_mod:
-                return Builder.CreateSRem(lhs, rhs, "modtmp");
-            
-            case tok_lessthan:
-                return Builder.CreateICmpSLT(lhs, rhs, "cmptmp");
-            case tok_morethan:
-                return Builder.CreateICmpSGT(lhs, rhs, "cmptmp");
-            case tok_dequal:
-                return Builder.CreateICmpEQ(lhs, rhs, "cmptmp");
-            case tok_nequal:
-                return Builder.CreateICmpNE(lhs, rhs, "cmptmp");
-            
-            default:
-                std::cout << "Unhandled binary operator" << std::endl;
-                return nullptr;
-        }
+        bool expr_is_fp=types::isTypeFloatingPoint(expr->getType());
+
+        return createBinaryOperation(lhs, rhs, expr->getOp(), expr_is_fp);
     }
 
     std::vector<llvm::Value*> VCompiler::compileBlock(std::vector<std::unique_ptr<ExprAST>> const& block)
