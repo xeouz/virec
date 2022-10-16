@@ -55,7 +55,7 @@ public:
     std::unique_ptr<ExprAST> ParsePrimary();
     std::unique_ptr<ExprAST> ParseExpression();
 
-    std::unique_ptr<ExprAST> ParseIdExpr();
+    std::unique_ptr<ExprAST> ParseIdExpr(bool include_assign=true);
     std::unique_ptr<ExprAST> ParseIncrementDecrementExpr();
 
     std::unique_ptr<ExprAST> ParseNumberExpr();

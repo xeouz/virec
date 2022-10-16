@@ -321,7 +321,7 @@ namespace vire
     {
         auto* var_type=getLLVMType(def->getType());
         auto* current_blk=Builder.GetInsertBlock();
-        
+
         auto* alloca=Builder.CreateAlloca(var_type, nullptr, def->getName());
 
         auto const& value=def->getValue();
@@ -732,15 +732,26 @@ namespace vire
     }
     llvm::Value* VCompiler::compileTypeAccess(TypeAccessAST* const expr)
     {
-        auto* st_type=(types::Custom*)expr->getParent()->getType();
-        auto* st_ltype=definedStructs[st_type->getName()];
+        llvm::Value* sgep;
+        ExprAST* current_expr=expr;
 
-        auto* val=getValueAsAlloca(compileExpr(expr->getParent()));
+        while(current_expr->asttype==ast_type_access)
+        {
+            auto* current=(TypeAccessAST*)current_expr;
+            auto* st_type=(types::Custom*)current->getParent()->getType();
+            auto* st_ltype=definedStructs[st_type->getName()];
 
-        auto* st=analyzer->getStruct(st_type->getName());
-        int indx=st->getMemberIndex(expr->getName());
+            auto* val=getValueAsAlloca(compileExpr(current->getParent()));
 
-        return Builder.CreateStructGEP(st_ltype, val, indx, "sgep");
+            auto* st=analyzer->getStruct(st_type->getName());
+            int indx=st->getMemberIndex(current->getName());
+
+            sgep=Builder.CreateStructGEP(st_ltype, val, indx, "sgep");
+            current_expr=current->getChild();
+        }
+
+        auto* ty=getLLVMType(expr->getType());
+        return Builder.CreateLoad(ty, sgep);
     }
 
     llvm::Module* VCompiler::getModule()

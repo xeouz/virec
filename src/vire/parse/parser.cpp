@@ -171,7 +171,7 @@ namespace vire
         return ParseBinopExpr(0,std::move(LHS));
     }
 
-    std::unique_ptr<ExprAST> Vireparse::ParseIdExpr()
+    std::unique_ptr<ExprAST> Vireparse::ParseIdExpr(bool include_assign)
     {
         auto id_name=copyCurrentToken();
 
@@ -210,20 +210,23 @@ namespace vire
                 }
             }
 
-            if(current_token->type==tok_equal)
+            if(include_assign)
             {
-                return ParseVariableAssign(std::move(expr));
+                if(current_token->type==tok_equal)
+                {
+                    return ParseVariableAssign(std::move(expr));
+                }
+                else if(current_token->type==tok_pluseq
+                    || current_token->type==tok_minuseq
+                    || current_token->type==tok_muleq
+                    || current_token->type==tok_diveq
+                    || current_token->type==tok_modeq
+                )
+                {
+                    return ParseShorthandVariableAssign(std::move(expr));
+                }
             }
-            else if(current_token->type==tok_pluseq
-                 || current_token->type==tok_minuseq
-                 || current_token->type==tok_muleq
-                 || current_token->type==tok_diveq
-                 || current_token->type==tok_modeq
-            )
-            {
-                return ParseShorthandVariableAssign(std::move(expr));
-            }
-
+            
             if(current_token->type==tok_incr || current_token->type==tok_decr)
             {
                 bool is_increment=(current_token->type=tok_incr);
@@ -823,8 +826,8 @@ namespace vire
     std::unique_ptr<ExprAST> Vireparse::ParseClassAccess(std::unique_ptr<ExprAST> parent)
     {
         getNextToken(tok_dot);
-        auto child=ParseIdExpr();
-
+        auto child=ParseIdExpr(false);
+ 
         if(!(child->asttype==ast_var || child->asttype==ast_call || child->asttype==ast_type_access))
         {
             std::cout << "Expected a class member during parsing" << std::endl;
@@ -833,7 +836,9 @@ namespace vire
 
         auto cast_child=cast_static<IdentifierExprAST>(std::move(child));
 
-        return std::make_unique<TypeAccessAST>(std::move(parent),std::move(cast_child));
+        auto x=std::make_unique<TypeAccessAST>(std::move(parent), std::move(cast_child));
+
+        return std::move(x);
     }
 
     std::unordered_map<std::string, std::unique_ptr<ExprAST>> Vireparse::ParsePrimitiveBody()

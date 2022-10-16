@@ -50,7 +50,7 @@ class TypeAccessAST : public IdentifierExprAST
 public:
     TypeAccessAST(std::unique_ptr<ExprAST> _parent, std::unique_ptr<IdentifierExprAST> _child)
     : parent(std::move(_parent)), child(std::move(_child)), 
-    IdentifierExprAST(Viretoken::construct(""), ast_type_access)
+    IdentifierExprAST(Viretoken::construct(""), false, ast_type_access)
     {
         if(child->asttype==ast_type_access)
         {
