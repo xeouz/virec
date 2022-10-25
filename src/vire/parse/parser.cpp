@@ -2,7 +2,7 @@
 
 namespace vire
 {
-    std::unique_ptr<ExprAST> Vireparse::LogError(const char* str,...)
+    std::unique_ptr<ExprAST> VParser::LogError(const char* str,...)
     {
         std::va_list args;
         va_start(args,str);
@@ -12,7 +12,7 @@ namespace vire
         printf("\n");
         return nullptr;
     }
-    std::unique_ptr<PrototypeAST> Vireparse::LogErrorP(const char* str,...)
+    std::unique_ptr<PrototypeAST> VParser::LogErrorP(const char* str,...)
     {
         std::va_list args;
         va_start(args,str);
@@ -22,7 +22,7 @@ namespace vire
         printf("\n");
         return nullptr;
     }
-    std::unique_ptr<FunctionAST> Vireparse::LogErrorF(const char* str,...)
+    std::unique_ptr<FunctionAST> VParser::LogErrorF(const char* str,...)
     {
         std::va_list args;
         va_start(args,str);
@@ -32,7 +32,7 @@ namespace vire
         printf("\n");
         return nullptr;
     }
-    std::unique_ptr<ClassAST> Vireparse::LogErrorC(const char* str,...)
+    std::unique_ptr<ClassAST> VParser::LogErrorC(const char* str,...)
     {
         std::va_list args;
         va_start(args,str);
@@ -42,7 +42,7 @@ namespace vire
         printf("\n");
         return nullptr;
     }
-    std::vector<std::unique_ptr<ExprAST>> Vireparse::LogErrorVP(const char* str,...)
+    std::vector<std::unique_ptr<ExprAST>> VParser::LogErrorVP(const char* str,...)
     {
         std::va_list args;
         va_start(args,str);
@@ -52,7 +52,7 @@ namespace vire
         printf("\n");
         return std::vector<std::unique_ptr<ExprAST>>();
     }
-    std::unordered_map<std::string, std::unique_ptr<ExprAST>> Vireparse::LogErrorPB(const char* str,...)
+    std::unordered_map<std::string, std::unique_ptr<ExprAST>> VParser::LogErrorPB(const char* str,...)
     {
         std::va_list args;
         va_start(args,str);
@@ -63,14 +63,14 @@ namespace vire
         return std::unordered_map<std::string, std::unique_ptr<ExprAST>>();
     }
 
-    void Vireparse::getNextToken()
+    void VParser::getNextToken()
     {
         current_token.reset();
         current_token=lexer->getToken();
 
         if(current_token==nullptr) current_token=lexer->getToken();
     }
-    void Vireparse::getNextToken(int toktype)
+    void VParser::getNextToken(int toktype)
     {
         if(current_token->type!=toktype)
         {
@@ -79,12 +79,12 @@ namespace vire
         }
         getNextToken();
     }
-    std::unique_ptr<Viretoken> Vireparse::copyCurrentToken()
+    std::unique_ptr<Viretoken> VParser::copyCurrentToken()
     {
         return std::make_unique<Viretoken>(current_token->value,current_token->type,current_token->line,current_token->charpos);
     }
 
-    std::vector<std::unique_ptr<ExprAST>> Vireparse::ParseBlock()
+    std::vector<std::unique_ptr<ExprAST>> VParser::ParseBlock()
     {
         getNextToken(tok_lbrace); // consume '}'
 
@@ -114,7 +114,7 @@ namespace vire
         return std::move(Stms);
     }
 
-    std::unique_ptr<ExprAST> Vireparse::ParsePrimary()
+    std::unique_ptr<ExprAST> VParser::ParsePrimary()
     {
         switch(current_token->type)
         {
@@ -160,7 +160,7 @@ namespace vire
         }
     }
 
-    std::unique_ptr<ExprAST> Vireparse::ParseExpression()
+    std::unique_ptr<ExprAST> VParser::ParseExpression()
     {
         auto LHS=ParsePrimary();
         if(!LHS)
@@ -171,7 +171,7 @@ namespace vire
         return ParseBinopExpr(0,std::move(LHS));
     }
 
-    std::unique_ptr<ExprAST> Vireparse::ParseIdExpr(bool include_assign)
+    std::unique_ptr<ExprAST> VParser::ParseIdExpr(bool include_assign)
     {
         auto id_name=copyCurrentToken();
 
@@ -270,7 +270,7 @@ namespace vire
         
         return std::move(expr);
     }
-    std::unique_ptr<ExprAST> Vireparse::ParseIncrementDecrementExpr()
+    std::unique_ptr<ExprAST> VParser::ParseIncrementDecrementExpr()
     {
         bool is_increment=(current_token->type==tok_incr);
         getNextToken();
@@ -280,7 +280,7 @@ namespace vire
         return std::make_unique<IncrementDecrementAST>(std::move(expr), true, is_increment);
     }
 
-    std::unique_ptr<ExprAST> Vireparse::ParseNumberExpr()
+    std::unique_ptr<ExprAST> VParser::ParseNumberExpr()
     {
         auto token=copyCurrentToken();
 
@@ -306,7 +306,7 @@ namespace vire
 
         return nullptr;
     }
-    std::unique_ptr<ExprAST> Vireparse::ParseStrExpr()
+    std::unique_ptr<ExprAST> VParser::ParseStrExpr()
     {
         auto token=copyCurrentToken();
         if(current_token->type==tok_char)
@@ -322,7 +322,7 @@ namespace vire
             return result;
         }
     }
-    std::unique_ptr<ExprAST> Vireparse::ParseBoolExpr()
+    std::unique_ptr<ExprAST> VParser::ParseBoolExpr()
     {
         auto token=copyCurrentToken();
         if(current_token->type==tok_true)
@@ -336,7 +336,7 @@ namespace vire
             return std::make_unique<BoolExprAST>(false, std::move(token));
         }
     }
-    std::unique_ptr<ExprAST> Vireparse::ParseArrayExpr()
+    std::unique_ptr<ExprAST> VParser::ParseArrayExpr()
     {
         getNextToken(tok_lbrack);
 
@@ -363,7 +363,7 @@ namespace vire
         return std::make_unique<ArrayExprAST>(std::move(Elements));
     }
 
-    std::unique_ptr<ExprAST> Vireparse::ParseParenExpr()
+    std::unique_ptr<ExprAST> VParser::ParseParenExpr()
     {
         getNextToken(tok_lparen); // consume '('
         auto stm=ParseExpression();
@@ -377,7 +377,7 @@ namespace vire
         return stm;
     }
 
-    std::unique_ptr<ExprAST> Vireparse::ParseBinopExpr(int ExprPrec, std::unique_ptr<ExprAST> LHS)
+    std::unique_ptr<ExprAST> VParser::ParseBinopExpr(int ExprPrec, std::unique_ptr<ExprAST> LHS)
     {
         while(1)
         {  
@@ -412,7 +412,7 @@ namespace vire
         }
     }
  
-    std::unique_ptr<ExprAST> Vireparse::ParseVariableDef()
+    std::unique_ptr<ExprAST> VParser::ParseVariableDef()
     { 
         bool isconst=false;
         bool islet=true;
@@ -504,14 +504,14 @@ namespace vire
 
         return std::make_unique<VariableDefAST>(std::move(var_name),std::move(type),std::move(value),isconst,islet);
     }
-    std::unique_ptr<ExprAST> Vireparse::ParseVariableAssign(std::unique_ptr<ExprAST> expr)
+    std::unique_ptr<ExprAST> VParser::ParseVariableAssign(std::unique_ptr<ExprAST> expr)
     {
         getNextToken(tok_equal);
         auto value=ParseExpression();
 
         return std::make_unique<VariableAssignAST>(std::move(expr), std::move(value));
     }
-    std::unique_ptr<ExprAST> Vireparse::ParseShorthandVariableAssign(std::unique_ptr<ExprAST> var)
+    std::unique_ptr<ExprAST> VParser::ParseShorthandVariableAssign(std::unique_ptr<ExprAST> var)
     {
         auto token=copyCurrentToken();
         getNextToken();
@@ -557,7 +557,7 @@ namespace vire
         return std::make_unique<VariableAssignAST>(std::move(var), std::move(expr), std::move(sym));
     }
 
-    std::unique_ptr<ExprAST> Vireparse::ParseForExpr()
+    std::unique_ptr<ExprAST> VParser::ParseForExpr()
     {
         getNextToken(tok_for);
         getNextToken(tok_lparen);
@@ -574,7 +574,7 @@ namespace vire
         return std::make_unique<ForExprAST>
         (std::move(initStm), std::move(condStm), std::move(incrStm), std::move(Stms));
     }
-    std::unique_ptr<ExprAST> Vireparse::ParseWhileExpr()
+    std::unique_ptr<ExprAST> VParser::ParseWhileExpr()
     {
         getNextToken(tok_while);
         getNextToken(tok_lparen);
@@ -585,7 +585,7 @@ namespace vire
 
         return std::make_unique<WhileExprAST>(std::move(cond), std::move(Stms));
     }
-    std::unique_ptr<ExprAST> Vireparse::ParseBreakContinue()
+    std::unique_ptr<ExprAST> VParser::ParseBreakContinue()
     {
         bool is_break=1;
         if(current_token->type==tok_continue) is_break=0;
@@ -612,7 +612,7 @@ namespace vire
         }
     }
 
-    std::unique_ptr<PrototypeAST> Vireparse::ParsePrototype()
+    std::unique_ptr<PrototypeAST> VParser::ParsePrototype()
     {
         if(current_token->type!=tok_id)
             return LogErrorP("Expected function name in prototype");
@@ -670,18 +670,18 @@ namespace vire
         return std::make_unique<PrototypeAST>(std::move(fn_name),std::move(args),std::move(return_type));
     }
 
-    std::unique_ptr<PrototypeAST> Vireparse::ParseProto()
+    std::unique_ptr<PrototypeAST> VParser::ParseProto()
     {
         getNextToken(tok_proto); // consume `proto`
         return ParsePrototype();
     }
-    std::unique_ptr<ExternAST> Vireparse::ParseExtern()
+    std::unique_ptr<ExternAST> VParser::ParseExtern()
     {
         getNextToken(tok_extern); // consume `extern`
         auto proto=ParsePrototype();
         return std::make_unique<ExternAST>(std::move(proto));
     }
-    std::unique_ptr<FunctionAST> Vireparse::ParseFunction()
+    std::unique_ptr<FunctionAST> VParser::ParseFunction()
     {
         getNextToken(tok_func); // eat `func`
 
@@ -694,14 +694,14 @@ namespace vire
 
         return std::make_unique<FunctionAST>(std::move(proto),std::move(Stms));
     }
-    std::unique_ptr<ExprAST> Vireparse::ParseReturn()
+    std::unique_ptr<ExprAST> VParser::ParseReturn()
     {
         getNextToken(tok_return);
 
         return std::make_unique<ReturnExprAST>(ParseExpression());
     }
  
-    std::unique_ptr<ExprAST> Vireparse::ParseIfExpr()
+    std::unique_ptr<ExprAST> VParser::ParseIfExpr()
     {
         getNextToken(tok_if);
         getNextToken(tok_lparen);
@@ -733,7 +733,7 @@ namespace vire
         auto ifthen=std::make_unique<IfThenExpr>(std::move(cond),std::move(mthenStm));
         return std::make_unique<IfExprAST>(std::move(ifthen),std::move(elseStms));
     }
-    std::unique_ptr<ClassAST> Vireparse::ParseClass()
+    std::unique_ptr<ClassAST> VParser::ParseClass()
     {
         getNextToken(tok_class);
         auto className=copyCurrentToken();
@@ -792,7 +792,7 @@ namespace vire
 
         return std::make_unique<ClassAST>(std::move(className),std::move(funcs),std::move(vars),std::move(Parent));
     }
-    std::unique_ptr<ExprAST> Vireparse::ParseNewExpr()
+    std::unique_ptr<ExprAST> VParser::ParseNewExpr()
     {
         getNextToken(tok_new); // consume `new`
         
@@ -814,7 +814,7 @@ namespace vire
 
         return std::make_unique<NewExprAST>(std::move(id_name),std::move(args));
     }
-    std::unique_ptr<ExprAST> Vireparse::ParseDeleteExpr()
+    std::unique_ptr<ExprAST> VParser::ParseDeleteExpr()
     {
         getNextToken(tok_delete);
 
@@ -823,7 +823,7 @@ namespace vire
 
         return std::make_unique<DeleteExprAST>(std::move(id_name));
     }
-    std::unique_ptr<ExprAST> Vireparse::ParseClassAccess(std::unique_ptr<ExprAST> parent)
+    std::unique_ptr<ExprAST> VParser::ParseClassAccess(std::unique_ptr<ExprAST> parent)
     {
         getNextToken(tok_dot);
         auto child=ParseIdExpr(false);
@@ -841,7 +841,7 @@ namespace vire
         return std::move(x);
     }
 
-    std::unordered_map<std::string, std::unique_ptr<ExprAST>> Vireparse::ParsePrimitiveBody()
+    std::unordered_map<std::string, std::unique_ptr<ExprAST>> VParser::ParsePrimitiveBody()
     {
         getNextToken(tok_lbrace);
         std::unordered_map<std::string, std::unique_ptr<ExprAST>> members;
@@ -889,7 +889,7 @@ namespace vire
 
         return std::move(members);
     }
-    std::unique_ptr<ExprAST> Vireparse::ParseUnion()
+    std::unique_ptr<ExprAST> VParser::ParseUnion()
     {
         getNextToken(tok_union);
 
@@ -905,7 +905,7 @@ namespace vire
         auto body=ParsePrimitiveBody();
         return std::make_unique<UnionExprAST>(std::move(body),std::move(name));
     }
-    std::unique_ptr<ExprAST> Vireparse::ParseStruct()
+    std::unique_ptr<ExprAST> VParser::ParseStruct()
     {
         getNextToken(tok_struct);
 
@@ -923,14 +923,14 @@ namespace vire
         return std::make_unique<StructExprAST>(std::move(body),std::move(name));
     }
 
-    std::unique_ptr<ExprAST> Vireparse::ParseUnsafe()
+    std::unique_ptr<ExprAST> VParser::ParseUnsafe()
     {
         getNextToken(tok_unsafe);
         
         auto block=ParseBlock();
         return std::make_unique<UnsafeExprAST>(std::move(block));
     }
-    std::unique_ptr<ExprAST> Vireparse::ParseReference()
+    std::unique_ptr<ExprAST> VParser::ParseReference()
     {
         getNextToken(tok_reference);
 
@@ -938,7 +938,7 @@ namespace vire
         return std::make_unique<ReferenceExprAST>(std::move(var));
     }
 
-    std::unique_ptr<CodeAST> Vireparse::ParseCode()
+    std::unique_ptr<ModuleAST> VParser::ParseSourceModule()
     {
         getNextToken();
 
@@ -988,6 +988,6 @@ namespace vire
             }
         }
         
-        return std::make_unique<CodeAST>(std::move(PreExecutionStatements),std::move(Functions),std::move(Classes),std::move(StructUnionDefs));
+        return std::make_unique<ModuleAST>(std::move(PreExecutionStatements),std::move(Functions),std::move(Classes),std::move(StructUnionDefs));
     }
 }

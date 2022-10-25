@@ -1,5 +1,7 @@
 #pragma once
 
+#define VIRE_WASM_ONLY
+
 #include "vire/ast/include.hpp"
 #include "vire/v_analyzer/include.hpp"
 
@@ -100,12 +102,15 @@ public:
     llvm::Function* compileExtern(std::string const& name);
     llvm::Function* compileFunction(std::string const& name);
 
+    llvm::StructType* compileUnion(std::string const& name);
     llvm::StructType* compileStruct(std::string const& name);
     llvm::Value* compileTypeAccess(TypeAccessAST* const name);
 
-    llvm::Module* getModule();
-    std::string getCompiledOutput();
+    llvm::Module* const getModule() const;
+    std::string getCompiledOutput() const;
+    VAnalyzer* const getAnalyzer()  const;
     
-    void compileToObjectFile(std::string const& filename);
+    void compileModule();
+    void compileToObjectFile(std::string const& filename, std::string const& target);
 };
 } // namespace vire

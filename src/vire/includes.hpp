@@ -8,3 +8,4 @@
 #include "v_analyzer/include.hpp"
 #include "v_compiler/include.hpp"
 #include "config/include.hpp"
+#include "api/include.hpp"

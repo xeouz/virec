@@ -1,25 +1,26 @@
-#include "vire/api/include.hpp"
+#include "vire/includes.hpp"
 
 #include <iostream>
 #include <memory> 
 
+/*
 int main(int argc, char ** argv)
 {
     std::string filename="output";
-    auto file=vire::proto::openFile("res/test.ve");
+    auto file=vire::proto::openFile("res/test.ve"); 
     auto code=vire::proto::readFile(file, 1);
 
     auto builder=std::make_unique<vire::errors::ErrorBuilder>("This program");
  
-    auto lexer=std::make_unique<vire::Virelex>(code, 0, builder);
-    auto parser=std::make_unique<vire::Vireparse>(std::move(lexer)); 
+    auto lexer=std::make_unique<vire::VLexer>(code, 0, builder.get());
+    auto parser=std::make_unique<vire::VParser>(std::move(lexer)); 
     auto analyzer=std::make_unique<vire::VAnalyzer>(builder.get(), code);
 
-    auto ast=parser->ParseCode();
+    auto ast=parser->ParseSourceModule();
  
     // std::cout << "Parsed Code" << std::endl;
 
-    bool success=analyzer->verifyCode(std::move(ast));
+    bool success=analyzer->verifySourceModule(std::move(ast));
 
     std::cout << "Analyzer Success: " << success << std::endl;
 
@@ -33,13 +34,7 @@ int main(int argc, char ** argv)
     // std::cout << "Generating Code" << std::endl; 
     auto compiler=std::make_unique<vire::VCompiler>(std::move(analyzer), filename);
 
-    compiler->compileExtern("puti");
-    compiler->compileExtern("putd");
-    compiler->compileExtern("putb");
-    compiler->compileExtern("put");
-    compiler->compileStruct("abc");
-    compiler->compileFunction("test");
-    compiler->compileFunction("main");
+    compiler->compileModule();
 
     llvm::verifyModule(*compiler->getModule());
 
@@ -47,22 +42,24 @@ int main(int argc, char ** argv)
     std::cout << compiler->getCompiledOutput() << std::endl;
     //std::cout << "---\n" << std::endl;
 
-    compiler->compileToObjectFile(filename+".o");
-    
-    // std::cout << "\n";
-    std::cout << "Compiled " << filename << ", Output: \n" << std::endl;
-    
-    std::string command="clang test.cpp ";
-    command.append(filename+".o"); 
-    command.append(" -o ");
-    command.append(filename);
- 
-    system(command.c_str());
-    
-    command="./";
-    command.append(filename);
-
-    system(command.c_str());
+    compiler->compileToObjectFile(filename+".wasm", "wasm32-unknown-unknown-wasm");
 
     return 0;
 }
+*/
+
+int main()
+{
+    auto api=std::make_unique<vire::VApi>("wasm32-unknown-unknown-wasm", "res/test.ve", "test.wasm");
+
+    api->parseSourceModule();
+    bool s=api->verifySourceModule();
+    if(!s) return 1;
+
+    s=api->compileSourceModule();
+    api->getErrorBuilder()->showErrors();
+    if(!s) return 1;
+
+    std::cout << "Compiled file to test.wasm" << std::endl;
+    //std::cout << api->getCompiler()->getCompiledOutput() << std::endl;
+} 

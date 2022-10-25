@@ -3,23 +3,16 @@ extern putd(i:double)  returns int;
 extern putb(i:bool)    returns int;
 extern put(c:char)     returns int;
 
-struct abc
-{
-    int a;
-    double b;
-}
-
 func test() returns int
 {
-    return 0;
+    return 1;
 }
 
 func main() returns int
 {
-    let a:abc;
-    a.a=10;
+    let a=10;
 
-    puti(a.a);
+    puti(a);
 
     return 0;
 }

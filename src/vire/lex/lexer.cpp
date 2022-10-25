@@ -14,20 +14,20 @@
 namespace vire
 {
 
-class Virelex
+class VLexer
 {
 protected:
     char cur;
     std::size_t indx;
     std::size_t line;
     std::size_t charpos;
-    const std::unique_ptr<errors::ErrorBuilder>& builder; // error builder
+    errors::ErrorBuilder* builder; // error builder
 public:
-    unsigned char jit;
+    bool jit;
     std::string code;
     std::size_t len;
 
-    Virelex(std::string code, unsigned char jit=0, const std::unique_ptr<errors::ErrorBuilder>& builder=nullptr)
+    VLexer(std::string code, bool jit=0, errors::ErrorBuilder* builder=nullptr)
     : builder(builder)
     {
         this->cur=' ';
@@ -210,7 +210,7 @@ public:
             advanceNext();
         }
         // Checks
-        if(isalpha(this->cur))
+        if(isalpha(this->cur) || this->cur=='_')
         {
             auto id_str=gatherId();
             int toktype=0;
@@ -324,7 +324,7 @@ public:
                 toktype=tok_id;
             }
 
-            tok=makeTokenInplace(id_str,toktype);
+            tok=makeTokenInplace(id_str, toktype);
             return std::move(tok);
         }
 

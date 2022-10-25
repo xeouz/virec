@@ -80,6 +80,11 @@
         "shared_mutex": "cpp",
         "stack": "cpp",
         "unordered_set": "cpp",
-        "__memory": "cpp"
+        "__memory": "cpp",
+        "*.def": "cpp",
+        "cfenv": "cpp",
+        "csignal": "cpp",
+        "forward_list": "cpp",
+        "future": "cpp"
     }
 }

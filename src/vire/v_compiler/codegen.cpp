@@ -665,6 +665,7 @@ namespace vire
     llvm::Function* VCompiler::compileExtern(std::string const& Name)
     {
         llvm::Function* func=compilePrototype(Name);
+        func->setName(Name);
 
         // Remove in release
         // func->print(llvm::errs());
@@ -754,28 +755,89 @@ namespace vire
         return Builder.CreateLoad(ty, sgep);
     }
 
-    llvm::Module* VCompiler::getModule()
+    void VCompiler::compileModule()
+    {
+        auto* mod=analyzer->getSourceModule();
+
+        for(auto const& s:mod->getUnionStructs())
+        {
+            if(s->asttype==ast_struct)
+            {
+                std::string name=((StructExprAST*)s.get())->getName();
+                compileStruct(name);
+            }
+            else
+            {
+                std::string name=((UnionExprAST*)s.get())->getName();
+                //compileUnion(name);
+            }
+        }
+
+        for(auto const& f:mod->getFunctions())
+        {
+            if(f->is_proto())
+            {
+                compilePrototype(f->getName());
+            }
+            else if(f->is_extern())
+            {
+                compileExtern(f->getName());
+            }
+            else
+            {
+                compileFunction(f->getName());
+            }
+        }
+
+        for(auto const& e:mod->getPreExecutionStatements())
+        {
+            compileExpr(e.get());
+        }
+    }
+
+    llvm::Module* const VCompiler::getModule() const
     {
         return Module.get();
     }
-    std::string VCompiler::getCompiledOutput()
+    std::string VCompiler::getCompiledOutput() const
     {
         std::string code;
         llvm::raw_string_ostream os(code);
         Module->print(os, nullptr);
         return code;
     }
-
-    void VCompiler::compileToObjectFile(const std::string& filename)
+    VAnalyzer* const VCompiler::getAnalyzer()  const
     {
-        std::string target_triple=llvm::sys::getDefaultTargetTriple();
+        return analyzer.get();
+    }
 
-        llvm::InitializeAllTargetInfos();
-        llvm::InitializeAllTargets();
-        llvm::InitializeAllTargetMCs();
-        llvm::InitializeAllAsmParsers();
-        llvm::InitializeAllAsmPrinters();
-
+    void VCompiler::compileToObjectFile(std::string const& filename, std::string const& target_str="")
+    {
+        std::string target_triple;
+        if(target_str=="default" || target_str=="")
+        {
+            target_triple=llvm::sys::getDefaultTargetTriple();
+        }
+        else
+        {
+            target_triple=target_str;
+        }
+    
+    #ifdef VIRE_WASM_ONLY
+            LLVMInitializeWebAssemblyTargetInfo();
+            LLVMInitializeWebAssemblyTarget();
+            LLVMInitializeWebAssemblyTargetMC();
+            LLVMInitializeWebAssemblyAsmParser();
+            LLVMInitializeWebAssemblyAsmPrinter();
+    #endif
+    #ifndef VIRE_WASM_ONLY
+            llvm::InitializeAllTargetInfos();
+            llvm::InitializeAllTargets();
+            llvm::InitializeAllTargetMCs();
+            llvm::InitializeAllAsmParsers();
+            llvm::InitializeAllAsmPrinters();
+    #endif
+        
         std::string error;
         auto target=llvm::TargetRegistry::lookupTarget(target_triple, error);
 
@@ -784,8 +846,10 @@ namespace vire
             llvm::errs() << "Target not found:\n" << error;
             return;
         }
-
-        auto cpu=llvm::sys::getHostCPUName();
+        std::string cpu;
+    #ifndef VIRE_WASM_ONLY
+        cpu=llvm::sys::getHostCPUName();
+    #endif
         auto features="";
 
         llvm::TargetOptions opt;
@@ -798,11 +862,11 @@ namespace vire
         std::error_code ec;
         llvm::raw_fd_ostream os(filename, ec, llvm::sys::fs::OF_None);
 
-        llvm::legacy::PassManager pass;
+        llvm::legacy::PassManager passmgr;
         auto file_type=llvm::CGFT_ObjectFile;
-        target_machine->addPassesToEmitFile(pass, os, nullptr, file_type);
+        target_machine->addPassesToEmitFile(passmgr, os, nullptr, file_type);
 
-        pass.run(*Module);
+        passmgr.run(*Module);
         os.flush();
 
         delete target_machine;

@@ -13,30 +13,30 @@
 namespace vire
 {
 
-class Vireparse
+class VParser
 {
-    std::unique_ptr<Virelex> lexer;
+    std::unique_ptr<VLexer> lexer;
     std::unique_ptr<Config> config;
 public:
     std::unique_ptr<Viretoken> current_token;
     std::string current_func_name;
 
-    Vireparse(Virelex* lexer) 
+    VParser(VLexer* lexer) 
     : lexer(lexer), current_token() {
         config=std::make_unique<Config>();
         config->installDefaultBinops();
     }
-    Vireparse(std::unique_ptr<Virelex> lexer) 
+    VParser(std::unique_ptr<VLexer> lexer) 
     : lexer(std::move(lexer)), current_token(std::make_unique<Viretoken>("",tok_eof)) {
         config=std::make_unique<Config>();
         config->installDefaultBinops();
     }
     
-    Vireparse(Virelex* lexer, Config* config)
+    VParser(VLexer* lexer, Config* config)
     : lexer(lexer), config(config), current_token(std::make_unique<Viretoken>("",tok_eof)) {}
-    Vireparse(std::unique_ptr<Virelex> lexer, Config* config)
+    VParser(std::unique_ptr<VLexer> lexer, Config* config)
     : lexer(std::move(lexer)), config(config), current_token(std::make_unique<Viretoken>("",tok_eof)) {}
-    Vireparse(std::unique_ptr<Virelex> lexer, std::unique_ptr<Config> config)
+    VParser(std::unique_ptr<VLexer> lexer, std::unique_ptr<Config> config)
     : lexer(std::move(lexer)), config(std::move(config)), current_token(std::make_unique<Viretoken>("",tok_eof)) {}
 
     std::unique_ptr<ExprAST> LogError(const char* str,...);
@@ -96,7 +96,7 @@ public:
     std::unique_ptr<ExprAST> ParseUnsafe();
     std::unique_ptr<ExprAST> ParseReference();
 
-    std::unique_ptr<CodeAST> ParseCode();
+    std::unique_ptr<ModuleAST> ParseSourceModule();
 };
 
 }

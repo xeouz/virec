@@ -10,7 +10,7 @@ namespace vire
 class VAnalyzer
 {
     // Symbol Tables
-    std::unique_ptr<CodeAST> codeast;
+    std::unique_ptr<ModuleAST> ast;
 
     FunctionAST* current_func;
 
@@ -56,7 +56,7 @@ public:
     FunctionBaseAST* const getFunc(const std::string& name);
     StructExprAST* const getStruct(const std::string& name);
 
-    CodeAST* const getCode();
+    ModuleAST* const getSourceModule();
 
     // Verification functions
     ReturnExprAST* const getReturnStatement(std::vector<std::unique_ptr<ExprAST>> const& block);
@@ -118,7 +118,7 @@ public:
     bool verifyBlock(std::vector<std::unique_ptr<ExprAST>> const& block);
 
     // Entry point for verification
-    bool verifyCode(std::unique_ptr<CodeAST> code);
+    bool verifySourceModule(std::unique_ptr<ModuleAST> code);
 
     // Helper functions
     bool verifyExpr(ExprAST* const expr);

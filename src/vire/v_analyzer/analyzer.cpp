@@ -8,7 +8,7 @@ namespace vire
 {
     bool VAnalyzer::isVarDefined(const std::string& name, bool check_globally_only)
     {
-        for(const auto& expr :codeast->getPreExecutionStatements())
+        for(const auto& expr :ast->getPreExecutionStatements())
         {
             if(expr->asttype==ast_vardef)
             {
@@ -30,7 +30,7 @@ namespace vire
     }
     bool VAnalyzer::isFuncDefined(const std::string& name)
     {
-        const auto& functions=codeast->getFunctions();
+        const auto& functions=ast->getFunctions();
         if(!functions.empty())
         {
             for(int i=0; i<functions.size(); ++i)
@@ -45,7 +45,7 @@ namespace vire
     }
     bool VAnalyzer::isClassDefined(const std::string& name)
     {
-        const auto& classes=codeast->getClasses();
+        const auto& classes=ast->getClasses();
         if(!classes.empty())
         {
             for(int i=0; i<classes.size(); ++i)
@@ -79,12 +79,12 @@ namespace vire
 
     void VAnalyzer::addFunction(std::unique_ptr<FunctionBaseAST> func)
     {
-        codeast->addFunction(std::move(func));
+        ast->addFunction(std::move(func));
     }
 
     FunctionBaseAST* const VAnalyzer::getFunc(std::string const& name)
     {
-        const auto& functions=codeast->getFunctions();
+        const auto& functions=ast->getFunctions();
 
         if(name=="")
         {
@@ -107,9 +107,9 @@ namespace vire
         return nullptr;
     }
 
-    CodeAST* const VAnalyzer::getCode()
+    ModuleAST* const VAnalyzer::getSourceModule()
     {
-        return codeast.get();
+        return ast.get();
     }
 
     VariableDefAST* const VAnalyzer::getVar(const std::string& name)
@@ -129,7 +129,7 @@ namespace vire
             return nullptr;
         }
 
-        auto const& structs=codeast->getUnionStructs();
+        auto const& structs=ast->getUnionStructs();
         for(auto const& expr : structs)
         {
             if(expr->asttype==ast_struct)
@@ -1166,15 +1166,15 @@ namespace vire
         return true;
     }
 
-    bool VAnalyzer::verifyCode(std::unique_ptr<CodeAST> code)
+    bool VAnalyzer::verifySourceModule(std::unique_ptr<ModuleAST> code)
     {
         bool is_valid=true;
-        codeast=std::move(code);
+        ast=std::move(code);
 
-        auto classes=codeast->moveClasses();
-        auto funcs=codeast->moveFunctions();
-        auto union_structs=codeast->moveUnionStructs();
-        auto pre_stms=codeast->movePreExecutionStatements();
+        auto classes=ast->moveClasses();
+        auto funcs=ast->moveFunctions();
+        auto union_structs=ast->moveUnionStructs();
+        auto pre_stms=ast->movePreExecutionStatements();
 
         bool has_main=false;
         unsigned int main_func_indx=0;
@@ -1206,7 +1206,7 @@ namespace vire
                 }
             }
 
-            codeast->addUnionStruct(std::move(union_structs[it]));
+            ast->addUnionStruct(std::move(union_structs[it]));
         }
         for(unsigned int it=0; it<funcs.size(); ++it)
         {

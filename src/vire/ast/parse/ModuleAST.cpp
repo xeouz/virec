@@ -13,13 +13,14 @@
 namespace vire
 {
 
-class CodeAST{
+class ModuleAST
+{
     std::vector<std::unique_ptr<ExprAST>> PreExecutionStatements;
     std::vector<std::unique_ptr<FunctionBaseAST>> Functions;
     std::vector<std::unique_ptr<ClassAST>> Classes;
     std::vector<std::unique_ptr<ExprAST>> UnionStructs;
 public:
-    CodeAST(std::vector<std::unique_ptr<ExprAST>> PreExecutionStatements,
+    ModuleAST(std::vector<std::unique_ptr<ExprAST>> PreExecutionStatements,
             std::vector<std::unique_ptr<FunctionBaseAST>> Functions,
             std::vector<std::unique_ptr<ClassAST>> Classes,
             std::vector<std::unique_ptr<ExprAST>> UnionStructs)

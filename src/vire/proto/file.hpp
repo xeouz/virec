@@ -8,7 +8,6 @@ namespace vire
 {
 namespace proto
 {
-
     std::fstream openFile(const std::string& filename);
 
     std::fstream openFile(const char* filename);

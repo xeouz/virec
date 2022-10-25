@@ -14,8 +14,6 @@ set(CMAKE_BUILD_TYPE Debug)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED true)
 
-message(STATUS CMAKE_PREFIX_PATH)
-
 set(CXX_COMPILE_FLAGS "-I${CMAKE_SOURCE_DIR}/src")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CXX_COMPILE_FLAGS}")
 
@@ -28,15 +26,22 @@ add_definitions(${LLVM_DEFINITIONS_LIST})
 add_executable(VIRELANG src/main.cpp)
 
 # -- LLVM Libraries
-foreach(target ${LLVM_TARGETS_TO_BUILD})
-    list(APPEND targets "LLVM${target}CodeGen")
-endforeach()
-llvm_map_components_to_libnames(llvm_libs ${LLVM_TARGETS_TO_BUILD} support core irreader)
-target_link_libraries(VIRELANG PRIVATE ${llvm_libs})
+link_libraries()
+execute_process(COMMAND llvm-config --libs WebAssembly OUTPUT_VARIABLE LIBS)
+execute_process(COMMAND llvm-config --system-libs OUTPUT_VARIABLE SYS_LIBS)
+execute_process(COMMAND llvm-config --ldflags OUTPUT_VARIABLE LDF)
+#message(STATUS "Found LLVM" ${LIBS})
+
+string(STRIP ${LIBS} LIBS)
+string(STRIP ${SYS_LIBS} SYS_LIBS)
+string(STRIP ${LDF} LDF)
+
+link_libraries(${LIBS} ${SYS_LIBS} ${LDF})
 
 set(VIRE_SRC_PATH "${CMAKE_CURRENT_SOURCE_DIR}/src/vire")
 
 # -- Compiling Parser, Proto, Analyzer, ErrorBuilder libs
+include(${VIRE_SRC_PATH}/api/VApi.cmake)
 include(${VIRE_SRC_PATH}/parse/Parser.cmake)
 include(${VIRE_SRC_PATH}/proto/Proto.cmake)
 include(${VIRE_SRC_PATH}/v_analyzer/VAnalyzer.cmake)
@@ -55,4 +60,4 @@ add_custom_command(
 add_custom_command(
     TARGET VIRELANG POST_BUILD
     COMMAND ./VIRELANG
-)
+) 
