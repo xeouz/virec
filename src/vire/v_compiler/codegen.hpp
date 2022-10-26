@@ -1,9 +1,19 @@
 #pragma once
 
-#define VIRE_WASM_ONLY
-
 #include "vire/ast/include.hpp"
 #include "vire/v_analyzer/include.hpp"
+
+// For `VIRE_ENABLE_ONLY` definition
+#include "vire/config/config.hpp"
+
+#ifdef VIRE_ENABLE_ONLY
+    #define __SPECIFIC_INIT_MACRO(target, func_name) LLVMInitialize##target##func_name()
+    #define SPECIFIC_INIT_TARGET_INFO(target) __SPECIFIC_INIT_MACRO(target, TargetInfo)
+    #define SPECIFIC_INIT_TARGET(target) __SPECIFIC_INIT_MACRO(target, Target)
+    #define SPECIFIC_INIT_TARGET_MC(target) __SPECIFIC_INIT_MACRO(target, TargetMC)
+    #define SPECIFIC_INIT_ASM_PARSER(target) __SPECIFIC_INIT_MACRO(target, AsmParser)
+    #define SPECIFIC_INIT_ASM_PRINTER(target) __SPECIFIC_INIT_MACRO(target, AsmPrinter)
+#endif
 
 // LLVM
 #include "llvm/ADT/APFloat.h"

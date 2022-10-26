@@ -61,5 +61,5 @@ int main()
     if(!s) return 1;
 
     std::cout << "Compiled file to test.wasm" << std::endl;
-    //std::cout << api->getCompiler()->getCompiledOutput() << std::endl;
+    std::cout << api->getCompiler()->getCompiledOutput() << std::endl;
 } 

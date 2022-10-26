@@ -823,34 +823,37 @@ namespace vire
             target_triple=target_str;
         }
     
-    #ifdef VIRE_WASM_ONLY
-            LLVMInitializeWebAssemblyTargetInfo();
-            LLVMInitializeWebAssemblyTarget();
-            LLVMInitializeWebAssemblyTargetMC();
-            LLVMInitializeWebAssemblyAsmParser();
-            LLVMInitializeWebAssemblyAsmPrinter();
+    #ifdef VIRE_ENABLE_ONLY
+        SPECIFIC_INIT_TARGET_INFO(VIRE_ENABLE_ONLY);
+        SPECIFIC_INIT_TARGET(VIRE_ENABLE_ONLY);
+        SPECIFIC_INIT_TARGET_MC(VIRE_ENABLE_ONLY);
+        SPECIFIC_INIT_ASM_PARSER(VIRE_ENABLE_ONLY);
+        SPECIFIC_INIT_ASM_PRINTER(VIRE_ENABLE_ONLY);
     #endif
-    #ifndef VIRE_WASM_ONLY
-            llvm::InitializeAllTargetInfos();
-            llvm::InitializeAllTargets();
-            llvm::InitializeAllTargetMCs();
-            llvm::InitializeAllAsmParsers();
-            llvm::InitializeAllAsmPrinters();
+    #ifndef VIRE_ENABLE_ONLY
+        llvm::InitializeAllTargetInfos();
+        llvm::InitializeAllTargets();
+        llvm::InitializeAllTargetMCs();
+        llvm::InitializeAllAsmParsers();
+        llvm::InitializeAllAsmPrinters();
     #endif
         
         std::string error;
-        auto target=llvm::TargetRegistry::lookupTarget(target_triple, error);
+        auto* target=llvm::TargetRegistry::lookupTarget(target_triple, error);
 
         if(!target)
         {
             llvm::errs() << "Target not found:\n" << error;
             return;
         }
+
         std::string cpu;
-    #ifndef VIRE_WASM_ONLY
+        std::string features;
+
+        // DANGEROUS, TO BE CHANGED
+    #ifndef VIRE_ENABLE_ONLY
         cpu=llvm::sys::getHostCPUName();
     #endif
-        auto features="";
 
         llvm::TargetOptions opt;
         auto rm=llvm::Optional<llvm::Reloc::Model>();
