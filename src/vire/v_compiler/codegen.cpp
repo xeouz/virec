@@ -660,6 +660,9 @@ namespace vire
             arg.setName(proto_args[idx]->getName());
         }
 
+        func->addFnAttr(llvm::Attribute::get(CTX, "wasm-export-name", func->getName()));
+        func->setVisibility(llvm::GlobalValue::DefaultVisibility);
+
         return func;
     }
     llvm::Function* VCompiler::compileExtern(std::string const& Name)
@@ -847,7 +850,7 @@ namespace vire
             return;
         }
 
-        std::string cpu;
+        std::string cpu="generic";
         std::string features;
 
         // DANGEROUS, TO BE CHANGED

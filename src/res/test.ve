@@ -10,9 +10,12 @@ func test() returns int
 
 func main() returns int
 {
-    let a=10;
+    let a=10.0;
+    let b=10.89;
 
-    puti(a);
+    a+=b;
+
+    putd(a);
 
     return 0;
 }

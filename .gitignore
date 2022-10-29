@@ -1,3 +1,4 @@
 build/
 gitignore/
 .vscode/
+wasm-test/node_modules
