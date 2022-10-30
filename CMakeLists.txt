@@ -59,5 +59,5 @@ add_custom_command(
 # -- Run the program
 add_custom_command(
     TARGET VIRELANG POST_BUILD
-    COMMAND ./VIRELANG
+    COMMAND valgrind --track-origins=yes ./VIRELANG
 ) 

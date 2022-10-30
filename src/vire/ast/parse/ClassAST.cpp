@@ -16,13 +16,13 @@ namespace vire
 
 class ClassAST
 {
-    std::unique_ptr<Viretoken> Name;
-    std::unique_ptr<Viretoken> Parent;
+    std::unique_ptr<VToken> Name;
+    std::unique_ptr<VToken> Parent;
     std::map<std::string, std::unique_ptr<VariableDefAST>> Variables;
     std::map<std::string, std::unique_ptr<FunctionBaseAST>> Functions;
 public:
-    ClassAST(std::unique_ptr<Viretoken> Name, std::vector<std::unique_ptr<FunctionBaseAST>> funcs
-    , std::vector<std::unique_ptr<VariableDefAST>> vars, std::unique_ptr<Viretoken> Parent)
+    ClassAST(std::unique_ptr<VToken> Name, std::vector<std::unique_ptr<FunctionBaseAST>> funcs
+    , std::vector<std::unique_ptr<VariableDefAST>> vars, std::unique_ptr<VToken> Parent)
     : Name(std::move(Name)), Parent(std::move(Name))
     {
         unsigned int it=0;
@@ -76,10 +76,10 @@ public:
 
 class NewExprAST : public ExprAST
 {
-    std::unique_ptr<Viretoken> ClassName;
+    std::unique_ptr<VToken> ClassName;
     std::vector<std::unique_ptr<ExprAST>> Args;
 public:
-    NewExprAST(std::unique_ptr<Viretoken> ClassName, std::vector<std::unique_ptr<ExprAST>> Args)
+    NewExprAST(std::unique_ptr<VToken> ClassName, std::vector<std::unique_ptr<ExprAST>> Args)
     : ClassName(std::move(ClassName)), Args(std::move(Args)), ExprAST("",ast_new) {};
 
     std::string const& getName() const {return ClassName->value;}
@@ -88,9 +88,9 @@ public:
 
 class DeleteExprAST : public ExprAST
 {
-    std::unique_ptr<Viretoken> varName;
+    std::unique_ptr<VToken> varName;
 public:
-    DeleteExprAST(std::unique_ptr<Viretoken> varName) : varName(std::move(varName)), ExprAST("",ast_delete) 
+    DeleteExprAST(std::unique_ptr<VToken> varName) : varName(std::move(varName)), ExprAST("",ast_delete) 
     {}
 
     std::string const& getName() const {return varName->value;}

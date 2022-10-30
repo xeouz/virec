@@ -2,6 +2,42 @@
 
 namespace vire
 {
+void VApi::internal_setup()
+{
+
+}
+
+VApi::VApi(std::unique_ptr<VParser> parser, std::unique_ptr<VCompiler> compiler, 
+     std::unique_ptr<errors::ErrorBuilder> ebuilder, std::string source_code, std::string target)
+: parser(std::move(parser)), compiler(std::move(compiler)), ebuilder(std::move(ebuilder)),
+  source_code(source_code), target(target)
+{
+    internal_setup();
+}
+
+std::unique_ptr<VApi> VApi::loadFromFile(std::string input_file_path, std::string compilation_target)
+{
+    auto file=vire::proto::openFile(input_file_path);
+    std::string src=vire::proto::readFile(file, true);
+
+    auto ebuilder=std::make_unique<errors::ErrorBuilder>("This program");
+    auto lexer=std::make_unique<VLexer>(src, ebuilder.get());
+    auto parser=std::make_unique<VParser>(std::move(lexer));
+    auto analyzer=std::make_unique<VAnalyzer>(ebuilder.get(), src);
+    auto compiler=std::make_unique<VCompiler>(std::move(analyzer));
+
+    return std::make_unique<VApi>(std::move(parser), std::move(compiler), std::move(ebuilder), src, compilation_target);
+}
+std::unique_ptr<VApi> VApi::loadFromText(std::string input_code, std::string compilation_target)
+{
+    auto ebuilder=std::make_unique<errors::ErrorBuilder>("This program");
+    auto lexer=std::make_unique<VLexer>(input_code, ebuilder.get());
+    auto parser=std::make_unique<VParser>(std::move(lexer));
+    auto analyzer=std::make_unique<VAnalyzer>(ebuilder.get(), input_code);
+    auto compiler=std::make_unique<VCompiler>(std::move(analyzer));
+
+    return std::make_unique<VApi>(std::move(parser), std::move(compiler), std::move(ebuilder), input_code, compilation_target); 
+}
 
 errors::ErrorBuilder* const VApi::getErrorBuilder() const
 {
@@ -28,14 +64,26 @@ bool VApi::verifySourceModule()
     bool success=compiler->getAnalyzer()->verifySourceModule(std::move(ast));
     return success;
 }
-bool VApi::compileSourceModule()
+bool VApi::compileSourceModule(std::string output_file_path, bool write_to_file)
 {
+    std::string out_file_path;
+
+    if(output_file_path=="")
+    {
+    #ifdef _WIN32
+        out_file_path="a.exe";
+    #endif
+    #ifndef _WIN32
+        out_file_path="a.out";
+    #endif
+    }
+
     compiler->compileModule();
     bool failure=llvm::verifyModule(*compiler->getModule());
     
-    if(!failure)
+    if(!failure && write_to_file)
     {
-        compiler->compileToObjectFile(out_file_name, target);
+        compiler->compileToObjectFile(out_file_path, target);
     }
 
     return !failure;

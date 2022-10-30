@@ -13,9 +13,9 @@ class TypeAST : public ExprAST
 {
     std::unordered_map<std::string, std::unique_ptr<ExprAST>> members;
     std::unordered_map<std::string, int> members_indx;
-    std::unique_ptr<Viretoken> name;
+    std::unique_ptr<VToken> name;
 public:
-    TypeAST(std::unordered_map<std::string, std::unique_ptr<ExprAST>> members, std::unique_ptr<Viretoken> name, int asttype=ast_type)
+    TypeAST(std::unordered_map<std::string, std::unique_ptr<ExprAST>> members, std::unique_ptr<VToken> name, int asttype=ast_type)
     : members(std::move(members)), name(std::move(name)), ExprAST("void", asttype)
     {
         int i=this->members.size()-1;
@@ -74,7 +74,7 @@ public:
 class UnionExprAST : public TypeAST
 {
 public:
-    UnionExprAST(std::unordered_map<std::string, std::unique_ptr<ExprAST>> members, std::unique_ptr<Viretoken> name)
+    UnionExprAST(std::unordered_map<std::string, std::unique_ptr<ExprAST>> members, std::unique_ptr<VToken> name)
     : TypeAST(std::move(members), std::move(name), ast_union)
     {
     }
@@ -83,7 +83,7 @@ public:
 class StructExprAST : public TypeAST
 {
 public:
-    StructExprAST(std::unordered_map<std::string, std::unique_ptr<ExprAST>> members, std::unique_ptr<Viretoken> name)
+    StructExprAST(std::unordered_map<std::string, std::unique_ptr<ExprAST>> members, std::unique_ptr<VToken> name)
     : TypeAST(std::move(members), std::move(name), ast_struct)
     {
     }

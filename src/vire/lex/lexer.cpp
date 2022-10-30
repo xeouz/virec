@@ -27,23 +27,24 @@ public:
     std::string code;
     std::size_t len;
 
-    VLexer(std::string code, bool jit=0, errors::ErrorBuilder* builder=nullptr)
-    : builder(builder)
+    VLexer(std::string code, errors::ErrorBuilder* builder)
+    : builder(builder), jit(false)
     {
         this->cur=' ';
         this->indx=-1;
+        this->line=0;
 
-        if(jit==0)
+        if(!jit)
         {
-            this->code=std::string(code);
+            this->code=code;
             this->len=code.length();
         }
         else
         {
-            this->code=std::string(" ");
+            this->code="";
             this->len=0;
         }
-        this->jit=jit;
+
         this->charpos=-1;
     }
     
@@ -84,7 +85,7 @@ public:
         return id;
     }
 
-    std::unique_ptr<Viretoken> gatherNum()
+    std::unique_ptr<VToken> gatherNum()
     {
         std::string numstr;
         int ttype;
@@ -136,7 +137,7 @@ public:
         return makeTokenInplace(numstr,ttype);
     }
 
-    std::unique_ptr<Viretoken> gatherChar()
+    std::unique_ptr<VToken> gatherChar()
     {
         std::string ch;
         advanceNext(); // eat `'`
@@ -148,7 +149,7 @@ public:
 
         return makeTokenInplace(ch, tok_char);
     }
-    std::unique_ptr<Viretoken> gatherStr()
+    std::unique_ptr<VToken> gatherStr()
     {
         std::string str="";
         advanceNext(); // consume the start d-quote
@@ -170,13 +171,13 @@ public:
         return makeTokenInplace(str, tok_str);
     }
 
-    std::unique_ptr<Viretoken> makeTokenInplace(std::string value, int type)
+    std::unique_ptr<VToken> makeTokenInplace(std::string value, int type)
     {
-        auto tok=std::make_unique<Viretoken>(value, type, this->line, this->charpos);
+        auto tok=std::make_unique<VToken>(value, type, this->line, this->charpos);
         return std::move(tok);
     }
 
-    std::unique_ptr<Viretoken> makeToken(std::string value, int type, char move=0)
+    std::unique_ptr<VToken> makeToken(std::string value, int type, char move=0)
     {
         this->cur=this->getNext(move);
         auto tok=this->makeTokenInplace(value,type);
@@ -184,7 +185,7 @@ public:
         return std::move(tok);
     }
 
-    std::unique_ptr<Viretoken> makeToken(const char* value, int type, char move=0)
+    std::unique_ptr<VToken> makeToken(const char* value, int type, char move=0)
     {
         this->cur=this->getNext(move);
         auto tok=this->makeTokenInplace(std::string(value),type);
@@ -192,7 +193,7 @@ public:
         return std::move(tok);
     }
 
-    std::unique_ptr<Viretoken> getToken()
+    std::unique_ptr<VToken> getToken()
     {
         while(isspace(this->cur))
         {
@@ -214,7 +215,7 @@ public:
         {
             auto id_str=gatherId();
             int toktype=0;
-            std::unique_ptr<Viretoken> tok;
+            std::unique_ptr<VToken> tok;
             if(id_str=="func")
             {
                 toktype=tok_func;
@@ -406,13 +407,13 @@ public:
             case EOF: return makeToken("",tok_eof);
 
             default: {
-                builder->addError<errors::lex_unknown_char>(this->code,this->cur,'\0',this->line,this->charpos);
+                builder->addError<errors::lex_unknown_char>(this->code, this->cur,' ', this->line, this->charpos);
                 advanceNext();
                 return nullptr;
             }
         }
     }
-    std::unique_ptr<Viretoken> getToken(std::string str)
+    std::unique_ptr<VToken> getToken(std::string str)
     {
         auto old_str=code;
         code=str;

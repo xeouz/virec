@@ -15,7 +15,7 @@ class IntExprAST : public ExprAST
 {
     int val;
 public:
-    IntExprAST(int val, std::unique_ptr<Viretoken> token) : val(val), 
+    IntExprAST(int val, std::unique_ptr<VToken> token) : val(val), 
     ExprAST(types::construct(types::TypeNames::Int), ast_int, std::move(token)) 
     {}
 
@@ -30,7 +30,7 @@ class FloatExprAST: public ExprAST
 {
     float val;
 public:
-    FloatExprAST(float val, std::unique_ptr<Viretoken> token=nullptr) : val(val), 
+    FloatExprAST(float val, std::unique_ptr<VToken> token=nullptr) : val(val), 
     ExprAST(types::construct(types::TypeNames::Float),ast_float, std::move(token)) {}
 
     const float& getValue() const {return val;}
@@ -41,7 +41,7 @@ class DoubleExprAST: public ExprAST
 {
     double val;
 public:
-    DoubleExprAST(double val, std::unique_ptr<Viretoken> token) : val(val), 
+    DoubleExprAST(double val, std::unique_ptr<VToken> token) : val(val), 
     ExprAST(types::construct(types::TypeNames::Double),ast_double,std::move(token)) {}
 
     const double& getValue() const {return val;}
@@ -52,7 +52,7 @@ class CharExprAST : public ExprAST
 {
     char val;
 public:
-    CharExprAST(char val, std::unique_ptr<Viretoken> token=nullptr) : val(val), 
+    CharExprAST(char val, std::unique_ptr<VToken> token=nullptr) : val(val), 
     ExprAST(types::construct(types::TypeNames::Char),ast_char,std::move(token)) {}
 
     const char& getValue() const {return val;}
@@ -63,7 +63,7 @@ class BoolExprAST : public ExprAST
 {
     bool val;
 public:
-    BoolExprAST(bool val, std::unique_ptr<Viretoken> token) : val(val),
+    BoolExprAST(bool val, std::unique_ptr<VToken> token) : val(val),
     ExprAST(types::construct(types::TypeNames::Bool), ast_bool, std::move(token))
     {}
 
@@ -78,7 +78,7 @@ class StrExprAST : public ExprAST
 {
     std::string val;
 public:
-    StrExprAST(const std::string& val, std::unique_ptr<Viretoken> token=nullptr) : val(val), ExprAST("str",ast_str,std::move(token)) {}
+    StrExprAST(const std::string& val, std::unique_ptr<VToken> token=nullptr) : val(val), ExprAST("str",ast_str,std::move(token)) {}
 
     const std::string& getValue() const {return val;}
 };

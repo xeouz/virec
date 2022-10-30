@@ -65,7 +65,7 @@ namespace vire
             return expr;
         }
     }
-    llvm::Value* VCompiler::createBinaryOperation(llvm::Value* lhs, llvm::Value* rhs, Viretoken* const op, bool expr_is_fp)
+    llvm::Value* VCompiler::createBinaryOperation(llvm::Value* lhs, llvm::Value* rhs, VToken* const op, bool expr_is_fp)
     {
         switch(op->type)
         {
@@ -817,7 +817,7 @@ namespace vire
     void VCompiler::compileToObjectFile(std::string const& filename, std::string const& target_str="")
     {
         std::string target_triple;
-        if(target_str=="default" || target_str=="")
+        if(target_str=="sys" || target_str=="")
         {
             target_triple=llvm::sys::getDefaultTargetTriple();
         }

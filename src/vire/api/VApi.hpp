@@ -1,6 +1,7 @@
 #pragma once
 
 #include <filesystem>
+#include <memory>
 
 #include "vire/proto/include.hpp"
 #include "vire/v_compiler/include.hpp"
@@ -15,40 +16,21 @@ class VApi
     std::unique_ptr<ModuleAST> ast;
     std::unique_ptr<errors::ErrorBuilder> ebuilder;
 
-    std::string inp_file_path;
-    std::string out_file_name;
+    std::string source_code;
     std::string target;
+private:
+    void internal_setup();
+
 public:
-    VApi(std::string target, std::string input_file_path, std::string output_file_name="")
-    : target(target), inp_file_path(input_file_path), out_file_name(output_file_name)
-    {
-        if(out_file_name=="")
-        {
-            auto current_path=std::filesystem::current_path().remove_filename().string();
-            
-        #ifdef  _WIN32
-            out_file_name=current_path+"/a.exe";
-        #endif
-        #ifndef _WIN32
-            out_file_name=current_path+"/a.out";
-        #endif
-        }
+    VApi(std::unique_ptr<VParser> parser, std::unique_ptr<VCompiler> compiler, 
+    std::unique_ptr<errors::ErrorBuilder> ebuilder, std::string source_code="", std::string target="sys");
 
-        auto file=vire::proto::openFile(inp_file_path);
-        std::string src=vire::proto::readFile(file, 1);
-
-        ebuilder=std::make_unique<errors::ErrorBuilder>("This program");
-
-        auto lexer=std::make_unique<VLexer>(src, false, ebuilder.get());
-        parser=std::make_unique<VParser>(std::move(lexer));
-
-        auto analyzer=std::make_unique<VAnalyzer>(ebuilder.get(), src);
-        compiler=std::make_unique<VCompiler>(std::move(analyzer), out_file_name);
-    }
+    static std::unique_ptr<VApi> loadFromFile(std::string input_file_path, std::string compilation_target="sys");
+    static std::unique_ptr<VApi> loadFromText(std::string input_code, std::string compilation_target="sys");
 
     bool parseSourceModule();
     bool verifySourceModule();
-    bool compileSourceModule();
+    bool compileSourceModule(std::string output_file_name="", bool write_to_file=true);
     
     errors::ErrorBuilder* const getErrorBuilder() const;
     VCompiler* const getCompiler() const;

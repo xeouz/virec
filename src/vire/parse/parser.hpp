@@ -17,8 +17,9 @@ class VParser
 {
     std::unique_ptr<VLexer> lexer;
     std::unique_ptr<Config> config;
+    bool parse_success;
 public:
-    std::unique_ptr<Viretoken> current_token;
+    std::unique_ptr<VToken> current_token;
     std::string current_func_name;
 
     VParser(VLexer* lexer) 
@@ -27,17 +28,17 @@ public:
         config->installDefaultBinops();
     }
     VParser(std::unique_ptr<VLexer> lexer) 
-    : lexer(std::move(lexer)), current_token(std::make_unique<Viretoken>("",tok_eof)) {
+    : lexer(std::move(lexer)), current_token(std::make_unique<VToken>("",tok_eof)) {
         config=std::make_unique<Config>();
         config->installDefaultBinops();
     }
     
     VParser(VLexer* lexer, Config* config)
-    : lexer(lexer), config(config), current_token(std::make_unique<Viretoken>("",tok_eof)) {}
+    : lexer(lexer), config(config), current_token(std::make_unique<VToken>("",tok_eof)) {}
     VParser(std::unique_ptr<VLexer> lexer, Config* config)
-    : lexer(std::move(lexer)), config(config), current_token(std::make_unique<Viretoken>("",tok_eof)) {}
+    : lexer(std::move(lexer)), config(config), current_token(std::make_unique<VToken>("",tok_eof)) {}
     VParser(std::unique_ptr<VLexer> lexer, std::unique_ptr<Config> config)
-    : lexer(std::move(lexer)), config(std::move(config)), current_token(std::make_unique<Viretoken>("",tok_eof)) {}
+    : lexer(std::move(lexer)), config(std::move(config)), current_token(std::make_unique<VToken>("",tok_eof)) {}
 
     std::unique_ptr<ExprAST> LogError(const char* str,...);
     std::unique_ptr<PrototypeAST> LogErrorP(const char* str,...);
@@ -48,7 +49,7 @@ public:
 
     void getNextToken();
     void getNextToken(int toktype);
-    std::unique_ptr<Viretoken> copyCurrentToken();
+    std::unique_ptr<VToken> copyCurrentToken();
 
     std::vector<std::unique_ptr<ExprAST>> ParseBlock();
 

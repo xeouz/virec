@@ -50,16 +50,20 @@ int main(int argc, char ** argv)
 
 int main()
 {
-    auto api=std::make_unique<vire::VApi>("wasm32-unknown-unknown-wasi", "res/test.ve", "test.wasm");
+    auto api=vire::VApi::loadFromFile("res/test.ve", "wasm32");
 
     api->parseSourceModule();
+
+    std::exit(1);
     bool s=api->verifySourceModule();
     if(!s) return 1;
-
-    s=api->compileSourceModule();
+    
+    s=api->compileSourceModule("test.wasm", false);
     api->getErrorBuilder()->showErrors();
     if(!s) return 1;
 
     std::cout << "Compiled file to test.wasm" << std::endl;
-    //std::cout << api->getCompiler()->getCompiledOutput() << std::endl;
+    std::cout << api->getCompiler()->getCompiledOutput() << std::endl;
+
+    return 1;
 } 

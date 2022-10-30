@@ -16,14 +16,14 @@ class ExprAST
 {
 protected:
     std::unique_ptr<types::Base> type;
-    std::unique_ptr<Viretoken> token;
+    std::unique_ptr<VToken> token;
 public:
     int asttype;
-    ExprAST(const std::string& type, int asttype, std::unique_ptr<Viretoken> token=nullptr)
+    ExprAST(const std::string& type, int asttype, std::unique_ptr<VToken> token=nullptr)
     : asttype(asttype), token(std::move(token)), type(types::construct(type))
     {}
 
-    ExprAST(std::unique_ptr<types::Base> type, int asttype, std::unique_ptr<Viretoken> token=nullptr)
+    ExprAST(std::unique_ptr<types::Base> type, int asttype, std::unique_ptr<VToken> token=nullptr)
     : asttype(asttype), token(std::move(token)), type(std::move(type))
     {}
 
@@ -31,7 +31,7 @@ public:
 
     virtual std::unique_ptr<ExprAST> copyAST() const
     {
-        return std::make_unique<ExprAST>(types::copyType(type.get()), asttype, Viretoken::construct(token.get()));
+        return std::make_unique<ExprAST>(types::copyType(type.get()), asttype, VToken::construct(token.get()));
     }
 
     virtual types::Base* getType() const 
@@ -83,11 +83,11 @@ public:
     {
         return token->charpos;
     } 
-    virtual void setToken(std::unique_ptr<Viretoken> token) 
+    virtual void setToken(std::unique_ptr<VToken> token) 
     {
         this->token.reset(); this->token=std::move(token);
     }
-    virtual Viretoken* const getToken()     const
+    virtual VToken* const getToken()     const
     {
         return token.get();
     }

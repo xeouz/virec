@@ -9,7 +9,6 @@ namespace vire
         fprintf(stderr,"Parse Error: ");
         std::vfprintf(stderr,str,args);
         va_end(args);
-        printf("\n");
         return nullptr;
     }
     std::unique_ptr<PrototypeAST> VParser::LogErrorP(const char* str,...)
@@ -19,7 +18,6 @@ namespace vire
         fprintf(stderr,"Parse Error: ");
         std::vfprintf(stderr,str,args);
         va_end(args);
-        printf("\n");
         return nullptr;
     }
     std::unique_ptr<FunctionAST> VParser::LogErrorF(const char* str,...)
@@ -29,7 +27,6 @@ namespace vire
         fprintf(stderr,"Parse Error: ");
         std::vfprintf(stderr,str,args);
         va_end(args);
-        printf("\n");
         return nullptr;
     }
     std::unique_ptr<ClassAST> VParser::LogErrorC(const char* str,...)
@@ -39,7 +36,6 @@ namespace vire
         fprintf(stderr,"Parse Error: ");
         std::vfprintf(stderr,str,args);
         va_end(args);
-        printf("\n");
         return nullptr;
     }
     std::vector<std::unique_ptr<ExprAST>> VParser::LogErrorVP(const char* str,...)
@@ -49,7 +45,6 @@ namespace vire
         fprintf(stderr,"Parse Error: ");
         std::vfprintf(stderr,str,args);
         va_end(args);
-        printf("\n");
         return std::vector<std::unique_ptr<ExprAST>>();
     }
     std::unordered_map<std::string, std::unique_ptr<ExprAST>> VParser::LogErrorPB(const char* str,...)
@@ -59,7 +54,6 @@ namespace vire
         fprintf(stderr,"Parse Error: ");
         std::vfprintf(stderr,str,args);
         va_end(args);
-        printf("\n");
         return std::unordered_map<std::string, std::unique_ptr<ExprAST>>();
     }
 
@@ -68,7 +62,16 @@ namespace vire
         current_token.reset();
         current_token=lexer->getToken();
 
-        if(current_token==nullptr) current_token=lexer->getToken();
+        if(!current_token)
+        {
+            LogError("Invalid Token Detected\n");
+            getNextToken();
+        }
+
+        if(current_token->type==tok_eof)
+        {
+            LogError("End of file reached, no more tokens to parse\n");
+        }
     }
     void VParser::getNextToken(int toktype)
     {
@@ -76,25 +79,39 @@ namespace vire
         {
             LogError("Current token type %s does not match type %s, Current token: `%s`\n",
             tokToStr(current_token->type), tokToStr(toktype), current_token->value.c_str());
+            parse_success=false;
         }
         getNextToken();
     }
-    std::unique_ptr<Viretoken> VParser::copyCurrentToken()
+    std::unique_ptr<VToken> VParser::copyCurrentToken()
     {
-        return std::make_unique<Viretoken>(current_token->value,current_token->type,current_token->line,current_token->charpos);
+        return std::make_unique<VToken>(current_token->value, current_token->type, current_token->line, current_token->charpos);
     }
 
     std::vector<std::unique_ptr<ExprAST>> VParser::ParseBlock()
     {
-        getNextToken(tok_lbrace); // consume '}'
+        getNextToken(tok_lbrace); // consume '{'
 
         std::vector<std::unique_ptr<ExprAST>> Stms;
         while(current_token->type!=tok_rbrace)
         {
             if(current_token->type==tok_eof)
-                return LogErrorVP("Expected '}' found end of file");
+            {
+                parse_success=false;
+                return LogErrorVP("Expected '}', found end of file");
+            }
+            
             auto stm=ParsePrimary();
-            if(!stm) continue;
+            while(!stm)
+            {
+                if(current_token->type==tok_eof)
+                {
+                    parse_success=false;
+                    return LogErrorVP("Expected statement, found end of file");
+                }
+                getNextToken();
+                stm=ParsePrimary();
+            }
 
             if(stm->asttype==ast_return) 
             { ((std::unique_ptr<ReturnExprAST> const&)stm)->setName(current_func_name); }
@@ -118,8 +135,11 @@ namespace vire
     {
         switch(current_token->type)
         {
-            default: 
-                return LogError("Unknown token `%s` found when expecting statement,value: %s",tokToStr(current_token->type),current_token->value.c_str());
+            default:
+            {
+                parse_success=false;
+                return LogError("Unknown token `%s` found when expecting statement, value: %s\n",tokToStr(current_token->type),current_token->value.c_str());
+            }
             
             case tok_id: return ParseIdExpr();
             case tok_incr: return ParseIncrementDecrementExpr();
@@ -165,6 +185,7 @@ namespace vire
         auto LHS=ParsePrimary();
         if(!LHS)
         {
+            parse_success=false;
             return nullptr;
         }
 
@@ -518,33 +539,33 @@ namespace vire
 
         auto expr=ParseExpression();
 
-        std::unique_ptr<Viretoken> sym;
+        std::unique_ptr<VToken> sym;
 
         switch(token->type)
         {
             case tok_pluseq: 
             {
-                sym=Viretoken::construct("+", tok_plus, token->line, token->charpos);
+                sym=VToken::construct("+", tok_plus, token->line, token->charpos);
                 break;
             }
             case tok_minuseq:
             {
-                sym=Viretoken::construct("-", tok_minus, token->line, token->charpos);
+                sym=VToken::construct("-", tok_minus, token->line, token->charpos);
                 break;
             }
             case tok_muleq:
             {
-                sym=Viretoken::construct("*", tok_mul, token->line, token->charpos);
+                sym=VToken::construct("*", tok_mul, token->line, token->charpos);
                 break;
             }
             case tok_diveq:
             {
-                sym=Viretoken::construct("/", tok_div, token->line, token->charpos);
+                sym=VToken::construct("/", tok_div, token->line, token->charpos);
                 break;
             }
             case tok_modeq:
             {
-                sym=Viretoken::construct("%", tok_mod, token->line, token->charpos);
+                sym=VToken::construct("%", tok_mod, token->line, token->charpos);
                 break;
             }
 
@@ -617,7 +638,7 @@ namespace vire
         if(current_token->type!=tok_id)
             return LogErrorP("Expected function name in prototype");
         
-        std::unique_ptr<Viretoken> fn_name=copyCurrentToken();
+        std::unique_ptr<VToken> fn_name=copyCurrentToken();
         getNextToken(tok_id);
 
         if(current_token->type!=tok_lparen)
@@ -627,7 +648,7 @@ namespace vire
         std::vector<std::unique_ptr<VariableDefAST>> args;
         while(current_token->type==tok_id)
         {
-            std::unique_ptr<Viretoken> var_name=copyCurrentToken();
+            std::unique_ptr<VToken> var_name=copyCurrentToken();
             var_name->value="_"+var_name->value;
             getNextToken(tok_id); // consume id
             if(current_token->type!=tok_colon) 
@@ -655,7 +676,7 @@ namespace vire
 
         getNextToken(tok_rparen);
 
-        std::unique_ptr<Viretoken> return_type;
+        std::unique_ptr<VToken> return_type;
         if(current_token->type==tok_rarrow || current_token->type==tok_returns)
         {
             getNextToken();
@@ -690,9 +711,9 @@ namespace vire
 
         current_func_name=proto->getName();
     
-        auto Stms=ParseBlock();
+        auto stms=ParseBlock();
 
-        return std::make_unique<FunctionAST>(std::move(proto),std::move(Stms));
+        return std::make_unique<FunctionAST>(std::move(proto),std::move(stms));
     }
     std::unique_ptr<ExprAST> VParser::ParseReturn()
     {
@@ -739,7 +760,7 @@ namespace vire
         auto className=copyCurrentToken();
         getNextToken(tok_id);
 
-        std::unique_ptr<Viretoken> Parent;
+        std::unique_ptr<VToken> Parent;
         if(current_token->type==tok_lparen)
         {
             getNextToken(tok_lparen);
@@ -799,7 +820,7 @@ namespace vire
         auto id_expr=ParseIdExpr();
 
         std::vector<std::unique_ptr<ExprAST>> args;
-        std::unique_ptr<Viretoken> id_name;
+        std::unique_ptr<VToken> id_name;
         if(id_expr->asttype==ast_var)
         {
             std::unique_ptr<VariableExprAST> var(static_cast<VariableExprAST*>(id_expr.release()));
@@ -894,7 +915,7 @@ namespace vire
         getNextToken(tok_union);
 
         char is_anonymous=1;
-        std::unique_ptr<Viretoken> name;
+        std::unique_ptr<VToken> name;
         if(current_token->type==tok_id)
         {
             is_anonymous=0;
@@ -910,7 +931,7 @@ namespace vire
         getNextToken(tok_struct);
 
         char is_anonymous=1;
-        std::unique_ptr<Viretoken> name;
+        std::unique_ptr<VToken> name;
         if(current_token->type==tok_id)
         {
             is_anonymous=0;
@@ -940,7 +961,8 @@ namespace vire
 
     std::unique_ptr<ModuleAST> VParser::ParseSourceModule()
     {
-        getNextToken();
+        getNextToken(); // load the first token
+        parse_success=true;
 
         std::vector<std::unique_ptr<ExprAST>> PreExecutionStatements;
         std::vector<std::unique_ptr<FunctionBaseAST>> Functions;
@@ -948,6 +970,11 @@ namespace vire
         std::vector<std::unique_ptr<ExprAST>> StructUnionDefs;
         while(current_token->type!=tok_eof)
         {
+            if(current_token->type==tok_eof)
+            {
+                break;
+            }
+
             if(current_token->type==tok_class)
             {
                 auto class_ast=ParseClass();
@@ -988,6 +1015,11 @@ namespace vire
             }
         }
         
+        if(!parse_success)
+        {
+            return nullptr;
+        }
+
         return std::make_unique<ModuleAST>(std::move(PreExecutionStatements),std::move(Functions),std::move(Classes),std::move(StructUnionDefs));
     }
 }

@@ -11,27 +11,27 @@ namespace vire
 // UnaryExprAST - Class for a unary operator, eg - `!`
 class UnaryExprAST : public ExprAST
 {
-    std::unique_ptr<Viretoken> op;
+    std::unique_ptr<VToken> op;
     std::unique_ptr<ExprAST> Expr;
 public:
-    UnaryExprAST(std::unique_ptr<Viretoken> op, std::unique_ptr<ExprAST> Expr)
+    UnaryExprAST(std::unique_ptr<VToken> op, std::unique_ptr<ExprAST> Expr)
     : op(std::move(op)), Expr(std::move(Expr)), ExprAST("void",ast_unop) {}
 
-    Viretoken* const getop() const { return op.get();   }
+    VToken* const getop() const { return op.get();   }
     ExprAST* const getExpr() const { return Expr.get(); }
 };
 
 // BinaryExprAST - Class for a binary operator, eg - `+`
 class BinaryExprAST : public ExprAST
 {
-    std::unique_ptr<Viretoken> op;
+    std::unique_ptr<VToken> op;
     std::unique_ptr<ExprAST> lhs, rhs;
 public:
 
-    BinaryExprAST(std::unique_ptr<Viretoken> op, std::unique_ptr<ExprAST> lhs, std::unique_ptr<ExprAST> rhs)
+    BinaryExprAST(std::unique_ptr<VToken> op, std::unique_ptr<ExprAST> lhs, std::unique_ptr<ExprAST> rhs)
     : op(std::move(op)), lhs(std::move(lhs)), rhs(std::move(rhs)), ExprAST("bool",ast_binop) {}
 
-    Viretoken* const getOp() const {return op.get();}
+    VToken* const getOp() const {return op.get();}
     ExprAST* const getLHS() const {return lhs.get();}
     ExprAST* const getRHS() const {return rhs.get();}
     std::unique_ptr<ExprAST> moveLHS() {return std::move(lhs);}

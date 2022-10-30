@@ -34,11 +34,11 @@ class VariableAssignAST: public ExprAST
 {
     std::unique_ptr<ExprAST> lhs;
     std::unique_ptr<ExprAST> rhs;
-    std::unique_ptr<Viretoken> shorthand_op;
+    std::unique_ptr<VToken> shorthand_op;
 public:
     bool is_shorthand;
 
-    VariableAssignAST(std::unique_ptr<ExprAST> lhs, std::unique_ptr<ExprAST> rhs, std::unique_ptr<Viretoken> _shorthand_op=nullptr)
+    VariableAssignAST(std::unique_ptr<ExprAST> lhs, std::unique_ptr<ExprAST> rhs, std::unique_ptr<VToken> _shorthand_op=nullptr)
     : lhs(std::move(lhs)), rhs(std::move(rhs)), ExprAST("void",ast_varassign)
     {
         if(_shorthand_op)
@@ -60,7 +60,7 @@ public:
     {
         return rhs.get();
     }
-    Viretoken* const getShorthandOperator()
+    VToken* const getShorthandOperator()
     {
         return shorthand_op.get();
     }
@@ -83,7 +83,7 @@ class VariableDefAST : public ExprAST
     bool is_const, is_let, is_array;
     bool use_value_type;
 public:
-    VariableDefAST(std::unique_ptr<Viretoken> name, std::unique_ptr<types::Base> type, std::unique_ptr<ExprAST> value,
+    VariableDefAST(std::unique_ptr<VToken> name, std::unique_ptr<types::Base> type, std::unique_ptr<ExprAST> value,
     bool is_const=false, bool is_let=false)
     : name(name->value), value(std::move(value)), ExprAST(std::move(type),ast_vardef), 
     is_const(is_const),is_let(is_let), use_value_type(false)

@@ -8,7 +8,7 @@
 
 namespace vire
 {
-class Viretoken
+class VToken
 {
 public:
     int type;
@@ -18,7 +18,7 @@ public:
     std::size_t line;
     std::size_t charpos;
 
-    Viretoken(std::string value, int type) 
+    VToken(std::string value, int type) 
     : value(value), type(type), line(0), charpos(0)
     {
         if(type>=0)
@@ -26,7 +26,7 @@ public:
             this->invalid=1;
         }
     }
-    Viretoken(std::string value, int type, std::size_t line, std::size_t charpos) 
+    VToken(std::string value, int type, std::size_t line, std::size_t charpos) 
     : value(value), type(type), line(line), charpos(charpos)
     {
         if(type>=0)
@@ -35,19 +35,31 @@ public:
         }
     }
 
-    static std::unique_ptr<Viretoken> construct(std::string _name, int _type=tok_id, std::size_t _line=0, std::size_t _charpos=0)
+    static std::unique_ptr<VToken> construct(std::string _name, int _type=tok_id, std::size_t _line=0, std::size_t _charpos=0)
     {
-        return std::make_unique<Viretoken>(_name, _type, _line, _charpos);
+        return std::make_unique<VToken>(_name, _type, _line, _charpos);
     }
-    static std::unique_ptr<Viretoken> construct(Viretoken* token)
+    static std::unique_ptr<VToken> construct(VToken* token)
     {
         return construct(token->value, token->type, token->line, token->charpos);
     }
 
-    inline friend std::ostream& operator<<(std::ostream& os, const Viretoken& tok);
+    inline friend std::ostream& operator<<(std::ostream& os, const VToken& tok);
+    inline friend bool operator==(const VToken& lhs, const VToken& rhs);
+    inline friend bool operator==(const VToken& lhs, const token& rhs);
 };
 
-inline std::ostream& operator<<(std::ostream& os, const vire::Viretoken& tok)
+inline bool operator==(const VToken& lhs, const VToken& rhs)
+{
+    return lhs.type==rhs.type;
+}
+
+inline bool operator==(const VToken& lhs, const token& rhs)
+{
+    return lhs.type==rhs;
+}
+
+inline std::ostream& operator<<(std::ostream& os, const VToken& tok)
 {
     os<<tokToStr(tok.type);
     return os;

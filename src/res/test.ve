@@ -1,21 +1,6 @@
-extern puti(i:int)     returns int;
-extern putd(i:double)  returns int;
-extern putb(i:bool)    returns int;
-extern put(c:char)     returns int;
+extern puti(i:int) returns int;
 
-func test() returns int
+func main() returns int;
 {
-    return 1;
-}
-
-func main() returns int
-{
-    let a=10.0;
-    let b=10.89;
-
-    a+=b;
-
-    putd(a);
-
-    return 0;
+    re\\ajsdiajsoajs0aiSJO
 }

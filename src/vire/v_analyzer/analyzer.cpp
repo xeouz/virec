@@ -1168,6 +1168,11 @@ namespace vire
 
     bool VAnalyzer::verifySourceModule(std::unique_ptr<ModuleAST> code)
     {
+        if(!code)
+        {
+            return false;
+        }
+
         bool is_valid=true;
         ast=std::move(code);
 
@@ -1249,8 +1254,8 @@ namespace vire
 
         if(!has_main)
         {
-            auto nametok=std::make_unique<Viretoken>("main", tok_func);
-            auto rettok =std::make_unique<Viretoken>("int", tok_id);
+            auto nametok=std::make_unique<VToken>("main", tok_func);
+            auto rettok =std::make_unique<VToken>("int", tok_id);
             std::vector<std::unique_ptr<VariableDefAST>> args;
             code->addFunction(std::make_unique<FunctionAST>(
                 std::make_unique<PrototypeAST>(std::move(nametok), std::move(args), std::move(rettok)), 

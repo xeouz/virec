@@ -11,7 +11,7 @@ class IdentifierExprAST : public ExprAST
     std::string name;
 public:
     bool is_const;
-    IdentifierExprAST(std::unique_ptr<Viretoken> name, bool is_const=false, int asttype=ast_var) 
+    IdentifierExprAST(std::unique_ptr<VToken> name, bool is_const=false, int asttype=ast_var) 
     : name(name->value), ExprAST("", asttype), is_const(is_const)
     {
         setToken(std::move(name));
@@ -21,7 +21,7 @@ public:
     {
         return name;
     }
-    virtual std::unique_ptr<Viretoken> moveToken()
+    virtual std::unique_ptr<VToken> moveToken()
     {
         return std::move(token);
     }
@@ -36,7 +36,7 @@ class VariableExprAST : public IdentifierExprAST
 {
     std::string name;
 public:
-    VariableExprAST(std::unique_ptr<Viretoken> name) : 
+    VariableExprAST(std::unique_ptr<VToken> name) : 
     IdentifierExprAST(std::move(name))
     {
         this->name=this->getToken()->value;
@@ -50,19 +50,19 @@ class TypeAccessAST : public IdentifierExprAST
 public:
     TypeAccessAST(std::unique_ptr<ExprAST> _parent, std::unique_ptr<IdentifierExprAST> _child)
     : parent(std::move(_parent)), child(std::move(_child)), 
-    IdentifierExprAST(Viretoken::construct(""), false, ast_type_access)
+    IdentifierExprAST(VToken::construct(""), false, ast_type_access)
     {
         if(child->asttype==ast_type_access)
         {
             auto* cast_child=(TypeAccessAST*)child.get();
             auto* cast_child_child=(VariableExprAST*)cast_child->getParent();
             setName(cast_child_child->getName());
-            setToken(Viretoken::construct(cast_child_child->getName()));
+            setToken(VToken::construct(cast_child_child->getName()));
         }
         else
         {
             setName(child->getName());
-            setToken(Viretoken::construct(child->getName()));
+            setToken(VToken::construct(child->getName()));
         }
     }
 
