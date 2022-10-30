@@ -57,8 +57,14 @@ namespace vire
         return std::unordered_map<std::string, std::unique_ptr<ExprAST>>();
     }
 
-    void VParser::getNextToken()
+    void VParser::getNextToken(bool first_token)
     {
+        if(current_token && current_token->type==tok_eof && !first_token)
+        {
+            LogError("End of file\n");
+            return;
+        }
+
         current_token.reset();
         current_token=lexer->getToken();
 
@@ -67,20 +73,16 @@ namespace vire
             LogError("Invalid Token Detected\n");
             getNextToken();
         }
-
-        if(current_token->type==tok_eof)
-        {
-            LogError("End of file reached, no more tokens to parse\n");
-        }
     }
     void VParser::getNextToken(int toktype)
-    {
+    {  
         if(current_token->type!=toktype)
         {
             LogError("Current token type %s does not match type %s, Current token: `%s`\n",
             tokToStr(current_token->type), tokToStr(toktype), current_token->value.c_str());
             parse_success=false;
         }
+        
         getNextToken();
     }
     std::unique_ptr<VToken> VParser::copyCurrentToken()
@@ -92,7 +94,7 @@ namespace vire
     {
         getNextToken(tok_lbrace); // consume '{'
 
-        std::vector<std::unique_ptr<ExprAST>> Stms;
+        std::vector<std::unique_ptr<ExprAST>> stms;
         while(current_token->type!=tok_rbrace)
         {
             if(current_token->type==tok_eof)
@@ -109,6 +111,7 @@ namespace vire
                     parse_success=false;
                     return LogErrorVP("Expected statement, found end of file");
                 }
+
                 getNextToken();
                 stm=ParsePrimary();
             }
@@ -123,12 +126,12 @@ namespace vire
             && stm->asttype!=ast_ifelse)
                 getNextToken(tok_semicol);
 
-            Stms.push_back(std::move(stm));
+            stms.push_back(std::move(stm));
         }
 
         getNextToken(tok_rbrace);
 
-        return std::move(Stms);
+        return std::move(stms);
     }
 
     std::unique_ptr<ExprAST> VParser::ParsePrimary()
@@ -713,7 +716,7 @@ namespace vire
     
         auto stms=ParseBlock();
 
-        return std::make_unique<FunctionAST>(std::move(proto),std::move(stms));
+        return std::make_unique<FunctionAST>(std::move(proto), std::move(stms));
     }
     std::unique_ptr<ExprAST> VParser::ParseReturn()
     {
@@ -961,7 +964,7 @@ namespace vire
 
     std::unique_ptr<ModuleAST> VParser::ParseSourceModule()
     {
-        getNextToken(); // load the first token
+        getNextToken(true); // load the first token
         parse_success=true;
 
         std::vector<std::unique_ptr<ExprAST>> PreExecutionStatements;
@@ -970,11 +973,6 @@ namespace vire
         std::vector<std::unique_ptr<ExprAST>> StructUnionDefs;
         while(current_token->type!=tok_eof)
         {
-            if(current_token->type==tok_eof)
-            {
-                break;
-            }
-
             if(current_token->type==tok_class)
             {
                 auto class_ast=ParseClass();

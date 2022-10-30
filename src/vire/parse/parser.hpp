@@ -47,7 +47,7 @@ public:
     std::vector<std::unique_ptr<ExprAST>> LogErrorVP(const char* str,...);
     std::unordered_map<std::string, std::unique_ptr<ExprAST>> LogErrorPB(const char* str,...);
 
-    void getNextToken();
+    void getNextToken(bool first_token=false);
     void getNextToken(int toktype);
     std::unique_ptr<VToken> copyCurrentToken();
 

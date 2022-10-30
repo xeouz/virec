@@ -54,7 +54,6 @@ int main()
 
     api->parseSourceModule();
 
-    std::exit(1);
     bool s=api->verifySourceModule();
     if(!s) return 1;
     

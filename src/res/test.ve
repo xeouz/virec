@@ -1,6 +1,16 @@
 extern puti(i:int) returns int;
 
-func main() returns int;
+struct outer
 {
-    re\\ajsdiajsoajs0aiSJO
+    struct inner
+    {
+        int a;
+    }
+}
+
+func main() returns int
+{
+    let x:outer;
+
+    return 0;
 }
