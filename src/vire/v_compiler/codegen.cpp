@@ -333,19 +333,33 @@ namespace vire
         }
 
         bool is_array=(value->asttype==ast_array);
-        if(!is_array)
+        if(def->getType()->getType()==types::TypeNames::Custom) // If it lhs is a struct
+        {
+            auto* val=compileExpr(value);
+            auto* alloca_rhs=(llvm::AllocaInst*)getValueAsAlloca(val);
+
+            auto lhs_align=alloca->getAlign();
+            auto rhs_align=alloca_rhs->getAlign();
+
+            auto size=llvm::APInt(64, def->getType()->getSize(), false);
+            auto* memcpy=Builder.CreateMemCpy(alloca, lhs_align, alloca_rhs, rhs_align, llvm::ConstantInt::get(CTX, size));
+
+            return memcpy;
+        }
+        else if(!is_array)
         {
             auto* val=compileExpr(value);
             Builder.CreateStore(val, alloca);
         }
         else
-        {
+        {   
+            /* Creating a Memcpy call */
+
             auto* val=compileConstantExpr((ArrayExprAST* const)value);
 
             // Create an i8*
             auto* ptr=Builder.CreateBitCast(alloca, llvm::IntegerType::getInt8PtrTy(CTX));
 
-            // Call memcpy to copy the array
             auto align=alloca->getAlign();
 
             // Set the size of the array
@@ -369,11 +383,24 @@ namespace vire
 
         llvm::Value* ptr;
 
-        if(assign->getLHS()->asttype==ast_array_access || assign->getLHS()->asttype==ast_type_access)
+        if(assign->getLHS()->asttype==ast_array_access || assign->getLHS()->asttype==ast_type_access) // if lhs is an access
         {
             auto* load_inst=llvm::dyn_cast<llvm::LoadInst>(lhs);
             ptr=load_inst->getPointerOperand();
             load_inst->eraseFromParent();
+        }
+        else if(assign->getLHS()->getType()->getType()==types::TypeNames::Custom) // If lhs is a struct
+        {
+            auto* alloca_lhs=(llvm::AllocaInst*)getValueAsAlloca(lhs);
+            auto* alloca_rhs=(llvm::AllocaInst*)getValueAsAlloca(value);
+
+            auto lhs_align=alloca_lhs->getAlign();
+            auto rhs_align=alloca_rhs->getAlign();
+
+            auto size=llvm::APInt(64, assign->getLHS()->getType()->getSize(), false);
+            auto* memcpy=Builder.CreateMemCpy(alloca_lhs, lhs_align, alloca_rhs, rhs_align, llvm::ConstantInt::get(CTX, size));
+
+            return memcpy;
         }
         else
         {

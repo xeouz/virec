@@ -73,6 +73,11 @@ public:
     virtual int8_t getSize() const { return size; }
 
     virtual unsigned int getDepth() const { return 0; }
+
+    virtual void setSize(unsigned int new_size)
+    {
+        size=new_size;
+    }
     
     virtual bool isSame(Base* const other) const
     {

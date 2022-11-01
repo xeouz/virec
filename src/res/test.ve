@@ -5,18 +5,23 @@ struct outer
     struct inner
     {
         int a;
-        int b;
+        struct inner
+        {
+            int x;
+        }
     }
-    int a;
+    int b;
 }
 
 func main() returns int
 {
-    let x:outer;
-    x.inner.a=10;
-    x.inner.b=450;
+    let a:outer;
+    let b:outer;
 
-    puti(x.inner.a + x.inner.b);
+    b.inner.inner.x=1201201;
+    a=b;
+
+    puti(a.inner.inner.x);
 
     return 0;
 }

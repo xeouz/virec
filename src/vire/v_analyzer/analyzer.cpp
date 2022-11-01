@@ -230,6 +230,7 @@ namespace vire
                 auto* st_type=getType(access->getParent());
                 auto name=((types::Void*)st_type)->getName();
                 auto* st=getStruct(name);
+
                 while(access->getChild()->asttype==ast_type_access)
                 {
                     name=access->getName();
@@ -650,6 +651,7 @@ namespace vire
             {
                 // Argument is not valid
                 is_valid=false;
+                continue;
             }
 
             auto* arg_type=getType(arg.get());
@@ -872,6 +874,14 @@ namespace vire
                     // Struct is not valid
                     is_valid=false;
                 }
+
+                unsigned int size=0;
+                for(auto const& member : struct_->getMembersValues())
+                {
+                    size+=member->getType()->getSize();
+                }
+
+                struct_->getType()->setSize(size);
             }
             else if(expr->asttype==ast_union)
             {
@@ -942,18 +952,19 @@ namespace vire
         bool is_valid=true;
 
         // Load the struct
-        StructExprAST* st;
+        StructExprAST* st=nullptr;
 
         auto* ptype=getType(access->getParent());
         if(ptype->getType() != types::TypeNames::Custom)
         {
             std::cout << "Parent is not a type" << std::endl;
-            is_valid=false;
+            return false;
         }
         auto* ptype_custom=(types::Custom*)ptype;
         if(!types::isTypeinMap(ptype_custom->getName()))
         {
             std::cout << "Type " << *ptype_custom << " is not defined" << std::endl;
+            return false;
         }
 
         access->getParent()->setType(types::copyType(ptype_custom));
@@ -961,10 +972,19 @@ namespace vire
 
         IdentifierExprAST* possible_access=access;
         ExprAST* possible_struct_child=st;
+
         while(possible_access->asttype==ast_type_access)
         {
             auto const* casted_pos_access=(TypeAccessAST*)possible_access;
             auto* child=(TypeAccessAST*)possible_access;
+
+            if(possible_struct_child->asttype!=ast_struct)
+            {
+                std::cout << "The type is not a struct" << std::endl;
+                is_valid=false;
+                break;
+            }
+
             auto* casted_pos_stchild=(StructExprAST*)possible_struct_child;
 
             if(!casted_pos_stchild->isMember(child->getName()))

@@ -63,6 +63,7 @@ public:
     : analyzer(std::move(analyzer)), Builder(llvm::IRBuilder<>(CTX))
     {
         Module = std::make_unique<llvm::Module>(name, CTX);
+        CTX.setOpaquePointers(true);
     }
 
     // Compilation Functions
