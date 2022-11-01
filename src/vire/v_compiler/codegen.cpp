@@ -715,15 +715,34 @@ namespace vire
         return function;
     }
 
-    llvm::StructType* VCompiler::compileStruct(std::string const& name)
+    llvm::StructType* VCompiler::compileStruct(std::string const& name, StructExprAST* struct_)
     {
-        auto const& st=analyzer->getStruct(name);
+        StructExprAST* st;
+        if(struct_)
+        {
+            st=struct_;
+        }
+        else
+        {
+            st=analyzer->getStruct(name);
+        }
 
         std::vector<llvm::Type*> elements;
 
-        for(auto const& e: st->getMembersValues())
+        auto const& vec=st->getMembersValues();
+        std::vector<ExprAST*>::const_reverse_iterator it;
+        for(it=vec.rbegin(); it!=vec.rend(); ++it)
         {
-            elements.push_back(getLLVMType(e->getType()));
+            auto const& expr=*it;
+            if(expr->asttype==ast_struct)
+            {
+                auto* st=compileStruct("", ((StructExprAST*)expr));
+                elements.push_back(st);
+            }
+            else
+            {
+                elements.push_back(getLLVMType(expr->getType()));
+            }
         }
 
         auto struct_type=llvm::StructType::create(CTX, elements);
@@ -736,22 +755,42 @@ namespace vire
     }
     llvm::Value* VCompiler::compileTypeAccess(TypeAccessAST* const expr)
     {
-        llvm::Value* sgep;
+        llvm::Value* sgep=nullptr;
+        StructExprAST* st=nullptr;
         ExprAST* current_expr=expr;
+        bool first_iter_completed=false;
 
         while(current_expr->asttype==ast_type_access)
         {
+            // Load the type access ast and the pre-compiled struct type
             auto* current=(TypeAccessAST*)current_expr;
             auto* st_type=(types::Custom*)current->getParent()->getType();
             auto* st_ltype=definedStructs[st_type->getName()];
 
-            auto* val=getValueAsAlloca(compileExpr(current->getParent()));
+            // Compile the pointer
+            llvm::Value* val;
+            if(first_iter_completed)
+            {
+                val=sgep;
+            }
+            else
+            {
+                val=getValueAsAlloca(compileExpr(current->getParent()));
+            }
 
-            auto* st=analyzer->getStruct(st_type->getName());
+            if(first_iter_completed)
+            {
+                st=(StructExprAST*)st->getMember(st_type->getName());
+            }
+            else
+            {
+                st=analyzer->getStruct(st_type->getName());
+            }
             int indx=st->getMemberIndex(current->getName());
 
             sgep=Builder.CreateStructGEP(st_ltype, val, indx, "sgep");
             current_expr=current->getChild();
+            first_iter_completed=true;
         }
 
         auto* ty=getLLVMType(expr->getType());

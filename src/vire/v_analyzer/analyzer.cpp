@@ -682,15 +682,15 @@ namespace vire
 
     bool VAnalyzer::verifyReturn(ReturnExprAST* const ret)
     {
-        auto const& ret_type=getFunc(ret->getName())->getReturnType();
-        
-        auto* ret_expr_type=getType(ret->getValue());
+        auto const& ret_type=getFunc(ret->getName())->getReturnType();  
 
         if(!verifyExpr(ret->getValue()))
         {
             // Return value is not valid
             return false;
         }
+
+        auto* ret_expr_type=getType(ret->getValue());
         
         if(!types::isSame(ret_type, ret_expr_type))
         {
@@ -937,62 +937,59 @@ namespace vire
 
         return is_valid;
     }
-    bool VAnalyzer::verifyTypeAccess(TypeAccessAST* const access, StructExprAST* struct_)
+    bool VAnalyzer::verifyTypeAccess(TypeAccessAST* const access)
     {
         bool is_valid=true;
 
+        // Load the struct
         StructExprAST* st;
-        if(!struct_)
-        {
-            auto* ptype=getType(access->getParent());
-        
-            if(ptype->getType() != types::TypeNames::Custom)
-            {
-                std::cout << "Parent is not a type" << std::endl;
-                is_valid=false;
-            }
-            auto* ptype_custom=(types::Custom*)ptype;
-            if(!types::isTypeinMap(ptype_custom->getName()))
-            {
-                std::cout << "Type " << *ptype_custom << " is not defined" << std::endl;
-            }
 
-            access->getParent()->setType(types::copyType(ptype_custom));
-            st=getStruct(ptype_custom->getName());
-        }
-        else
+        auto* ptype=getType(access->getParent());
+        if(ptype->getType() != types::TypeNames::Custom)
         {
-            st=struct_;
-        }
-        
-        auto name=access->getName();
-        if(!st->isMember(name))
-        {
-            std::cout << "No member as " << name << " in struct" << std::endl;
+            std::cout << "Parent is not a type" << std::endl;
             is_valid=false;
-
-            return is_valid;
         }
-        
-        auto* member=st->getMember(name);
-
-        if(access->getChild()->asttype==ast_type_access)
+        auto* ptype_custom=(types::Custom*)ptype;
+        if(!types::isTypeinMap(ptype_custom->getName()))
         {
-            auto* child=(TypeAccessAST*)access->getChild();
-            
-            if(member->asttype!=ast_struct)
+            std::cout << "Type " << *ptype_custom << " is not defined" << std::endl;
+        }
+
+        access->getParent()->setType(types::copyType(ptype_custom));
+        st=getStruct(ptype_custom->getName());
+
+        IdentifierExprAST* possible_access=access;
+        ExprAST* possible_struct_child=st;
+        while(possible_access->asttype==ast_type_access)
+        {
+            auto const* casted_pos_access=(TypeAccessAST*)possible_access;
+            auto* child=(TypeAccessAST*)possible_access;
+            auto* casted_pos_stchild=(StructExprAST*)possible_struct_child;
+
+            if(!casted_pos_stchild->isMember(child->getName()))
             {
-                std::cout << "`" << name << "` is not a struct" << std::endl;
+                std::cout << "No member as `" << child->getName() << "` in struct `" << casted_pos_stchild->getName() << "`." << std::endl;
                 is_valid=false;
+                break;
             }
             else
             {
-                is_valid=verifyTypeAccess(child, (StructExprAST*)member);
+                possible_struct_child->setType(std::make_unique<types::Custom>(casted_pos_stchild->getName(), 1));
+                casted_pos_access->getParent()->setType(std::make_unique<types::Custom>(casted_pos_stchild->getName(), 1));
+                possible_access=child->getChild();
+                possible_struct_child=casted_pos_stchild->getMember(child->getName());
             }
         }
 
-        auto* type=getType(access);
-        access->setType(types::copyType(type));
+        // Set the type for the tail of the access
+        possible_access->setType(types::copyType(possible_struct_child->getType()));
+
+        if(is_valid)
+        {
+            auto* type=getType(access);
+            access->setType(types::copyType(type));
+        }
 
         return is_valid;
     }

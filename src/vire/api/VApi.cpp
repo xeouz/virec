@@ -71,11 +71,15 @@ bool VApi::compileSourceModule(std::string output_file_path, bool write_to_file)
     if(output_file_path=="")
     {
     #ifdef _WIN32
-        out_file_path="a.exe";
+        out_file_path="./a.exe";
     #endif
     #ifndef _WIN32
-        out_file_path="a.out";
+        out_file_path="./a.out";
     #endif
+    }
+    else
+    {
+        out_file_path=output_file_path;
     }
 
     compiler->compileModule();

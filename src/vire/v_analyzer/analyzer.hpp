@@ -104,7 +104,7 @@ public:
     bool verifyUnionStructBody(std::vector<ExprAST*> const& body);
     bool verifyUnion(UnionExprAST* const union_);
     bool verifyStruct(StructExprAST* const struct_);
-    bool verifyTypeAccess(TypeAccessAST* const member, StructExprAST* struct_=nullptr);
+    bool verifyTypeAccess(TypeAccessAST* const member);
 
     // If-Else verifications
     bool verifyIfThen(IfThenExpr* const if_);

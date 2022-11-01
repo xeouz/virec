@@ -113,7 +113,7 @@ public:
     llvm::Function* compileFunction(std::string const& name);
 
     llvm::StructType* compileUnion(std::string const& name);
-    llvm::StructType* compileStruct(std::string const& name);
+    llvm::StructType* compileStruct(std::string const& name, StructExprAST* st=nullptr);
     llvm::Value* compileTypeAccess(TypeAccessAST* const name);
 
     llvm::Module* const getModule() const;

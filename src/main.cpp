@@ -50,19 +50,19 @@ int main(int argc, char ** argv)
 
 int main()
 {
-    auto api=vire::VApi::loadFromFile("res/test.ve", "wasm32");
+    auto api=vire::VApi::loadFromFile("res/test.ve", "sys");
 
     api->parseSourceModule();
 
     bool s=api->verifySourceModule();
     if(!s) return 1;
     
-    s=api->compileSourceModule("test.wasm", false);
+    s=api->compileSourceModule("test.o", true);
     api->getErrorBuilder()->showErrors();
     if(!s) return 1;
 
-    std::cout << "Compiled file to test.wasm" << std::endl;
-    std::cout << api->getCompiler()->getCompiledOutput() << std::endl;
+    std::cout << "Compiled file to test.o" << std::endl;
+    //std::cout << api->getCompiler()->getCompiledOutput() << std::endl;
 
-    return 1;
+    return 0;
 } 
