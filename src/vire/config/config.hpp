@@ -4,6 +4,8 @@
 #include <string>
 #include <array>
 
+#define VIRE_ENABLE_ONLY X86
+
 namespace vire
 {
 

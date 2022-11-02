@@ -3,7 +3,7 @@
 #include <iostream>
 #include <memory> 
 
-/* 
+/*
 int main(int argc, char ** argv)
 {
     std::string filename="output";

@@ -1,27 +1,17 @@
 extern puti(i:int) returns int;
 
-struct outer
+struct abc
 {
-    struct inner
-    {
-        int a;
-        struct inner
-        {
-            int x;
-        }
-    }
+    int a;
     int b;
+    int c;
 }
 
 func main() returns int
 {
-    let a:outer;
-    let b:outer;
+    let a:abc;
 
-    b.inner.inner.x=1201201;
-    a=b;
+    a.a=100;
 
-    puti(a.inner.inner.x);
-
-    return 0;
+    return a.a;
 }
