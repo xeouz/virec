@@ -5,7 +5,8 @@
             "includePath": [
                 "${workspaceFolder}/**",
                 "/home/dev0/Programming/llvm-project/llvm/include",
-                "/home/dev0/Programming/llvm-project/build/include"
+                "/home/dev0/Programming/llvm-project/build/include",
+                "/home/dev0/Programming/emsdk/upstream/emscripten/system/include/"
             ],
             "defines": [],
             "compilerPath": "/home/dev0/Programming/llvm-project/build/bin/clang++",

@@ -15,6 +15,9 @@ VApi::VApi(std::unique_ptr<VParser> parser, std::unique_ptr<VCompiler> compiler,
     internal_setup();
 }
 
+VApi::VApi()
+{   }
+
 std::unique_ptr<VApi> VApi::loadFromFile(std::string input_file_path, std::string compilation_target)
 {
     auto file=vire::proto::openFile(input_file_path);
@@ -39,11 +42,14 @@ std::unique_ptr<VApi> VApi::loadFromText(std::string input_code, std::string com
     return std::make_unique<VApi>(std::move(parser), std::move(compiler), std::move(ebuilder), input_code, compilation_target); 
 }
 
+void VApi::showErrors() const
+{
+    getErrorBuilder()->showErrors();
+}
 errors::ErrorBuilder* const VApi::getErrorBuilder() const
 {
     return ebuilder.get();
 }
-
 VCompiler* const VApi::getCompiler() const
 {
     return compiler.get();
@@ -87,10 +93,40 @@ bool VApi::compileSourceModule(std::string output_file_path, bool write_to_file)
     
     if(!failure && write_to_file)
     {
-        compiler->compileToObjectFile(out_file_path, target);
+        compiler->compileToFile(output_file_path, target);
+    }
+    else if(!failure && !write_to_file)
+    {
+        byte_output=compiler->compileToString(target);
     }
 
     return !failure;
+}
+std::vector<unsigned char> const& VApi::getByteOutput()
+{
+    return byte_output;
+}
+std::string const& VApi::getCompiledLLVMIR()
+{
+    return getCompiler()->getCompiledOutput();
+}
+
+using namespace emscripten;
+
+EMSCRIPTEN_BINDINGS(VAPI)
+{
+    register_vector<unsigned char>("VireVectorUC");
+
+    class_<VApi>("VireAPI")
+    .constructor<>()
+    .function("parseSourceModule", &VApi::parseSourceModule)
+    .function("verifySourceModule", &VApi::verifySourceModule)
+    .function("compileSourceModule", &VApi::compileSourceModule)
+    .function("getByteOutput", &VApi::getByteOutput)
+    .function("getCompiledLLVMIR", &VApi::getCompiledLLVMIR)
+    .function("showErrors", &VApi::showErrors)
+    .class_function("loadFromText", &VApi::loadFromText)
+    ;
 }
 
 }

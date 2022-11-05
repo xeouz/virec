@@ -475,8 +475,6 @@ namespace vire
             auto* const dest_type=cast_expr->getDestType();
             auto* const src_type=cast_expr->getSourceType();
 
-            std::cout << *dest_type << " : " << *src_type << std::endl;
-
             bool is_dest_fp=types::isTypeFloatingPoint(dest_type);
             bool is_src_fp=types::isTypeFloatingPoint(src_type);
 
@@ -698,7 +696,7 @@ namespace vire
         func->setName(Name);
 
         // Remove in release
-        // func->print(llvm::errs());
+        // func->print(error_os);
         return func;
     }
     llvm::Function* VCompiler::compileFunction(std::string const& Name)
@@ -868,19 +866,19 @@ namespace vire
     {
         return Module.get();
     }
-    std::string VCompiler::getCompiledOutput() const
+    std::string const& VCompiler::getCompiledOutput()
     {
-        std::string code;
-        llvm::raw_string_ostream os(code);
+        output_ir="";
+        llvm::raw_string_ostream os(output_ir);
         Module->print(os, nullptr);
-        return code;
+        return output_ir;
     }
     VAnalyzer* const VCompiler::getAnalyzer()  const
     {
         return analyzer.get();
     }
 
-    void VCompiler::compileToObjectFile(std::string const& filename, std::string const& target_str="")
+    void VCompiler::compileInternal(std::string const& target_str)
     {
         std::string target_triple;
         if(target_str=="sys" || target_str=="")
@@ -926,21 +924,36 @@ namespace vire
 
         llvm::TargetOptions opt;
         auto rm=llvm::Optional<llvm::Reloc::Model>();
-        auto* target_machine=target->createTargetMachine(target_triple, cpu, features, opt, rm);
+        target_machine=std::unique_ptr<llvm::TargetMachine>(target->createTargetMachine(target_triple, cpu, features, opt, rm));
 
         Module->setDataLayout(target_machine->createDataLayout());
         Module->setTargetTriple(target_triple);
+    }
+    std::vector<unsigned char> VCompiler::compileToString(std::string const& target_str)
+    {
+        llvm::SmallString<1> out;
+        llvm::raw_svector_ostream os(out);
 
+        compileInternal(target_str);
+
+        target_machine->addPassesToEmitFile(passmgr, os, nullptr, file_type);
+        passmgr.run(*Module);
+
+        auto bytestr=out.str().str();
+        std::vector<unsigned char> ret(bytestr.begin(), bytestr.end());
+        target_machine.reset();
+
+        return ret;
+    }
+    void VCompiler::compileToFile(std::string const& filename, std::string const& target_str)
+    {
         std::error_code ec;
         llvm::raw_fd_ostream os(filename, ec, llvm::sys::fs::OF_None);
 
-        llvm::legacy::PassManager passmgr;
-        auto file_type=llvm::CGFT_ObjectFile;
-        target_machine->addPassesToEmitFile(passmgr, os, nullptr, file_type);
+        compileInternal(target_str);
 
+        target_machine->addPassesToEmitFile(passmgr, os, nullptr, file_type);
         passmgr.run(*Module);
         os.flush();
-
-        delete target_machine;
     }
 }

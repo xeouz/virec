@@ -4,7 +4,7 @@
 #include <string>
 #include <array>
 
-#define VIRE_ENABLE_ONLY X86
+#define VIRE_ENABLE_ONLY WebAssembly
 
 namespace vire
 {

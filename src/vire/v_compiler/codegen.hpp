@@ -58,12 +58,22 @@ class VCompiler
     llvm::BasicBlock* currentFunctionEndBB;
     llvm::BasicBlock* currentLoopEndBB;
     llvm::BasicBlock* currentLoopBodyBB;
+
+    // Compilation
+    llvm::legacy::PassManager passmgr;
+    std::unique_ptr<llvm::TargetMachine> target_machine;
+    enum llvm::CodeGenFileType file_type;
+    std::string output_ir;
+private:
+    void compileInternal(std::string const& target_str);
+
 public:
     VCompiler(std::unique_ptr<VAnalyzer> analyzer, std::string const& name="vire")
     : analyzer(std::move(analyzer)), Builder(llvm::IRBuilder<>(CTX))
     {
         Module = std::make_unique<llvm::Module>(name, CTX);
         CTX.setOpaquePointers(true);
+        file_type=llvm::CGFT_ObjectFile;
     }
 
     // Compilation Functions
@@ -118,10 +128,11 @@ public:
     llvm::Value* compileTypeAccess(TypeAccessAST* const name);
 
     llvm::Module* const getModule() const;
-    std::string getCompiledOutput() const;
+    std::string const& getCompiledOutput();
     VAnalyzer* const getAnalyzer()  const;
     
     void compileModule();
-    void compileToObjectFile(std::string const& filename, std::string const& target);
+    void compileToFile(std::string const& filename, std::string const& target);
+    std::vector<unsigned char> compileToString(std::string const& target_str="");
 };
 } // namespace vire

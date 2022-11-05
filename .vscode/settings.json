@@ -85,6 +85,17 @@
         "cfenv": "cpp",
         "csignal": "cpp",
         "forward_list": "cpp",
-        "future": "cpp"
+        "future": "cpp",
+        "*.inc": "cpp",
+        "__std_stream": "cpp",
+        "any": "cpp",
+        "barrier": "cpp",
+        "charconv": "cpp",
+        "complex": "cpp",
+        "format": "cpp",
+        "regex": "cpp",
+        "strstream": "cpp",
+        "valarray": "cpp",
+        "filesystem": "cpp"
     }
 }
