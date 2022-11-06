@@ -38,6 +38,9 @@ public:
     bool verifySourceModule();
     bool compileSourceModule(std::string output_file_name="", bool write_to_file=true);
 
+    void setSourceCode(std::string new_code);
+    void resetAST();
+
     void showErrors() const;
     errors::ErrorBuilder* const getErrorBuilder() const;
     VCompiler* const getCompiler() const;

@@ -1,3 +1,5 @@
 {
-    "dependencies": {}
+    "dependencies": {
+        "typescript": "^4.8.4"
+    }
 }

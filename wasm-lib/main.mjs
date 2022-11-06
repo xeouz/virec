@@ -1,14 +1,4 @@
-import createGlobalModule from "./VIRELANG.js";
-
-let GModule;
-let GVireAPI;
-
-function stringToArrayBuffer( string, encoding, callback ) {
-    var blob = new Blob([string],{type:'text/plain;charset='+encoding});
-    var reader = new FileReader();
-    reader.onload = function(evt){callback(evt.target.result);};
-    reader.readAsArrayBuffer(blob);
-}
+import createGlobalModule from "./src/VIRELANG/VIRELANG.js";
 
 async function loadModule(_callback)
 {

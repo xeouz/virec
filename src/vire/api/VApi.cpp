@@ -111,6 +111,15 @@ std::string const& VApi::getCompiledLLVMIR()
     return getCompiler()->getCompiledOutput();
 }
 
+void VApi::setSourceCode(std::string new_code)
+{
+    this->source_code=new_code;
+}
+void VApi::resetAST()
+{
+    this->ast.reset();
+}
+
 using namespace emscripten;
 
 EMSCRIPTEN_BINDINGS(VAPI)
@@ -119,12 +128,14 @@ EMSCRIPTEN_BINDINGS(VAPI)
 
     class_<VApi>("VireAPI")
     .constructor<>()
-    .function("parseSourceModule", &VApi::parseSourceModule)
-    .function("verifySourceModule", &VApi::verifySourceModule)
-    .function("compileSourceModule", &VApi::compileSourceModule)
+    .function("ParseSourceModule", &VApi::parseSourceModule)
+    .function("VerifySourceModule", &VApi::verifySourceModule)
+    .function("CompileSourceModule", &VApi::compileSourceModule)
     .function("getByteOutput", &VApi::getByteOutput)
     .function("getCompiledLLVMIR", &VApi::getCompiledLLVMIR)
     .function("showErrors", &VApi::showErrors)
+    .function("setSourceCode", &VApi::setSourceCode)
+    .function("resetAST", &VApi::resetAST)
     .class_function("loadFromText", &VApi::loadFromText)
     ;
 }
