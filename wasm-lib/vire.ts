@@ -1,4 +1,4 @@
-import createGlobalModule from "./VIRELANG/VIRELANG";
+import { createGlobalModule } from "./vire-emcc";
 
 let GlobalModule :any;
 let GlobalVireAPI:any;
@@ -12,7 +12,7 @@ const importObject:WebAssembly.Imports = {
     }
 }
 
-async function loadMainModule(input_code:string = "", target_triple:string = "wasm32", _async_callback:Function = ()=>{}) {
+export async function loadMainModule(input_code:string = "", target_triple:string = "wasm32", _async_callback:Function = ()=>{}) {
     createGlobalModule().then((Module: any)=>{
         GlobalModule=Module;
         GlobalVireAPI=GlobalModule.VireAPI.loadFromText(input_code, target_triple);
@@ -20,13 +20,13 @@ async function loadMainModule(input_code:string = "", target_triple:string = "wa
     })
 }
 
-async function compileSourceCodeFromAPI() :Promise<void> {
+export async function compileSourceCodeFromAPI() :Promise<void> {
     GlobalVireAPI.ParseSourceModule();
     GlobalVireAPI.VerifySourceModule();
     GlobalVireAPI.CompileSourceModule("", false);
 }
 
-async function instantiateOutputFromAPI() :Promise<WebAssembly.WebAssemblyInstantiatedSource> {
+export async function instantiateOutputFromAPI() :Promise<WebAssembly.WebAssemblyInstantiatedSource> {
     let bin:any = GlobalVireAPI.getByteOutput();
     let arr:Uint8Array = new Uint8Array(bin.size());
 
@@ -39,14 +39,7 @@ async function instantiateOutputFromAPI() :Promise<WebAssembly.WebAssemblyInstan
     return module;
 }
 
-async function setSourceCode(input_code:string) {
+export async function setSourceCode(input_code:string) {
     GlobalVireAPI.setSourceCode(input_code);
     GlobalVireAPI.resetAST();
 }
-
-loadMainModule("extern puti(n:int) returns int; func main() returns int{let a=69; puti(a);}", "wasm32", async ()=>{
-    await compileSourceCodeFromAPI()
-    let m=await instantiateOutputFromAPI();
-    let main=m.instance.exports.main as CallableFunction;
-    main()
-});
