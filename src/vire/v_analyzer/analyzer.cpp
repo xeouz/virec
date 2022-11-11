@@ -630,8 +630,9 @@ namespace vire
 
         if(!isFuncDefined(name))
         {
+            std::cout << "Function `" << name << "` is not defined" << std::endl;
             // Function is not defined
-            is_valid=false;
+            return false;
         }
 
         auto args=call->moveArgs();
@@ -1206,7 +1207,7 @@ namespace vire
             if(!verifyClass(cls.get()))
             {
                 // Class is not valid
-                return false;
+                is_valid=false;
             }
         }
         for(unsigned int it=0; it<union_structs.size(); ++it)
@@ -1269,33 +1270,15 @@ namespace vire
 
             addFunction(std::move(funcs[it]));
         }
-
-        if(!has_main)
+        for(const auto& expr : pre_stms)
         {
-            auto nametok=std::make_unique<VToken>("main", tok_func);
-            auto rettok =std::make_unique<VToken>("int", tok_id);
-            std::vector<std::unique_ptr<VariableDefAST>> args;
-            code->addFunction(std::make_unique<FunctionAST>(
-                std::make_unique<PrototypeAST>(std::move(nametok), std::move(args), std::move(rettok)), 
-                std::vector<std::unique_ptr<ExprAST>>()
-                )
-            );
-
-            main_func_indx=funcs.size();
-        }
-        
-        const auto& main_func=(std::unique_ptr<FunctionAST> const&)funcs[main_func_indx];
-        for(unsigned int it=0; it<pre_stms.size(); ++it)
-        {
-            auto expr=std::move(pre_stms[it]);
-            if(!verifyExpr(((std::unique_ptr<ExprAST> const&)expr).get()))
+            if(!verifyExpr(expr.get()))
             {
-                // Pre-execution statement is not valid
                 is_valid=false;
             }
-
-            main_func->insertStatement(std::move(expr));
         }
+
+        ast->addPreExecutionStatements(std::move(pre_stms));
 
         return is_valid;
     }

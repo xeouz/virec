@@ -1,8 +1,9 @@
-extern puti(i:int) returns void;
+extern puti(n:int) returns void;
 
 func main() returns int
 {
-    puti(100);
-
-    return 0;
+    puti(1000);
+    return 10;
 }
+
+puti(100);

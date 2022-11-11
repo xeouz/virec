@@ -60,4 +60,4 @@ add_custom_command(
 add_custom_command(
     TARGET VIRELANG POST_BUILD
     COMMAND ./VIRELANG
-) 
+)

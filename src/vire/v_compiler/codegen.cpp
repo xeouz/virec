@@ -666,9 +666,9 @@ namespace vire
 
         return value;
     }
-    llvm::Function* VCompiler::compilePrototype(std::string const& Name)
+    llvm::Function* VCompiler::compilePrototype(std::string const& name)
     {
-        auto const& base_ast=analyzer->getFunc(Name);
+        auto const& base_ast=analyzer->getFunc(name);
         auto const& proto=(std::unique_ptr<PrototypeAST> const&)base_ast;
         auto const& proto_args=proto->getArgs();
         std::vector<llvm::Type*> args(proto_args.size());
@@ -681,7 +681,7 @@ namespace vire
         }
 
         llvm::FunctionType* func_type=llvm::FunctionType::get(func_ret_type, args, false);
-        llvm::Function* func=llvm::Function::Create(func_type, llvm::Function::ExternalLinkage, Name, Module.get());
+        llvm::Function* func=llvm::Function::Create(func_type, llvm::Function::ExternalLinkage, name, Module.get());
 
         unsigned idx=0;
         for(auto& arg: func->args())
@@ -694,20 +694,20 @@ namespace vire
 
         return func;
     }
-    llvm::Function* VCompiler::compileExtern(std::string const& Name)
+    llvm::Function* VCompiler::compileExtern(std::string const& name)
     {
-        llvm::Function* func=compilePrototype(Name);
-        func->setName(Name);
+        llvm::Function* func=compilePrototype(name);
+        func->setName(name);
 
         // Remove in release
         // func->print(error_os);
         return func;
     }
-    llvm::Function* VCompiler::compileFunction(std::string const& Name)
+    llvm::Function* VCompiler::compileFunction(std::string const& name)
     {
-        llvm::Function* function=Module->getFunction(Name);
+        llvm::Function* function=Module->getFunction(name);
         if(!function)
-            function=compilePrototype(Name);
+            function=compilePrototype(name);
 
         llvm::BasicBlock* bb=llvm::BasicBlock::Create(CTX, "entry", function);
         currentFunctionEndBB=llvm::BasicBlock::Create(CTX, "end", function);
@@ -721,7 +721,7 @@ namespace vire
             namedValues[arg.getName()]=alloca;
         }
 
-        auto const& func=(FunctionAST*)analyzer->getFunc(Name);
+        auto const& func=(FunctionAST*)analyzer->getFunc(name);
 
         // Create return value
         auto ret_type=getLLVMType(func->getReturnType());
@@ -739,6 +739,10 @@ namespace vire
         auto& bbend=function->getBasicBlockList().back();
         currentFunctionEndBB->moveAfter(&bbend); // Move the end block after the 
                                                  // last block of the function
+        if(name=="main")
+        {
+            function->setName("entry_main");
+        }
 
         return function;
     }
@@ -859,9 +863,29 @@ namespace vire
             }
         }
 
+        llvm::FunctionType* main_type=llvm::FunctionType::get(llvm::Type::getInt32Ty(CTX), false);
+        llvm::Function* main_func=llvm::Function::Create(main_type, llvm::GlobalValue::ExternalLinkage, "main", Module.get());
+        llvm::BasicBlock* bb=llvm::BasicBlock::Create(CTX, "entry", main_func);
+        currentFunctionEndBB=llvm::BasicBlock::Create(CTX, "end", main_func);
+        Builder.SetInsertPoint(bb);
+        currentFunction=main_func;
+
         for(auto const& e:mod->getPreExecutionStatements())
         {
             compileExpr(e.get());
+        }
+        if(auto* pre_main_func=Module->getFunction("entry_main"))
+        {
+            auto* retval=Builder.CreateCall(pre_main_func, llvm::None, "retval");
+            Builder.CreateBr(currentFunctionEndBB);
+            Builder.SetInsertPoint(currentFunctionEndBB);
+            Builder.CreateRet(retval);
+        }
+        else
+        {
+            Builder.CreateBr(currentFunctionEndBB);
+            Builder.SetInsertPoint(currentFunctionEndBB);
+            Builder.CreateRet(llvm::ConstantInt::get(CTX, llvm::APInt(32, 0, false)));
         }
     }
 

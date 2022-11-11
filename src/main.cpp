@@ -14,7 +14,7 @@ int entry()
     if(!s)
     {
         std::cout << "Verification Failed" << std::endl;
-        return 1;
+        return 1; 
     }
 
     s=api->compileSourceModule("./test.o", true);

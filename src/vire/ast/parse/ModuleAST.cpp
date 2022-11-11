@@ -63,6 +63,15 @@ public:
     {
         UnionStructs.push_back(std::move(union_struct));
     }
+
+    void addPreExecutionStatements(std::vector<std::unique_ptr<ExprAST>> stms){
+        int pes_size=PreExecutionStatements.size();
+        PreExecutionStatements.resize(pes_size+stms.size());
+        for(size_t i=0; i<stms.size(); ++i)
+        {
+            PreExecutionStatements[pes_size+i]=std::move(stms[i]);
+        }
+    }
 };
 
 }
