@@ -89,7 +89,12 @@ bool VApi::compileSourceModule(std::string output_file_path, bool write_to_file)
     }
 
     compiler->compileModule();
-    bool failure=llvm::verifyModule(*compiler->getModule());
+
+    std::string errs;
+    llvm::raw_string_ostream os(errs);
+    bool failure=llvm::verifyModule(*compiler->getModule(), &os);
+    os.flush();
+    std::cout << errs << std::endl;
     
     if(!failure && write_to_file)
     {
@@ -120,6 +125,7 @@ void VApi::resetAST()
     this->ast.reset();
 }
 
+#ifdef VIRE_USE_EMCC
 using namespace emscripten;
 
 EMSCRIPTEN_BINDINGS(VAPI)
@@ -139,5 +145,6 @@ EMSCRIPTEN_BINDINGS(VAPI)
     .class_function("loadFromText", &VApi::loadFromText)
     ;
 }
+#endif
 
 }

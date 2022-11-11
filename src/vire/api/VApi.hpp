@@ -6,8 +6,10 @@
 #include "vire/proto/include.hpp"
 #include "vire/v_compiler/include.hpp"
 
+#ifdef VIRE_USE_EMCC
 #include <emscripten/emscripten.h>
 #include <emscripten/bind.h>
+#endif
 
 namespace vire
 {

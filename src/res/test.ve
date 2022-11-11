@@ -1,17 +1,8 @@
-extern puti(i:int) returns int;
-
-struct abc
-{
-    int a;
-    int b;
-    int c;
-}
+extern puti(i:int) returns void;
 
 func main() returns int
 {
-    let a:abc;
+    puti(100);
 
-    a.a=100;
-
-    return a.a;
+    return 0;
 }

@@ -761,8 +761,9 @@ namespace vire
             return false;
         }
 
-        if(types::isSame(proto->getReturnType(),"any") || types::isSame(proto->getReturnType(),"auto"))
+        if(types::isSame(proto->getReturnType(), "any") /*|| types::isSame(proto->getReturnType(), "auto")*/)
         {
+            std::cout << "Function type cannot be `" << *proto->getReturnType() << "`" << std::endl;
             // Type is not valid
             is_valid=false;
         }

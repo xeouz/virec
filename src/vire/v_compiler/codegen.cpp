@@ -652,6 +652,10 @@ namespace vire
             args.push_back(compileExpr(arg.get()));
         }
 
+        if(expr->getType()->getType()==types::TypeNames::Void)
+        {
+            return Builder.CreateCall(func, args);
+        }
         return Builder.CreateCall(func, args, "calltmp");
     }
     llvm::Value* VCompiler::compileReturnExpr(ReturnExprAST* const expr)
@@ -735,7 +739,6 @@ namespace vire
         auto& bbend=function->getBasicBlockList().back();
         currentFunctionEndBB->moveAfter(&bbend); // Move the end block after the 
                                                  // last block of the function
-        llvm::verifyFunction(*function);
 
         return function;
     }

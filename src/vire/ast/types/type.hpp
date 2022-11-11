@@ -20,6 +20,7 @@ enum class TypeNames
     Bool,
     Array,
     Custom,
+    Any,
 };
 
 // Type Map
@@ -31,6 +32,7 @@ inline std::unordered_map<std::string, TypeNames> type_map=
     {"float", TypeNames::Float},
     {"double", TypeNames::Double},
     {"bool", TypeNames::Bool},
+    {"any", TypeNames::Any}
 };
 inline std::unordered_map<TypeNames, std::string> typestr_map=
 {
@@ -41,11 +43,10 @@ inline std::unordered_map<TypeNames, std::string> typestr_map=
     {TypeNames::Double, "double"},
     {TypeNames::Bool, "bool"},
     {TypeNames::Custom, "custom"},
+    {TypeNames::Any, "any"},
 };
 inline std::unordered_map<std::string, int> custom_type_sizes=
-{
-
-};
+{ };
 
 // Prototypes
 inline std::string getMapFromType(TypeNames type);
@@ -277,7 +278,7 @@ public:
     {
         this->type=TypeNames::Custom;
         this->size=size;
-        is_const=_is_const;
+        this->is_const=_is_const;
     }
 
     std::string const& getName() const 
@@ -288,6 +289,17 @@ public:
     bool isSame(Custom* other)
     {
         return name==other->getName();
+    }
+};
+
+class Any : public Base
+{
+public:
+    Any(bool _is_const=true)
+    {
+        this->type=TypeNames::Any;
+        this->size=0;
+        this->is_const=_is_const;
     }
 };
 
@@ -414,7 +426,9 @@ inline std::unique_ptr<Base> construct(std::string typestr, bool create_custom)
             
             return std::make_unique<Custom>(typestr, custom_type_sizes.at(typestr));
         }
-        
+        case TypeNames::Any:
+            return std::make_unique<Any>();
+
         default:
             return std::make_unique<Void>();
     }
