@@ -1,8 +1,15 @@
 extern puti(n:int) returns void;
 
-func foo(n:int) returns void
+func foo(n:int) returns int
 {
+    puti(n);
+
+    if(n>0)
+    {
+        return foo(n-1);
+    }
     
+    return 0;
 }
 
 func main() returns int

@@ -646,6 +646,8 @@ namespace vire
     {
         auto func=Module->getFunction(expr->getName());
 
+        func->print(llvm::errs());
+
         std::vector<llvm::Value*> args;
         for(auto& arg : expr->getArgs())
         {
@@ -721,12 +723,15 @@ namespace vire
             namedValues[arg.getName()]=alloca;
         }
 
-        auto const& func=(FunctionAST*)analyzer->getFunc(name);
+        auto* func=(FunctionAST*)analyzer->getFunc(name);
 
         // Create return value
-        auto ret_type=getLLVMType(func->getReturnType());
-        auto ret_val=Builder.CreateAlloca(ret_type, nullptr, "retval");
-        namedValues["retval"]=ret_val;
+        llvm::Type* ret_type=getLLVMType(func->getReturnType());
+        if(func->getReturnType()->getType()!=types::TypeNames::Void)
+        {
+            auto* ret_val=Builder.CreateAlloca(ret_type, nullptr, "retval");
+            namedValues["retval"]=ret_val;
+        }
 
         // Compile the block
         currentFunction=function;
@@ -735,7 +740,15 @@ namespace vire
 
         // Create the return instruction
         Builder.SetInsertPoint(currentFunctionEndBB);
-        Builder.CreateRet(Builder.CreateLoad(ret_type, ret_val, "ret"));
+
+        if(func->getReturnType()->getType()!=types::TypeNames::Void)
+        {
+            Builder.CreateRet(Builder.CreateLoad(ret_type, namedValues["retval"], "ret"));
+        }
+        else
+        {
+            Builder.CreateRetVoid();
+        }
         auto& bbend=function->getBasicBlockList().back();
         currentFunctionEndBB->moveAfter(&bbend); // Move the end block after the 
                                                  // last block of the function
@@ -868,7 +881,7 @@ namespace vire
         llvm::BasicBlock* bb=llvm::BasicBlock::Create(CTX, "entry", main_func);
         currentFunctionEndBB=llvm::BasicBlock::Create(CTX, "end", main_func);
         Builder.SetInsertPoint(bb);
-        currentFunction=main_func;
+        currentFunction=main_func; 
 
         for(auto const& e:mod->getPreExecutionStatements())
         {
