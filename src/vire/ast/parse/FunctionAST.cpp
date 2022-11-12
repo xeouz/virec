@@ -23,6 +23,10 @@ public:
     : callee(callee_token->value), callee_token(std::move(callee_token)), args(std::move(args)), ExprAST("void",ast_call)
     {}
 
+    proto::IName const& getIName() const
+    {
+        return callee;
+    }
     std::string const& getName() const
     {
         return callee.get();

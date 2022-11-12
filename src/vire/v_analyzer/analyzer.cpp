@@ -635,6 +635,12 @@ namespace vire
             return false;
         }
 
+        if(call->getIName().name == "main")
+        {
+            std::cout << "Verification Error: Cannot call the main function, it is an entry point" << std::endl;
+            is_valid=false;
+        }
+
         auto args=call->moveArgs();
         const auto& func_args=getFunc(name)->getArgs();
 
