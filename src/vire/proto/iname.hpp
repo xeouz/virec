@@ -12,11 +12,12 @@ class IName
     std::string prefixed_name;
 
     void refresh();
-protected:
+public:
     std::string name;
     std::string prefix;
 public:
-    IName(std::string prefix, std::string name);
+    IName();
+    IName(std::string name, std::string prefix="_");
 
     void setName(const char* name);
     void setName(std::string const& name);
@@ -24,8 +25,28 @@ public:
     void setPrefix(const char* prefix);
     void setPrefix(std::string const& prefix);
 
-    std::string const& get();
+    std::string const& get() const;
+
+    bool isSame(IName const& rhs) const;
+    bool operator==(IName const& rhs) const;
 };
 
 }
+}
+
+namespace std {
+
+  template <>
+  struct hash<vire::proto::IName>
+  {
+    std::size_t operator()(const vire::proto::IName& k) const
+    {
+      using std::size_t;
+      using std::hash;
+      using std::string;
+
+      return hash<string>()(k.get());
+    }
+  };
+
 }

@@ -47,14 +47,14 @@ namespace vire
         va_end(args);
         return std::vector<std::unique_ptr<ExprAST>>();
     }
-    std::unordered_map<std::string, std::unique_ptr<ExprAST>> VParser::LogErrorPB(const char* str,...)
+    std::unordered_map<proto::IName, std::unique_ptr<ExprAST>> VParser::LogErrorPB(const char* str,...)
     {
         std::va_list args;
         va_start(args,str);
         fprintf(stderr,"Parse Error: ");
         std::vfprintf(stderr,str,args);
         va_end(args);
-        return std::unordered_map<std::string, std::unique_ptr<ExprAST>>();
+        return std::unordered_map<proto::IName, std::unique_ptr<ExprAST>>();
     }
 
     void VParser::getNextToken(bool first_token)
@@ -199,7 +199,6 @@ namespace vire
     {
         auto id_name=copyCurrentToken();
 
-        id_name->value="_"+id_name->value;
         getNextToken(tok_id);
         
         std::unique_ptr<ExprAST> expr;
@@ -261,9 +260,6 @@ namespace vire
             return std::move(expr);
         }
         
-        // Remove `_` from the function name
-        id_name->value=id_name->value.substr(1);
-
         getNextToken(tok_lparen); // consume '('
 
         std::vector<std::unique_ptr<ExprAST>> args;
@@ -865,10 +861,10 @@ namespace vire
         return std::move(x);
     }
 
-    std::unordered_map<std::string, std::unique_ptr<ExprAST>> VParser::ParsePrimitiveBody()
+    std::unordered_map<proto::IName, std::unique_ptr<ExprAST>> VParser::ParsePrimitiveBody()
     {
         getNextToken(tok_lbrace);
-        std::unordered_map<std::string, std::unique_ptr<ExprAST>> members;
+        std::unordered_map<proto::IName, std::unique_ptr<ExprAST>> members;
 
         while(current_token->type!=tok_rbrace)
         {
@@ -895,8 +891,6 @@ namespace vire
                 getNextToken(tok_id);
                 getNextToken(tok_semicol);
 
-                member_name=name->value;
-                name->value="_"+name->value;
                 member=std::make_unique<VariableDefAST>(std::move(name), types::construct(type->value), nullptr);
             }
             else
@@ -905,8 +899,7 @@ namespace vire
                 break;
             }
             
-            member_name="_"+member_name;
-            members.insert(std::make_pair(member_name, std::move(member)));
+            members.insert(std::make_pair(proto::IName(member_name), std::move(member)));
         }
         
         getNextToken(tok_rbrace);
@@ -927,7 +920,7 @@ namespace vire
         }
 
         auto body=ParsePrimitiveBody();
-        return std::make_unique<UnionExprAST>(std::move(body),std::move(name));
+        return std::make_unique<UnionExprAST>(std::move(body), std::move(name));
     }
     std::unique_ptr<ExprAST> VParser::ParseStruct()
     {
@@ -944,7 +937,7 @@ namespace vire
 
         auto body=ParsePrimitiveBody();
 
-        return std::make_unique<StructExprAST>(std::move(body),std::move(name));
+        return std::make_unique<StructExprAST>(std::move(body), std::move(name));
     }
 
     std::unique_ptr<ExprAST> VParser::ParseUnsafe()

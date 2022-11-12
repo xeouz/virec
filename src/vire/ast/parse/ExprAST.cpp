@@ -9,6 +9,8 @@
 
 #include "ASTType.hpp"
 
+#include "vire/proto/iname.hpp"
+
 namespace vire
 {
 

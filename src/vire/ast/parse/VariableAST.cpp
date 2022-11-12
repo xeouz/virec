@@ -78,7 +78,7 @@ public:
 
 class VariableDefAST : public ExprAST
 {
-    std::string name;
+    proto::IName name;
     std::unique_ptr<ExprAST> value;
     bool is_const, is_let, is_array;
     bool use_value_type;
@@ -91,7 +91,7 @@ public:
         setToken(std::move(name));
     }
 
-    std::string const& getName() const {return name;}
+    std::string const& getName() const {return name.get();}
     const bool& isConst() const {return is_const;}
     const bool& isLet() const {return is_let;}
 

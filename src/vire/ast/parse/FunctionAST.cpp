@@ -15,23 +15,25 @@ namespace vire
 // CallExprAST - Class for function calls, eg - `print()`
 class CallExprAST : public ExprAST
 {
-    std::unique_ptr<VToken> callee;
+    proto::IName callee;
+    std::unique_ptr<VToken> callee_token;
     std::vector<std::unique_ptr<ExprAST>> args;
 public:
-    CallExprAST(std::unique_ptr<VToken> callee, std::vector<std::unique_ptr<ExprAST>> args)
-    : callee(std::move(callee)), args(std::move(args)), ExprAST("void",ast_call){}
+    CallExprAST(std::unique_ptr<VToken> callee_token, std::vector<std::unique_ptr<ExprAST>> args)
+    : callee(callee_token->value), callee_token(std::move(callee_token)), args(std::move(args)), ExprAST("void",ast_call)
+    {}
 
     std::string const& getName() const
     {
-        return callee->value;
+        return callee.get();
     }
     VToken* const getToken() const
     {
-        return callee.get();
+        return callee_token.get();
     }
     std::unique_ptr<VToken> moveToken()
     {
-        return std::move(callee);
+        return std::move(callee_token);
     }
 
     std::vector<std::unique_ptr<ExprAST>> const& getArgs() const 
@@ -48,6 +50,7 @@ public:
     }
 };
 
+// FunctionBaseAST - Base Class for the functions
 class FunctionBaseAST
 {
 protected:
@@ -60,6 +63,8 @@ public:
     types::Base* getReturnType() const { return return_type.get(); }
     std::unique_ptr<types::Base> moveReturnType() { return std::move(return_type); }
     void setReturnType(std::unique_ptr<types::Base> t) { this->return_type=std::move(t); }
+
+    virtual proto::IName const& getIName() const = 0;
 
     virtual std::string      const getName()       const = 0;
     virtual std::string      const getReturnName() const = 0;
@@ -84,8 +89,12 @@ public:
 // PrototypeAST - Class for prototype functions, captures function name and args
 class PrototypeAST : public FunctionBaseAST
 {
-    std::unique_ptr<VToken> name; 
-    std::unique_ptr<VToken> return_name;
+    proto::IName name;
+    proto::IName return_name;
+
+    std::unique_ptr<VToken> name_token;
+    std::unique_ptr<VToken> return_name_token;
+
     std::vector<std::unique_ptr<VariableDefAST>> args;
 public:
     int asttype;
@@ -94,17 +103,19 @@ public:
     std::vector<std::unique_ptr<VariableDefAST>> args, 
     std::unique_ptr<VToken> return_type)
     : FunctionBaseAST(return_type->value), args(std::move(args)), asttype(ast_proto),
-    name(std::move(name)), return_name(std::move(return_type))
+    name(name->value), return_name(return_type->value) ,name_token(std::move(name)), return_name_token(std::move(return_type))
     {}
 
-    std::string const getName()       const { return getNameToken()->value; }
-    std::string const getReturnName() const { return getReturnNameToken()->value; }
+    proto::IName const& getIName()       const { return name; }
+    proto::IName const& getReturnIName() const { return return_name; }
+    std::string const getName()       const { return name.get(); }
+    std::string const getReturnName() const { return return_name.get(); }
 
-    VToken* const getNameToken()        const { return name.get(); }
-    VToken* const getReturnNameToken()  const { return return_name.get(); }
+    VToken* const getNameToken()        const { return name_token.get(); }
+    VToken* const getReturnNameToken()  const { return return_name_token.get(); }
 
-    std::unique_ptr<VToken> moveNameToken()       { return std::move(name); }
-    std::unique_ptr<VToken> moveReturnNameToken() { return std::move(return_name); }
+    std::unique_ptr<VToken> moveNameToken()       { return std::move(name_token); }
+    std::unique_ptr<VToken> moveReturnNameToken() { return std::move(return_name_token); }
     
     unsigned int getArgCount() const {return args.size();}
     
@@ -114,6 +125,7 @@ public:
     std::vector<std::unique_ptr<VariableDefAST>> const& getArgs() const {return args;}
 };
 
+// ExternAST - Class for extern functions which are defined in some other language like C
 class ExternAST : public FunctionBaseAST
 {
     std::unique_ptr<PrototypeAST> proto;
@@ -125,6 +137,7 @@ public:
     asttype(ast_extern), proto(std::move(prototype))
     {}
 
+    proto::IName const& getIName()    const { return proto->getIName(); }
     std::string const getName()       const { return proto->getName(); }
     std::string const getReturnName() const { return proto->getReturnName(); }
 
@@ -163,6 +176,7 @@ public:
     std::vector<std::unique_ptr<VariableDefAST>> const& getArgs() const { return proto->getArgs(); }
     std::vector<std::unique_ptr<ExprAST>>        const& getBody() const { return statements; }
 
+    proto::IName const& getIName()    const { return proto->getIName(); }
     std::string const getName()       const { return proto->getName(); }
     std::string const getReturnName() const { return proto->getReturnName(); }
 
@@ -185,13 +199,14 @@ public:
 class ReturnExprAST : public ExprAST
 {
     std::unique_ptr<ExprAST> expr;
-    std::string func_name;
+    proto::IName func_name;
 public:
-    ReturnExprAST(std::unique_ptr<ExprAST> expr) : expr(std::move(expr)), ExprAST("",ast_return)
+    ReturnExprAST(std::unique_ptr<ExprAST> expr) : expr(std::move(expr)), ExprAST("",ast_return), 
+    func_name("")
     {}
 
     void setName(std::string name) {func_name = name;}
-    std::string const& getName() const {return func_name;}
+    std::string const& getName() const {return func_name.get();}
     ExprAST* const getValue() const {return expr.get();}
     std::unique_ptr<ExprAST> const moveValue() { return std::move(expr); }
     void setValue(std::unique_ptr<ExprAST> t) { expr=std::move(t); }

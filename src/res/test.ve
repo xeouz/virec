@@ -1,19 +1,6 @@
 extern puti(n:int) returns void;
 
-func foo(n:int) returns int
+func entry_main()
 {
-    puti(n);
-
-    if(n>0)
-    {
-        return foo(n-1);
-    }
-    
-    return 0;
-}
-
-func main() returns int
-{
-    foo(10);
-    return 10;
+    puti(100);
 }

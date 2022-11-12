@@ -16,14 +16,16 @@ namespace vire
 
 class ClassAST
 {
-    std::unique_ptr<VToken> Name;
-    std::unique_ptr<VToken> Parent;
+    proto::IName name;
+    proto::IName parent;
+    std::unique_ptr<VToken> name_token;
+    std::unique_ptr<VToken> parent_token;
     std::map<std::string, std::unique_ptr<VariableDefAST>> Variables;
     std::map<std::string, std::unique_ptr<FunctionBaseAST>> Functions;
 public:
-    ClassAST(std::unique_ptr<VToken> Name, std::vector<std::unique_ptr<FunctionBaseAST>> funcs
-    , std::vector<std::unique_ptr<VariableDefAST>> vars, std::unique_ptr<VToken> Parent)
-    : Name(std::move(Name)), Parent(std::move(Name))
+    ClassAST(std::unique_ptr<VToken> name_token, std::vector<std::unique_ptr<FunctionBaseAST>> funcs
+    , std::vector<std::unique_ptr<VariableDefAST>> vars, std::unique_ptr<VToken> parent_token)
+    : name(name_token->value), parent(parent_token->value), name_token(std::move(name_token)), parent_token(std::move(parent_token))
     {
         unsigned int it=0;
         for(it=0; it<funcs.size(); it++)
@@ -70,30 +72,33 @@ public:
         return (std::unique_ptr<T>)Functions[funcName].get();
     }
 
-    std::string const& getParent() const {return Parent->value;}
-    std::string const& getName() const {return Name->value;}
+    std::string const& getParent() const {return parent.get();}
+    std::string const& getName() const {return name.get();}
 };
 
 class NewExprAST : public ExprAST
 {
-    std::unique_ptr<VToken> ClassName;
-    std::vector<std::unique_ptr<ExprAST>> Args;
+    proto::IName class_name;
+    std::unique_ptr<VToken> class_name_token;
+    std::vector<std::unique_ptr<ExprAST>> args;
 public:
-    NewExprAST(std::unique_ptr<VToken> ClassName, std::vector<std::unique_ptr<ExprAST>> Args)
-    : ClassName(std::move(ClassName)), Args(std::move(Args)), ExprAST("",ast_new) {};
+    NewExprAST(std::unique_ptr<VToken> class_name_token, std::vector<std::unique_ptr<ExprAST>> args)
+    : class_name(class_name_token->value), class_name_token(std::move(class_name_token)), args(std::move(args)), ExprAST("",ast_new) {};
 
-    std::string const& getName() const {return ClassName->value;}
-    std::vector<std::unique_ptr<ExprAST>> const& getArgs() {return Args;}
+    std::string const& getName() const {return class_name.get();}
+    std::vector<std::unique_ptr<ExprAST>> const& getArgs() {return args;}
 };
 
 class DeleteExprAST : public ExprAST
 {
-    std::unique_ptr<VToken> varName;
+    proto::IName var_name;
+    std::unique_ptr<VToken> var_name_token;
 public:
-    DeleteExprAST(std::unique_ptr<VToken> varName) : varName(std::move(varName)), ExprAST("",ast_delete) 
+    DeleteExprAST(std::unique_ptr<VToken> var_name_token) 
+    : var_name(var_name_token->value), var_name_token(std::move(var_name_token)), ExprAST("",ast_delete) 
     {}
 
-    std::string const& getName() const {return varName->value;}
+    std::string const& getName() const {return var_name.get();}
 };
 
 }

@@ -8,7 +8,7 @@ namespace vire
 
 class IdentifierExprAST : public ExprAST
 {
-    std::string name;
+    proto::IName name;
 public:
     bool is_const;
     IdentifierExprAST(std::unique_ptr<VToken> name, bool is_const=false, int asttype=ast_var) 
@@ -19,7 +19,7 @@ public:
 
     virtual std::string const getName() const
     {
-        return name;
+        return name.get();
     }
     virtual std::unique_ptr<VToken> moveToken()
     {
@@ -27,19 +27,17 @@ public:
     }
     virtual void setName(std::string const& _name)
     {
-        name=_name;
+        name.setName(_name);
     }
 };
 
 // VariableExprAST - Class for referencing a variable, eg - `myvar`
 class VariableExprAST : public IdentifierExprAST
 {
-    std::string name;
 public:
     VariableExprAST(std::unique_ptr<VToken> name) : 
     IdentifierExprAST(std::move(name))
     {
-        this->name=this->getToken()->value;
     } 
 };
 

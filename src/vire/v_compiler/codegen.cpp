@@ -644,7 +644,19 @@ namespace vire
 
     llvm::Value* VCompiler::compileCallExpr(CallExprAST* const expr)
     {
-        auto func=Module->getFunction(expr->getName());
+        std::string func_name;
+        auto* afunc=analyzer->getFunc(expr->getName());
+
+        if(afunc->is_extern())
+        {
+            func_name=afunc->getIName().name;
+        }
+        else
+        {
+            func_name=afunc->getName();
+        }
+
+        auto func=Module->getFunction(func_name);
 
         std::vector<llvm::Value*> args;
         for(auto& arg : expr->getArgs())
@@ -656,6 +668,7 @@ namespace vire
         {
             return Builder.CreateCall(func, args);
         }
+        
         return Builder.CreateCall(func, args, "calltmp");
     }
     llvm::Value* VCompiler::compileReturnExpr(ReturnExprAST* const expr)
@@ -697,7 +710,7 @@ namespace vire
     llvm::Function* VCompiler::compileExtern(std::string const& name)
     {
         llvm::Function* func=compilePrototype(name);
-        func->setName(name);
+        func->setName(analyzer->getFunc(name)->getIName().name);
 
         // Remove in release
         // func->print(error_os);
@@ -750,7 +763,7 @@ namespace vire
         auto& bbend=function->getBasicBlockList().back();
         currentFunctionEndBB->moveAfter(&bbend); // Move the end block after the 
                                                  // last block of the function
-        if(name=="main")
+        if(func->getIName().name=="main")
         {
             function->setName("entry_main");
         }
@@ -885,12 +898,23 @@ namespace vire
         {
             compileExpr(e.get());
         }
+
         if(auto* pre_main_func=Module->getFunction("entry_main"))
         {
-            auto* retval=Builder.CreateCall(pre_main_func, llvm::None, "retval");
-            Builder.CreateBr(currentFunctionEndBB);
-            Builder.SetInsertPoint(currentFunctionEndBB);
-            Builder.CreateRet(retval);
+            if(!pre_main_func->getReturnType()->isVoidTy())
+            {
+                auto* retval=Builder.CreateCall(pre_main_func, llvm::None, "retval");
+                Builder.CreateBr(currentFunctionEndBB);
+                Builder.SetInsertPoint(currentFunctionEndBB);
+                Builder.CreateRet(retval);
+            }
+            else
+            {
+                Builder.CreateCall(pre_main_func);
+                Builder.CreateBr(currentFunctionEndBB);
+                Builder.SetInsertPoint(currentFunctionEndBB);
+                Builder.CreateRet(llvm::ConstantInt::get(CTX, llvm::APInt(32, 0, false)));
+            }
         }
         else
         {

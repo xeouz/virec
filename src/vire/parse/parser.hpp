@@ -45,7 +45,7 @@ public:
     std::unique_ptr<FunctionAST> LogErrorF(const char* str,...);
     std::unique_ptr<ClassAST> LogErrorC(const char* str,...);
     std::vector<std::unique_ptr<ExprAST>> LogErrorVP(const char* str,...);
-    std::unordered_map<std::string, std::unique_ptr<ExprAST>> LogErrorPB(const char* str,...);
+    std::unordered_map<proto::IName, std::unique_ptr<ExprAST>> LogErrorPB(const char* str,...);
 
     void getNextToken(bool first_token=false);
     void getNextToken(int toktype);
@@ -90,7 +90,7 @@ public:
     std::unique_ptr<ExprAST> ParseDeleteExpr();
     std::unique_ptr<ExprAST> ParseClassAccess(std::unique_ptr<ExprAST> parent);
 
-    std::unordered_map<std::string, std::unique_ptr<ExprAST>> ParsePrimitiveBody();
+    std::unordered_map<proto::IName, std::unique_ptr<ExprAST>> ParsePrimitiveBody();
     std::unique_ptr<ExprAST> ParseUnion();
     std::unique_ptr<ExprAST> ParseStruct();
 

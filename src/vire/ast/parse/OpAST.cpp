@@ -52,6 +52,7 @@ public:
     }
 };
 
+// IncrementDecrementAST - Class for a increment or decrement operation
 class IncrementDecrementAST : public ExprAST
 {
     std::unique_ptr<ExprAST> expr;

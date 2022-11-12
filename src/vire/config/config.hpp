@@ -4,7 +4,13 @@
 #include <string>
 #include <array>
 
+#ifdef VIRE_USE_EMCC
+#define VIRE_ENABLE_ONLY WebAssembly
+#endif
+
+#ifndef VIRE_USE_EMCC
 #define VIRE_ENABLE_ONLY X86
+#endif
 
 namespace vire
 {
