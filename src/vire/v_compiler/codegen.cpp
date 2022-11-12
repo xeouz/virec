@@ -765,6 +765,7 @@ namespace vire
                                                  // last block of the function
         if(func->getIName().name=="main")
         {
+            function->removeFnAttr("wasm-export-name");
             function->setName("entry_main");
         }
 
