@@ -646,8 +646,6 @@ namespace vire
     {
         auto func=Module->getFunction(expr->getName());
 
-        func->print(llvm::errs());
-
         std::vector<llvm::Value*> args;
         for(auto& arg : expr->getArgs())
         {
