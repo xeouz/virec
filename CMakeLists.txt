@@ -8,13 +8,16 @@ find_package(LLVM REQUIRED CONFIG)
 message(STATUS "Found LLVM: ${LLVM_VERSION}")
 message(STATUS "Using LLVMConfig.cmake in ${LLVM_DIR}")
 
-set(CMAKE_BUILD_TYPE Debug)
-
+set(CMAKE_BUILD_TYPE MinSizeRel)
 # -- Compile Flags
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED true)
 
-set(CXX_COMPILE_FLAGS "-I${CMAKE_SOURCE_DIR}/src")
+set(CXX_COMPILE_FLAGS "-I${CMAKE_SOURCE_DIR}/src -lembind")
+set(CXX_COMPILE_FLAGS "${CXX_COMPILE_FLAGS} -s MODULARIZE -s WASM=1 -s EXPORT_ES6 -s ENVIRONMENT=web -s EXPORT_NAME=\"createGlobalModule\"")
+set(CXX_COMPILE_FLAGS "${CXX_COMPILE_FLAGS} --pre-js ${CMAKE_CURRENT_SOURCE_DIR}/wasm-lib/emcc-pre.js --extern-pre-js ${CMAKE_CURRENT_SOURCE_DIR}/wasm-lib/emcc-extern-pre.js")
+set(CXX_COMPILE_FLAGS "${CXX_COMPILE_FLAGS} -s -Wno-unused-command-line-argument -sERROR_ON_UNDEFINED_SYMBOLS=0 -sNO_DISABLE_EXCEPTION_CATCHING")
+set(CXX_COMPILE_FLAGS "${CXX_COMPILE_FLAGS} --closure 1 --closure-args=--compilation_level=SIMPLE_OPTIMIZATIONS -Oz -sFILESYSTEM=0")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CXX_COMPILE_FLAGS}")
 
 # -- LLVM
@@ -23,20 +26,21 @@ separate_arguments(LLVM_DEFINITIONS_LIST NATIVE_COMMAND ${LLVM_DEFINITIONS})
 add_definitions(${LLVM_DEFINITIONS_LIST})
 
 # -- Add main executable
+add_compile_definitions(VIRE_USE_EMCC)
 add_executable(VIRELANG src/main.cpp)
 
 # -- LLVM Libraries
 link_libraries()
-execute_process(COMMAND llvm-config --libs x86 OUTPUT_VARIABLE LIBS)
+execute_process(COMMAND llvm-config --libs WebAssembly OUTPUT_VARIABLE LIBS)
 execute_process(COMMAND llvm-config --system-libs OUTPUT_VARIABLE SYS_LIBS)
 execute_process(COMMAND llvm-config --ldflags OUTPUT_VARIABLE LDF)
-#message(STATUS "Found LLVM" ${LIBS})
+message(STATUS "Found LLVM: " ${LDF})
 
 string(STRIP ${LIBS} LIBS)
 string(STRIP ${SYS_LIBS} SYS_LIBS)
 string(STRIP ${LDF} LDF)
 
-link_libraries(${LIBS} ${SYS_LIBS} ${LDF})
+link_libraries(${LIBS} ${SYS_LIBS} -L/home/dev0/Programming/llvm-project/build-wasm/lib)
 
 set(VIRE_SRC_PATH "${CMAKE_CURRENT_SOURCE_DIR}/src/vire")
 
@@ -54,10 +58,4 @@ add_custom_command(
     TARGET VIRELANG POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
         ${CMAKE_SOURCE_DIR}/src/res $<TARGET_FILE_DIR:VIRELANG>/res
-)
-
-# -- Run the program
-add_custom_command(
-    TARGET VIRELANG POST_BUILD
-    COMMAND ./VIRELANG
 )

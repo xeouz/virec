@@ -3,7 +3,6 @@
 #include <iostream>
 #include <memory>
 
-
 int entry()
 {
     auto api=vire::VApi::loadFromFile("res/test.ve", "sys");
@@ -29,20 +28,6 @@ int entry()
     std::cout << api->getCompiler()->getCompiledOutput() << std::endl;
  
     return 0;
-}
-
-bool iss(const char* a, int alen, const char* b, int blen)
-{
-    if(alen!=blen)
-        return false;
-
-    for(int i=0; i<alen; ++i)
-    {
-        if(a[i]!=b[i])
-            return false;
-    }
-
-    return true;
 }
 
 #ifndef VIRE_USE_EMCC

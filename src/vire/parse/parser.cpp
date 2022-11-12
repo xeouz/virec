@@ -447,7 +447,6 @@ namespace vire
             getNextToken(); // consume `let` / `const`
 
         auto var_name=copyCurrentToken();
-        var_name->value="_"+var_name->value;
         getNextToken(tok_id);
 
         bool is_array=false;
@@ -522,7 +521,7 @@ namespace vire
 
         }
 
-        return std::make_unique<VariableDefAST>(std::move(var_name),std::move(type),std::move(value),isconst,islet);
+        return std::make_unique<VariableDefAST>(std::move(var_name), std::move(type), std::move(value), isconst, islet);
     }
     std::unique_ptr<ExprAST> VParser::ParseVariableAssign(std::unique_ptr<ExprAST> expr)
     {
