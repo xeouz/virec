@@ -1,9 +1,12 @@
 extern puti(n:int) returns void;
 
-func main() returns int
+func foo(n:int) returns void
 {
-    puti(1000);
-    return 10;
+    
 }
 
-puti(100);
+func main() returns int
+{
+    foo(10);
+    return 10;
+}

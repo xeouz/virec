@@ -628,7 +628,7 @@ namespace vire
         bool is_valid=true;
         auto name=call->getName();
 
-        if(!isFuncDefined(name))
+        if(!isFuncDefined(name) && current_func->getName() != name)
         {
             std::cout << "Function `" << name << "` is not defined" << std::endl;
             // Function is not defined

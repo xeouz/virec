@@ -3,7 +3,6 @@
 #include <iostream>
 #include <memory>
 
-
 int entry()
 {
     auto api=vire::VApi::loadFromFile("res/test.ve", "sys");
@@ -27,7 +26,7 @@ int entry()
 
     std::cout << "Compiled code" << std::endl;
     std::cout << api->getCompiler()->getCompiledOutput() << std::endl;
-
+ 
     return 0;
 }
 
