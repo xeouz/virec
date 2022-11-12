@@ -892,7 +892,9 @@ namespace vire
         llvm::BasicBlock* bb=llvm::BasicBlock::Create(CTX, "entry", main_func);
         currentFunctionEndBB=llvm::BasicBlock::Create(CTX, "end", main_func);
         Builder.SetInsertPoint(bb);
-        currentFunction=main_func; 
+        currentFunction=main_func;
+        main_func->addFnAttr(llvm::Attribute::get(CTX, "wasm-export-name", "_main"));
+        main_func->setVisibility(llvm::GlobalValue::DefaultVisibility);
 
         for(auto const& e:mod->getPreExecutionStatements())
         {
