@@ -647,7 +647,6 @@ namespace vire
         while(current_token->type==tok_id)
         {
             std::unique_ptr<VToken> var_name=copyCurrentToken();
-            var_name->value="_"+var_name->value;
             getNextToken(tok_id); // consume id
             if(current_token->type!=tok_colon) 
                 return LogErrorP("Expected ':' for type specifier after arg name");
