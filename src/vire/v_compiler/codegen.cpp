@@ -854,6 +854,10 @@ namespace vire
         return Builder.CreateLoad(ty, sgep);
     }
 
+    void VCompiler::resetModule()
+    {
+        Module=std::make_unique<llvm::Module>(Module->getName(), CTX);
+    }
     void VCompiler::compileModule()
     {
         auto* mod=analyzer->getSourceModule();
@@ -943,7 +947,13 @@ namespace vire
         return analyzer.get();
     }
 
-    void VCompiler::compileInternal(std::string const& target_str)
+    llvm::legacy::PassManager VCompiler::createPassManager() const
+    {
+        llvm::legacy::PassManager passmgr;
+
+        return passmgr;
+    }
+    llvm::TargetMachine* VCompiler::compileInternal(std::string const& target_str)
     {
         std::string target_triple;
         if(target_str=="sys" || target_str=="")
@@ -976,37 +986,47 @@ namespace vire
         if(!target)
         {
             llvm::errs() << "Target not found:\n" << error;
-            return;
+            return nullptr;
         }
 
         std::string cpu="generic";
         std::string features;
 
-        // DANGEROUS, TO BE CHANGED
+        // POSSIBLY DANGEROUS, TO BE CHANGED
     #ifndef VIRE_ENABLE_ONLY
         cpu=llvm::sys::getHostCPUName();
     #endif
 
         llvm::TargetOptions opt;
         auto rm=llvm::Optional<llvm::Reloc::Model>();
-        target_machine=std::unique_ptr<llvm::TargetMachine>(target->createTargetMachine(target_triple, cpu, features, opt, rm));
+
+        auto* target_machine=target->createTargetMachine(target_triple, cpu, features, opt, rm);
 
         Module->setDataLayout(target_machine->createDataLayout());
         Module->setTargetTriple(target_triple);
+
+        return target_machine;
     }
     std::vector<unsigned char> VCompiler::compileToString(std::string const& target_str)
     {
         llvm::SmallString<1> out;
         llvm::raw_svector_ostream os(out);
 
-        compileInternal(target_str);
+        auto* target_machine=compileInternal(target_str);
 
+        if(!target_machine)
+        {
+            return std::vector<unsigned char>();
+        }
+
+        auto passmgr=createPassManager();
         target_machine->addPassesToEmitFile(passmgr, os, nullptr, file_type);
         passmgr.run(*Module);
 
         auto bytestr=out.str().str();
         std::vector<unsigned char> ret(bytestr.begin(), bytestr.end());
-        target_machine.reset();
+
+        delete target_machine;
 
         return ret;
     }
@@ -1014,11 +1034,19 @@ namespace vire
     {
         std::error_code ec;
         llvm::raw_fd_ostream os(filename, ec, llvm::sys::fs::OF_None);
+        
+        auto* target_machine=compileInternal(target_str);
 
-        compileInternal(target_str);
+        if(!target_machine)
+        {
+            return;
+        }
 
+        auto passmgr=createPassManager();
         target_machine->addPassesToEmitFile(passmgr, os, nullptr, file_type);
         passmgr.run(*Module);
         os.flush();
+
+        delete target_machine;
     }
 }

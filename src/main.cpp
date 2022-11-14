@@ -24,7 +24,7 @@ int entry()
         return 1;
     }
 
-    std::cout << "Compiled code" << std::endl;
+    std::cout << "Compiled" << std::endl;
     std::cout << api->getCompiler()->getCompiledOutput() << std::endl;
  
     return 0;

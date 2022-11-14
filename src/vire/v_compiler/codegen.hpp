@@ -60,12 +60,11 @@ class VCompiler
     llvm::BasicBlock* currentLoopBodyBB;
 
     // Compilation
-    llvm::legacy::PassManager passmgr;
-    std::unique_ptr<llvm::TargetMachine> target_machine;
     enum llvm::CodeGenFileType file_type;
     std::string output_ir;
 private:
-    void compileInternal(std::string const& target_str);
+    llvm::TargetMachine* compileInternal(std::string const& target_str);
+    llvm::legacy::PassManager createPassManager() const;
 
 public:
     VCompiler(std::unique_ptr<VAnalyzer> analyzer, std::string const& name="vire")
@@ -131,6 +130,7 @@ public:
     std::string const& getCompiledOutput();
     VAnalyzer* const getAnalyzer()  const;
     
+    void resetModule();
     void compileModule();
     void compileToFile(std::string const& filename, std::string const& target);
     std::vector<unsigned char> compileToString(std::string const& target_str="");

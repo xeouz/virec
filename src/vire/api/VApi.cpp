@@ -120,9 +120,10 @@ void VApi::setSourceCode(std::string new_code)
 {
     this->source_code=new_code;
 }
-void VApi::resetAST()
+void VApi::reset()
 {
     this->ast.reset();
+    this->compiler->resetModule();
 }
 
 #ifdef VIRE_USE_EMCC
@@ -141,7 +142,7 @@ EMSCRIPTEN_BINDINGS(VAPI)
     .function("getCompiledLLVMIR", &VApi::getCompiledLLVMIR)
     .function("showErrors", &VApi::showErrors)
     .function("setSourceCode", &VApi::setSourceCode)
-    .function("resetAST", &VApi::resetAST)
+    .function("reset", &VApi::reset)
     .class_function("loadFromText", &VApi::loadFromText)
     ;
 }

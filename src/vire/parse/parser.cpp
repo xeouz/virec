@@ -1,13 +1,15 @@
 #include "parser.hpp"
 
+#define ERR_OUT stdout
+
 namespace vire
 {
     std::unique_ptr<ExprAST> VParser::LogError(const char* str,...)
     {
         std::va_list args;
         va_start(args,str);
-        fprintf(stderr,"Parse Error: ");
-        std::vfprintf(stderr,str,args);
+        fprintf(ERR_OUT,"Parse Error: ");
+        std::vfprintf(ERR_OUT,str,args);
         va_end(args);
         return nullptr;
     }
@@ -15,8 +17,8 @@ namespace vire
     {
         std::va_list args;
         va_start(args,str);
-        fprintf(stderr,"Parse Error: ");
-        std::vfprintf(stderr,str,args);
+        fprintf(ERR_OUT,"Parse Error: ");
+        std::vfprintf(ERR_OUT,str,args);
         va_end(args);
         return nullptr;
     }
@@ -24,8 +26,8 @@ namespace vire
     {
         std::va_list args;
         va_start(args,str);
-        fprintf(stderr,"Parse Error: ");
-        std::vfprintf(stderr,str,args);
+        fprintf(ERR_OUT,"Parse Error: ");
+        std::vfprintf(ERR_OUT,str,args);
         va_end(args);
         return nullptr;
     }
@@ -33,8 +35,8 @@ namespace vire
     {
         std::va_list args;
         va_start(args,str);
-        fprintf(stderr,"Parse Error: ");
-        std::vfprintf(stderr,str,args);
+        fprintf(ERR_OUT,"Parse Error: ");
+        std::vfprintf(ERR_OUT,str,args);
         va_end(args);
         return nullptr;
     }
@@ -42,8 +44,8 @@ namespace vire
     {
         std::va_list args;
         va_start(args,str);
-        fprintf(stderr,"Parse Error: ");
-        std::vfprintf(stderr,str,args);
+        fprintf(ERR_OUT,"Parse Error: ");
+        std::vfprintf(ERR_OUT,str,args);
         va_end(args);
         return std::vector<std::unique_ptr<ExprAST>>();
     }
@@ -51,8 +53,8 @@ namespace vire
     {
         std::va_list args;
         va_start(args,str);
-        fprintf(stderr,"Parse Error: ");
-        std::vfprintf(stderr,str,args);
+        fprintf(ERR_OUT,"Parse Error: ");
+        std::vfprintf(ERR_OUT,str,args);
         va_end(args);
         return std::unordered_map<proto::IName, std::unique_ptr<ExprAST>>();
     }
@@ -955,6 +957,8 @@ namespace vire
 
     std::unique_ptr<ModuleAST> VParser::ParseSourceModule()
     {
+        lexer->reset();
+
         getNextToken(true); // load the first token
         parse_success=true;
 

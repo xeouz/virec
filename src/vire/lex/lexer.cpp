@@ -30,13 +30,18 @@ public:
     VLexer(std::string code, errors::ErrorBuilder* builder)
     : builder(builder), jit(false)
     {
+        this->code=code;
+        reset();
+    }
+
+    void reset()
+    {
         this->cur=' ';
         this->indx=-1;
         this->line=0;
 
         if(!jit)
         {
-            this->code=code;
             this->len=code.length();
         }
         else
@@ -47,7 +52,6 @@ public:
 
         this->charpos=-1;
     }
-    
     char getNext(char move_amt=0)
     {
         if(this->indx+move_amt+1==this->len)
