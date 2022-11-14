@@ -54,9 +54,3 @@ add_custom_command(
     COMMAND ${CMAKE_COMMAND} -E copy_directory
         ${CMAKE_SOURCE_DIR}/src/res $<TARGET_FILE_DIR:VIRELANG>/res
 )
-
-# -- Run the program
-add_custom_command(
-    TARGET VIRELANG POST_BUILD
-    COMMAND ./VIRELANG
-)
