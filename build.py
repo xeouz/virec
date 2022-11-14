@@ -21,6 +21,7 @@ class options:
     verbose_commands = True
     run_executable = True
     build_arg = "--debug"
+    clean_build = False
 commands = {
     "cxx-cmake": "cmake . -GNinja -Bbuild",
     "wasm-cmake": "emcmake cmake ./wasm-lib -Wno-dev -GNinja -Bbuild -DZLIB_LIBRARY=/home/dev0/Programming/emsdk/upstream/emscripten/cache/sysroot/lib/wasm32-emscripten/libz.a -DZLIB_INCLUDE_DIR=/usr/include/ -DLLVM_DIR=/home/dev0/Programming/llvm-project/build-wasm/lib/cmake/llvm",
@@ -126,6 +127,10 @@ def build_wasm(opts):
     print(f"{colors.OKGREEN}Build succeeded{colors.ENDC}")
 
 def build_entry(opts):
+    if opts.clean_build:
+        subprocess.run(["rm","-rf","./build"])
+        subprocess.run(["mkdir","build"])
+
     if "--wasm" in sys.argv:
         build_wasm(opts)
     else:
@@ -139,8 +144,11 @@ def main():
             opts.build_arg=arg
             break
 
+    if ("--clean" in sys.argv) or ("-cln" in sys.argv):
+        opts.clean_build = True
+
     if ("--compile" in sys.argv) or ("-c" in sys.argv):
-        opts.run_executable=False
+        opts.run_executable = False
     
     if ("--verbose-all" in sys.argv) or ("-va" in sys.argv):
         opts.verbose = True
