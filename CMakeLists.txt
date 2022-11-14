@@ -8,13 +8,12 @@ find_package(LLVM REQUIRED CONFIG)
 message(STATUS "Found LLVM: ${LLVM_VERSION}")
 message(STATUS "Using LLVMConfig.cmake in ${LLVM_DIR}")
 
-set(CMAKE_BUILD_TYPE Debug)
-
 # -- Compile Flags
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED true)
 
-set(CXX_COMPILE_FLAGS "-I${CMAKE_SOURCE_DIR}/src")
+get_filename_component(SRC_DIR ./ ABSOLUTE)
+set(CXX_COMPILE_FLAGS "-I${SRC_DIR}/src")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CXX_COMPILE_FLAGS}")
 
 # -- LLVM
@@ -23,7 +22,7 @@ separate_arguments(LLVM_DEFINITIONS_LIST NATIVE_COMMAND ${LLVM_DEFINITIONS})
 add_definitions(${LLVM_DEFINITIONS_LIST})
 
 # -- Add main executable
-add_executable(VIRELANG src/main.cpp)
+add_executable(VIRELANG ${SRC_DIR}/src/main.cpp)
 
 # -- LLVM Libraries
 link_libraries()
@@ -38,7 +37,7 @@ string(STRIP ${LDF} LDF)
 
 link_libraries(${LIBS} ${SYS_LIBS} ${LDF})
 
-set(VIRE_SRC_PATH "${CMAKE_CURRENT_SOURCE_DIR}/src/vire")
+set(VIRE_SRC_PATH "${SRC_DIR}/src/vire")
 
 # -- Compiling Parser, Proto, Analyzer, ErrorBuilder libs
 include(${VIRE_SRC_PATH}/api/VApi.cmake)
