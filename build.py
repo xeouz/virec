@@ -22,7 +22,7 @@ class options:
     run_executable = True
     build_arg = "--debug"
 commands = {
-    "cxx-cmake": "cmake . -DZLIB_LIBRARY=/usr/lib/x86_64-linux-gnu/libz.so -DCMAKE_PREFIX_PATH=/usr/local -GNinja -Bbuild",
+    "cxx-cmake": "cmake . -DCMAKE_PREFIX_PATH=/usr/local -GNinja -Bbuild",
     "wasm-cmake": "emcmake cmake ./wasm-lib -Wno-dev -GNinja -Bbuild -DZLIB_LIBRARY=/home/dev0/Programming/emsdk/upstream/emscripten/cache/sysroot/lib/wasm32-emscripten/libz.a -DZLIB_INCLUDE_DIR=/usr/include/ -DLLVM_DIR=/home/dev0/Programming/llvm-project/build-wasm/lib/cmake/llvm",
     "cxx-build": "ninja -Cbuild -j8",
     "wasm-build": "ninja -Cbuild -j8",
