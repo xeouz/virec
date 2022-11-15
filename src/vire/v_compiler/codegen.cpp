@@ -21,7 +21,7 @@ namespace vire
             case types::TypeNames::Array:
             {
                 auto* array=(types::Array*)type;
-
+                
                 return llvm::ArrayType::get(getLLVMType(array->getChild()), array->getLength());
             }
             
@@ -50,6 +50,7 @@ namespace vire
     }
     llvm::Value* VCompiler::getValueAsAlloca(llvm::Value* expr)
     {
+        llvm::AllocaInst* alloca=nullptr;
         // Check if expr is llvm::LoadInst
         if (llvm::LoadInst* load=llvm::dyn_cast<llvm::LoadInst>(expr))
         {
@@ -60,9 +61,17 @@ namespace vire
             // return the alloca
             return alloca;
         }
+        else if(llvm::GetElementPtrInst* gep=llvm::dyn_cast<llvm::GetElementPtrInst>(expr))
+        {
+            auto* alloca=namedValues[gep->getPointerOperand()->getName()];
+
+            gep->eraseFromParent();
+
+            return alloca;
+        }
         else
         {
-            return expr;
+            return alloca;
         }
     }
     llvm::Value* VCompiler::createBinaryOperation(llvm::Value* lhs, llvm::Value* rhs, VToken* const op, bool expr_is_fp)
@@ -312,9 +321,20 @@ namespace vire
         }
     }
     llvm::Value* VCompiler::compileVariableExpr(VariableExprAST* const expr)
-    {
+    { 
         llvm::AllocaInst* val=namedValues[expr->getName()];
         llvm::Type* ty=val->getAllocatedType();
+
+        if(ty->isArrayTy())
+        {
+            llvm::ArrayRef<llvm::Value*> indices({
+                llvm::ConstantInt::get(CTX, llvm::APInt(64, 0, false)),
+                llvm::ConstantInt::get(CTX, llvm::APInt(64, 0, false)),
+            });
+            auto* gep=Builder.CreateInBoundsGEP(ty, val, indices, "lgep");
+            return gep;
+        }
+
         return Builder.CreateLoad(ty, val, expr->getName());
     }
     llvm::Value* VCompiler::compileVariableDef(VariableDefAST* const def)
@@ -369,7 +389,7 @@ namespace vire
             auto size=elems*elem_size;
 
             // Create the memcpy call
-            auto* call_inst=Builder.CreateMemCpy(ptr, align, val, align, llvm::ConstantInt::get(CTX, llvm::APInt(32, size, true)));
+            auto* call_inst=Builder.CreateMemCpy(ptr, align, val, align, llvm::ConstantInt::get(CTX, llvm::APInt(64, size, true)));
         }
 
         namedValues[def->getName()]=alloca;
@@ -428,32 +448,16 @@ namespace vire
     }
     llvm::Value* VCompiler::compileVariableArrayAccess(VariableArrayAccessAST* const access)
     {
-        /* Single index access, kept for reference */
-        /*
-            auto* var=namedValues[access->getName()];
-            auto* indx_expr=(IntExprAST*)access->getIndex();
-            int indx=indx_expr->getValue();
-
-            // get the type of the array element
-            auto* ty=var->getAllocatedType();
-
-            llvm::Value* indx_val=llvm::ConstantInt::get(CTX, llvm::APInt(32, indx, false));
-
-            llvm::Value* indices[2];
-            indices[0]=llvm::ConstantInt::get(CTX, llvm::APInt(32, 0, false));  // index 0 is the array index
-            indices[1]=indx_val;                                               // index 1 is the element index
-            llvm::Value* indx_ptr=Builder.CreateInBoundsGEP(ty, var, llvm::ArrayRef<llvm::Value*>(indices, 2));
-            return Builder.CreateLoad(ty->getArrayElementType(), indx_ptr);
-        */
-
         /* Multi index access */
         auto* expr=compileExpr(access->getExpr());
-        auto* ty=expr->getType();
-
+        auto* ty=getLLVMType(access->getType());
+        
         expr=getValueAsAlloca(expr);
+        expr=Builder.CreateLoad(expr->getType(), expr, "agepload");
 
         for(auto const& elem : access->getIndices())
         {
+            ty=ty->getArrayElementType();
             // Implemented only for int expressions, WIP
             if(elem->getType()->getType() != types::TypeNames::Int)
             {
@@ -461,9 +465,7 @@ namespace vire
             }
             
             auto* indx=compileExpr(elem.get());
-            expr=Builder.CreateInBoundsGEP(ty, expr, {llvm::ConstantInt::get(CTX, llvm::APInt(32, 0, false)), indx});
-            
-            ty=ty->getArrayElementType();
+            expr=Builder.CreateInBoundsGEP(ty, expr, {indx}, "agep");
         }
 
         return Builder.CreateLoad(ty, expr);
@@ -690,7 +692,14 @@ namespace vire
 
         for(size_t i=0; i<proto_args.size(); i++)
         {
-            args[i]=getLLVMType(proto_args[i]->getType());
+            auto* llvm_type=getLLVMType(proto_args[i]->getType());
+
+            if(llvm_type->isArrayTy())
+            {
+                llvm_type=llvm::PointerType::get(llvm_type, 0);
+            }
+
+            args[i]=llvm_type;
         }
 
         llvm::FunctionType* func_type=llvm::FunctionType::get(func_ret_type, args, false);
@@ -699,7 +708,7 @@ namespace vire
         unsigned idx=0;
         for(auto& arg: func->args())
         {
-            arg.setName(proto_args[idx]->getName());
+            arg.setName("a"+proto_args[idx]->getName());
         }
 
         func->addFnAttr(llvm::Attribute::get(CTX, "wasm-export-name", func->getName()));
@@ -726,15 +735,17 @@ namespace vire
         currentFunctionEndBB=llvm::BasicBlock::Create(CTX, "end", function);
         Builder.SetInsertPoint(bb);
 
-        namedValues.clear();
-        for(auto& arg: function->args())
-        {
-            auto* alloca=Builder.CreateAlloca(arg.getType(), nullptr, arg.getName());
-            Builder.CreateStore(&arg, alloca);
-            namedValues[arg.getName()]=alloca;
-        }
-
         auto* func=(FunctionAST*)analyzer->getFunc(name);
+        auto& func_args=func->getArgs();
+
+        namedValues.clear();
+        for(int i=0; i<function->arg_size(); ++i)
+        {
+            auto* arg=function->getArg(i);
+            auto* alloca=Builder.CreateAlloca(arg->getType(), nullptr, func_args[i]->getName());
+            Builder.CreateStore(arg, alloca);
+            namedValues[func_args[i]->getName()]=alloca;
+        }
 
         // Create return value
         llvm::Type* ret_type=getLLVMType(func->getReturnType());

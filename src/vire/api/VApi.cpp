@@ -94,7 +94,6 @@ bool VApi::compileSourceModule(std::string output_file_path, bool write_to_file)
     llvm::raw_string_ostream os(errs);
     bool failure=llvm::verifyModule(*compiler->getModule(), &os);
     os.flush();
-    std::cout << errs << std::endl;
     
     if(!failure && write_to_file)
     {
@@ -116,6 +115,7 @@ std::string const& VApi::getCompiledLLVMIR()
     return getCompiler()->getCompiledOutput();
 }
 
+// DEPRECATED
 void VApi::setSourceCode(std::string new_code)
 {
     this->source_code=new_code;

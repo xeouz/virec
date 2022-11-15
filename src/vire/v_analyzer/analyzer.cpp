@@ -288,12 +288,26 @@ namespace vire
     }
     std::unique_ptr<ExprAST> VAnalyzer::tryCreateImplicitCast(types::Base* target, types::Base* base, std::unique_ptr<ExprAST> expr)
     {
-        if(!types::isUserDefined(target) && !types::isUserDefined(base))
+        bool types_are_user_defined=(types::isUserDefined(target) || types::isUserDefined(base));
+        bool types_are_arrays=(target->getType()==types::TypeNames::Array || base->getType()==types::TypeNames::Array);
+        if(!types_are_user_defined && !types_are_arrays)
         {
             auto src_type=types::copyType(base);
             auto dst_type=types::copyType(target);
             auto new_cast_value=std::make_unique<CastExprAST>(std::move(expr), std::move(dst_type), true);
             new_cast_value->setSourceType(std::move(src_type));
+            
+            if(new_cast_value->getSourceType()->getSize() > new_cast_value->getDestType()->getSize())
+            {
+                std::cout << "Warning: Analysis: Truncation, possible data loss while converting from "
+                << *new_cast_value->getSourceType() << " to " << *new_cast_value->getDestType() << std::endl;
+            }
+            else if(types::isTypeFloatingPoint(new_cast_value->getSourceType()) xor types::isTypeFloatingPoint(new_cast_value->getDestType()))
+            {
+                std::cout << "Warning: Analysis: Decimal (Floating point) to Integer, possible data while converting from "
+                << *new_cast_value->getSourceType() << " to " << *new_cast_value->getDestType() << std::endl;
+            }
+
             return std::move(new_cast_value);
         }
         else

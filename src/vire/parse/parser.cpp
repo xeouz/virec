@@ -92,6 +92,26 @@ namespace vire
         return std::make_unique<VToken>(current_token->value, current_token->type, current_token->line, current_token->charpos);
     }
 
+    std::unique_ptr<types::Base> VParser::ParseTypeIdentifier()
+    {
+        // int[3][3]
+        auto main_type_tok=copyCurrentToken();
+        auto main_type=types::construct(main_type_tok->value);
+        getNextToken(tok_id);
+
+        while(current_token->type==tok_lbrack)
+        {
+            getNextToken();
+            auto arr_num=std::stoi(current_token->value);
+            getNextToken(tok_int);
+
+            auto main_type_child=std::move(main_type);
+            main_type=std::make_unique<types::Array>(std::move(main_type_child), arr_num);
+            getNextToken(tok_rbrack);
+        }
+
+        return std::move(main_type);
+    }
     std::vector<std::unique_ptr<ExprAST>> VParser::ParseBlock()
     {
         getNextToken(tok_lbrace); // consume '{'
@@ -661,8 +681,7 @@ namespace vire
                 getNextToken();
             }
 
-            auto type=types::construct(current_token->value);
-            getNextToken(); // consume typename
+            auto type=ParseTypeIdentifier();
             auto var=std::make_unique<VariableDefAST>(std::move(var_name),std::move(type),nullptr,isconst,!isconst);
             args.push_back(std::move(var));
 

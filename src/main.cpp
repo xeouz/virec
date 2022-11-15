@@ -25,8 +25,9 @@ int entry()
     }
 
     std::cout << "Compiled" << std::endl;
-    std::cout << api->getCompiler()->getCompiledOutput() << std::endl;
- 
+    std::cout << api->getCompiledLLVMIR() << std::endl;
+    std::cout << "---" << std::endl;
+
     return 0;
 }
 

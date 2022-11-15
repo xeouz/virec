@@ -51,6 +51,7 @@ public:
     void getNextToken(int toktype);
     std::unique_ptr<VToken> copyCurrentToken();
 
+    std::unique_ptr<types::Base> ParseTypeIdentifier();
     std::vector<std::unique_ptr<ExprAST>> ParseBlock();
 
     std::unique_ptr<ExprAST> ParsePrimary();

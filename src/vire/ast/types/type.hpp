@@ -356,7 +356,7 @@ inline std::unique_ptr<Base> copyType(Base* const type)
 inline void printAsArray(Base* const type)
 {
     auto* a= static_cast<Array*>(type);
-    std::cout << a->getChild() << "[" << a->getLength() << "]";
+    std::cout << *a->getChild() << "[" << a->getLength() << "]" << std::endl;
 }
 
 inline Base* getArrayRootType(Base* const arr)
