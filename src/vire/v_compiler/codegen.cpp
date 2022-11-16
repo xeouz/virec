@@ -327,7 +327,7 @@ namespace vire
 
         if(ty->isArrayTy())
         {
-            llvm::ArrayRef<llvm::Value*> indices({
+            std::vector<llvm::Value*> indices({
                 llvm::ConstantInt::get(CTX, llvm::APInt(64, 0, false)),
                 llvm::ConstantInt::get(CTX, llvm::APInt(64, 0, false)),
             });
@@ -749,6 +749,7 @@ namespace vire
 
         // Create return value
         llvm::Type* ret_type=getLLVMType(func->getReturnType());
+        std::cout << "FUNC: " << *func->getReturnType() << std::endl;
         if(func->getReturnType()->getType()!=types::TypeNames::Void)
         {
             auto* ret_val=Builder.CreateAlloca(ret_type, nullptr, "retval");

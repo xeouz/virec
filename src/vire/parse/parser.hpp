@@ -20,7 +20,7 @@ class VParser
     bool parse_success;
 public:
     std::unique_ptr<VToken> current_token;
-    std::string current_func_name;
+    const proto::IName* current_func_name;
 
     VParser(VLexer* lexer) 
     : lexer(lexer), current_token() {

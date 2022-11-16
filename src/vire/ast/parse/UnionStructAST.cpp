@@ -31,6 +31,10 @@ public:
     {
         return name.get();
     }
+    virtual proto::IName const& getIName() const
+    {
+        return name;
+    }
     virtual void setName(std::string new_name)
     {
         name.setName(new_name);
@@ -52,12 +56,12 @@ public:
 
         return values;
     }
-    virtual int const getMemberIndex(std::string const& name)
+    virtual int const getMemberIndex(proto::IName const& name)
     {
         return members_indx.at(name);
     }
 
-    virtual bool isMember(std::string const& name)
+    virtual bool isMember(proto::IName const& name)
     {
         if(members.count(name)>0)
         {
@@ -66,7 +70,7 @@ public:
 
         return false;
     }
-    virtual ExprAST* getMember(std::string const& name)
+    virtual ExprAST* getMember(proto::IName const& name)
     {
         return members.at(name).get();
     }

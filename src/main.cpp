@@ -17,6 +17,7 @@ int entry()
     }
 
     s=api->compileSourceModule("./test.o", true);
+        std::cout << api->getCompiledLLVMIR() << std::endl;
     api->getErrorBuilder()->showErrors();
     if(!s)
     {
@@ -25,7 +26,7 @@ int entry()
     }
 
     std::cout << "Compiled" << std::endl;
-    std::cout << api->getCompiledLLVMIR() << std::endl;
+
     std::cout << "---" << std::endl;
 
     return 0;

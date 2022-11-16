@@ -139,7 +139,9 @@ namespace vire
             }
 
             if(stm->asttype==ast_return) 
-            { ((std::unique_ptr<ReturnExprAST> const&)stm)->setName(current_func_name); }
+            {
+                ((std::unique_ptr<ReturnExprAST> const&)stm)->setName(current_func_name->name); 
+            }
 
             if(stm->asttype!=ast_for 
             && stm->asttype!=ast_while 
@@ -694,19 +696,20 @@ namespace vire
 
         getNextToken(tok_rparen);
 
-        std::unique_ptr<VToken> return_type;
-        if(current_token->type==tok_rarrow || current_token->type==tok_returns)
+        std::unique_ptr<types::Base> return_type;
+        if(current_token->type==tok_colon || current_token->type==tok_returns)
         {
             getNextToken();
-            return_type=copyCurrentToken();
-            getNextToken(tok_id);
+            return_type=ParseTypeIdentifier();
         }
         else
         {
-            return_type=copyCurrentToken();
+            return_type=types::construct(types::TypeNames::Void);
         }
         
-        return std::make_unique<PrototypeAST>(std::move(fn_name),std::move(args),std::move(return_type));
+        std::cout << *return_type << std::endl;
+
+        return std::make_unique<PrototypeAST>(std::move(fn_name), std::move(args), std::move(return_type));
     }
 
     std::unique_ptr<PrototypeAST> VParser::ParseProto()
@@ -727,7 +730,7 @@ namespace vire
         auto proto=ParsePrototype();
         if(!proto)  return nullptr;
 
-        current_func_name=proto->getName();
+        current_func_name=&proto->getIName();
     
         auto stms=ParseBlock();
 
@@ -894,12 +897,12 @@ namespace vire
             if(current_token->type==tok_union)
             {
                 member=ParseUnion();
-                member_name=((UnionExprAST*)member.get())->getName();
+                member_name=((UnionExprAST*)member.get())->getIName().name;
             }
             else if(current_token->type==tok_struct)
             {
                 member=ParseStruct();
-                member_name=((StructExprAST*)member.get())->getName();
+                member_name=((StructExprAST*)member.get())->getIName().name;
             }
             else if(current_token->type==tok_id)
             {
@@ -910,6 +913,7 @@ namespace vire
                 getNextToken(tok_id);
                 getNextToken(tok_semicol);
 
+                member_name=name->value;
                 member=std::make_unique<VariableDefAST>(std::move(name), types::construct(type->value), nullptr);
             }
             else

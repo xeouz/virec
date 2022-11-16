@@ -24,13 +24,14 @@ class options:
     clean_build = False
     keep_cache = True
 commands = {
-    "cxx-cmake": "cmake . -GNinja -Bbuild",
+    "cxx-cmake": "cmake . -GNinja -Bbuild ",
     "wasm-cmake": "emcmake cmake ./wasm-lib -Wno-dev -GNinja -Bbuild -DZLIB_LIBRARY=/home/dev0/Programming/emsdk/upstream/emscripten/cache/sysroot/lib/wasm32-emscripten/libz.a -DZLIB_INCLUDE_DIR=/usr/include/ -DLLVM_DIR=/home/dev0/Programming/llvm-project/build-wasm/lib/cmake/llvm",
     "cxx-build": "ninja -Cbuild -j8",
     "wasm-build": "ninja -Cbuild -j8",
     "wasm-copy-wasm": "cp ./build/VIRELANG.wasm ./wasm-build/VIRELANG.wasm",
     "wasm-copy-js": "cp ./build/VIRELANG.js ./wasm-build/VIRELANG.js",
-    "cxx-run": "valgrind ./VIRELANG",
+    "wasm-zip-wasm": "gzip -k --best ./VIRELANG.wasm",
+    "cxx-run": "./VIRELANG",
     "cxx-run-gen": "clang res/test.cpp test.o -o test",
     "cxx-run-gen-exec": "./test",
 }
@@ -136,6 +137,11 @@ def build_wasm(opts):
         run_command(commands["wasm-copy-wasm"].split(), run_verbose=opts.verbose)
         run_command(commands["wasm-copy-js"].split(), run_verbose=opts.verbose)
     print(f"{colors.OKGREEN}Copied generated files to wasm-build directory{colors.ENDC}")
+
+    ##########
+    with Halo(text="Compressing generated WASM file to .gz", spinner="arc", placement="right"):
+        run_command(commands["wasm-zip-wasm"].split(), run_verbose=opts.verbose)
+    print(f"{colors.OKGREEN}Compressed generated WASM file to .gz{colors.ENDC}")
 
 def build_entry(opts):
     if opts.clean_build:

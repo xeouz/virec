@@ -136,7 +136,7 @@ namespace vire
             {
                 auto* st=(StructExprAST*)expr.get();
 
-                if(st->getName()==name)
+                if(st->getIName().name==name)
                 {
                     return st;
                 }
@@ -956,10 +956,11 @@ namespace vire
 
         if(!is_valid)   return is_valid;
 
-        if(!types::isTypeinMap(struct_->getName()))
+        std::string st_name=struct_->getIName().name;
+        if(!types::isTypeinMap(st_name))
         {
-            types::addTypeToMap(struct_->getName());
-            types::addTypeSizeToMap(struct_->getName(), size);
+            types::addTypeToMap(st_name);
+            types::addTypeSizeToMap(st_name, size);
         }
         else
         {
@@ -1009,9 +1010,9 @@ namespace vire
 
             auto* casted_pos_stchild=(StructExprAST*)possible_struct_child;
 
-            if(!casted_pos_stchild->isMember(child->getName()))
+            if(!casted_pos_stchild->isMember(child->getIName()))
             {
-                std::cout << "No member as `" << child->getName() << "` in struct `" << casted_pos_stchild->getName() << "`." << std::endl;
+                std::cout << "No member as `" << child->getIName().name << "` in struct `" << casted_pos_stchild->getName() << "`." << std::endl;
                 is_valid=false;
                 break;
             }

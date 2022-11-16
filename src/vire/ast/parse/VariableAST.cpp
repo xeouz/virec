@@ -92,6 +92,7 @@ public:
     }
 
     std::string const& getName() const {return name.get();}
+    proto::IName const& getIName() const {return name;}
     const bool& isConst() const {return is_const;}
     const bool& isLet() const {return is_let;}
 

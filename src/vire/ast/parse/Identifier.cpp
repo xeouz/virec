@@ -21,6 +21,10 @@ public:
     {
         return name.get();
     }
+    virtual proto::IName const& getIName() const
+    {
+        return name;
+    }
     virtual std::unique_ptr<VToken> moveToken()
     {
         return std::move(token);
