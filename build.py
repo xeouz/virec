@@ -30,7 +30,7 @@ commands = {
     "wasm-build": "ninja -Cbuild -j8",
     "wasm-copy-wasm": "cp ./build/VIRELANG.wasm ./wasm-build/VIRELANG.wasm",
     "wasm-copy-js": "cp ./build/VIRELANG.js ./wasm-build/VIRELANG.js",
-    "wasm-zip-wasm": "gzip -k --best ./VIRELANG.wasm",
+    "wasm-zip-wasm": "gzip -k --best -f ./VIRELANG.wasm",
     "cxx-run": "./VIRELANG",
     "cxx-run-gen": "clang res/test.cpp test.o -o test",
     "cxx-run-gen-exec": "./test",
@@ -140,7 +140,7 @@ def build_wasm(opts):
 
     ##########
     with Halo(text="Compressing generated WASM file to .gz", spinner="arc", placement="right"):
-        run_command(commands["wasm-zip-wasm"].split(), run_verbose=opts.verbose)
+        run_command(commands["wasm-zip-wasm"].split(), run_verbose=opts.verbose, cwd="./wasm-build")
     print(f"{colors.OKGREEN}Compressed generated WASM file to .gz{colors.ENDC}")
 
 def build_entry(opts):

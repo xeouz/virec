@@ -1023,9 +1023,16 @@ namespace vire
             }
             else
             {
-                auto statement=ParsePrimary();
-                PreExecutionStatements.push_back(std::move(statement));
-                getNextToken(tok_semicol);
+                auto stm=ParsePrimary();
+
+                if(stm->asttype!=ast_for 
+                && stm->asttype!=ast_while 
+                && stm->asttype!=ast_unsafe
+                && stm->asttype!=ast_if
+                && stm->asttype!=ast_ifelse)
+                    getNextToken(tok_semicol);
+                
+                PreExecutionStatements.push_back(std::move(stm));
             }
         }
         

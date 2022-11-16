@@ -10,4 +10,7 @@ func fib(n: int) returns int
     return fib(n-1) + fib(n-2);
 }
 
-puti(fib(10));
+for(let i=1; i<6; i++)
+{
+    puti(fib(i));
+}
