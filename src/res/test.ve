@@ -1,14 +1,13 @@
 extern puti(n: int);
 
-func lol(n: int) returns int
+func fib(n: int) returns int
 {
-    if(n==0)
+    if(n<2)
     { 
-        return 1;
+        return n;
     }
     
-    return 2;
+    return fib(n-1) + fib(n-2);
 }
 
-lol(1);
-puti(42);
+puti(fib(10));

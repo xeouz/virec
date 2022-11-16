@@ -749,7 +749,6 @@ namespace vire
 
         // Create return value
         llvm::Type* ret_type=getLLVMType(func->getReturnType());
-        std::cout << "FUNC: " << *func->getReturnType() << std::endl;
         if(func->getReturnType()->getType()!=types::TypeNames::Void)
         {
             auto* ret_val=Builder.CreateAlloca(ret_type, nullptr, "retval");

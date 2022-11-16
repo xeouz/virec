@@ -706,8 +706,6 @@ namespace vire
         {
             return_type=types::construct(types::TypeNames::Void);
         }
-        
-        std::cout << *return_type << std::endl;
 
         return std::make_unique<PrototypeAST>(std::move(fn_name), std::move(args), std::move(return_type));
     }
