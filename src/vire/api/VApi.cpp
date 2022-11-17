@@ -94,6 +94,11 @@ bool VApi::compileSourceModule(std::string output_file_path, bool write_to_file)
     llvm::raw_string_ostream os(errs);
     bool failure=llvm::verifyModule(*compiler->getModule(), &os);
     os.flush();
+
+    if(errs.size())
+    {
+        std::cout << errs << std::endl;
+    }
     
     if(!failure && write_to_file)
     {

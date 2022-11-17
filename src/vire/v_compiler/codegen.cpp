@@ -327,11 +327,10 @@ namespace vire
 
         if(ty->isArrayTy())
         {
-            std::vector<llvm::Value*> indices({
-                llvm::ConstantInt::get(CTX, llvm::APInt(64, 0, false)),
-                llvm::ConstantInt::get(CTX, llvm::APInt(64, 0, false)),
-            });
-            auto* gep=Builder.CreateInBoundsGEP(ty, val, indices, "lgep");
+            auto* gep=Builder.CreateInBoundsGEP(ty, val, 
+            {llvm::ConstantInt::get(CTX, llvm::APInt(1, 0, false)),
+            llvm::ConstantInt::get(CTX, llvm::APInt(1, 0, false)),}
+            , "lgep");
             return gep;
         }
 
@@ -449,15 +448,16 @@ namespace vire
     llvm::Value* VCompiler::compileVariableArrayAccess(VariableArrayAccessAST* const access)
     {
         /* Multi index access */
-        auto* expr=compileExpr(access->getExpr());
+        auto* expr=getValueAsAlloca(compileExpr(access->getExpr()));
         auto* ty=getLLVMType(access->getType());
-        
-        expr=getValueAsAlloca(expr);
-        expr=Builder.CreateLoad(expr->getType(), expr, "agepload");
+
+        if(((llvm::AllocaInst*)expr)->getAllocatedType()->isOpaquePointerTy())
+        {
+            expr=Builder.CreateLoad(expr->getType(), expr);
+        }
 
         for(auto const& elem : access->getIndices())
         {
-            ty=ty->getArrayElementType();
             // Implemented only for int expressions, WIP
             if(elem->getType()->getType() != types::TypeNames::Int)
             {
@@ -465,7 +465,8 @@ namespace vire
             }
             
             auto* indx=compileExpr(elem.get());
-            expr=Builder.CreateInBoundsGEP(ty, expr, {indx}, "agep");
+            expr=Builder.CreateInBoundsGEP(ty, expr, {llvm::ConstantInt::get(CTX, llvm::APInt(64, 0, false)), indx}, "agep");
+            ty=ty->getArrayElementType();
         }
 
         return Builder.CreateLoad(ty, expr);
