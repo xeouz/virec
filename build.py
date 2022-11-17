@@ -125,7 +125,7 @@ def build_wasm(opts):
 
     cmd_text = "build command"
     if(opts.verbose_commands):
-        cmd_text += ": \"" + commands["wasm-build"] + " && " + "\""
+        cmd_text += ": \"" + commands["wasm-build"]
 
     with Halo(text=f"Executing {cmd_text}", spinner="arc", placement="right"):
         run_command(exec_command, run_verbose=opts.verbose)
