@@ -1,9 +1,10 @@
 extern puti(n: int);
 
-func test(n: int[3])
+struct abc
 {
-    puti(n[2]);
+    int a;
+    int b;
 }
 
-let a=[1,2,3];
-test(a);
+let a:abc;
+puti(a.a);

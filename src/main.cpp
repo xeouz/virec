@@ -5,7 +5,7 @@
 
 int entry()
 {
-    auto api=vire::VApi::loadFromFile("res/test.ve", "sys");
+    auto api=vire::VApi::loadFromFile("res/test.ve", "sys"); 
 
     api->parseSourceModule();
 

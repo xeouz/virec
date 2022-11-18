@@ -642,7 +642,16 @@ namespace vire
         bool is_valid=true;
         auto name=call->getName();
 
-        if(!isFuncDefined(name) && current_func->getName() != name)
+        bool is_recursive_call=false;
+        if(current_func)
+        {
+            if(current_func->getName()==name)
+            {
+                is_recursive_call=true;
+            }
+        }
+
+        if(!isFuncDefined(name) && !is_recursive_call)
         {
             std::cout << "Function `" << name << "` is not defined" << std::endl;
             // Function is not defined

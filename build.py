@@ -2,6 +2,7 @@
 
 import sys
 import subprocess
+from io import TextIOBase
 
 from halo import Halo
 
@@ -31,7 +32,7 @@ commands = {
     "wasm-copy-wasm": "cp ./build/VIRELANG.wasm ./wasm-build/VIRELANG.wasm",
     "wasm-copy-js": "cp ./build/VIRELANG.js ./wasm-build/VIRELANG.js",
     "wasm-zip-wasm": "gzip -k --best -f ./VIRELANG.wasm",
-    "cxx-run": "./VIRELANG",
+    "cxx-run": "valgrind ./VIRELANG",
     "cxx-run-gen": "clang res/test.cpp test.o -o test",
     "cxx-run-gen-exec": "./test",
 }
@@ -51,7 +52,6 @@ def run_command(command_list, run_verbose=False, cwd="./"):
         return subprocess.run(command_list, cwd=cwd)
 
     return subprocess.run(command_list, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, cwd=cwd)
-
 def clean_cmake_cache(opts):
     if opts.keep_cache and not opts.clean_build:
         return;
@@ -74,8 +74,9 @@ def build_cxx(opts):
     cmd_text = "CMake command"
     if(opts.verbose_commands):
         cmd_text += ": \"" + commands["cxx-cmake"] + "\""
-
-    with Halo(text=f"Executing {cmd_text}", spinner="arc", placement="right"):
+    
+    stre=TextIOBase()
+    with Halo(text=f"Executing {cmd_text}\n", spinner="arc", placement="right") as spinner:
         run_command(exec_command, run_verbose=opts.verbose)
     print(f"{colors.OKGREEN}Executed {cmd_text}{colors.ENDC}")
 
@@ -86,7 +87,7 @@ def build_cxx(opts):
     if(opts.verbose_commands):
         cmd_text += ": \"" + commands["cxx-build"] + "\""
 
-    with Halo(text=f"Executing {cmd_text}", spinner="arc", placement="right"):
+    with Halo(text=f"Executing {cmd_text}\n", spinner="arc", placement="right"):
         run_command(exec_command, run_verbose=opts.verbose)
     print(f"{colors.OKGREEN}Executed {cmd_text}{colors.ENDC}")
     print(f"{colors.OKGREEN}Build succeeded{colors.ENDC}")
@@ -101,7 +102,6 @@ def build_cxx(opts):
     if opts.run_argument == "gen":
         run_command(commands["cxx-run-gen"].split(), run_verbose=False, cwd="./build")
         run_command(commands["cxx-run-gen-exec"].split(), run_verbose=True, cwd="./build")
-
 def build_wasm(opts):
     ##########
     print(f"{colors.OKBLUE}{colors.BOLD}Building to native target...{colors.ENDC}\n---")
@@ -116,7 +116,7 @@ def build_wasm(opts):
     if(opts.verbose_commands):
         cmd_text += ": \"" + commands["wasm-cmake"] + "\""
 
-    with Halo(text=f"Executing {cmd_text}", spinner="arc", placement="right"):
+    with Halo(text=f"Executing {cmd_text}\n", spinner="arc", placement="right"):
         run_command(exec_command, run_verbose=opts.verbose)
     print(f"{colors.OKGREEN}Executed {cmd_text}{colors.ENDC}")
 
@@ -127,22 +127,21 @@ def build_wasm(opts):
     if(opts.verbose_commands):
         cmd_text += ": \"" + commands["wasm-build"]
 
-    with Halo(text=f"Executing {cmd_text}", spinner="arc", placement="right"):
+    with Halo(text=f"Executing {cmd_text}\n", spinner="arc", placement="right"):
         run_command(exec_command, run_verbose=opts.verbose)
     print(f"{colors.OKGREEN}Executed {cmd_text}{colors.ENDC}")
     print(f"{colors.OKGREEN}Build succeeded{colors.ENDC}")
 
     ##########
-    with Halo(text="Copying generated files to wasm-build directory", spinner="arc", placement="right"):
+    with Halo(text="Copying generated files to wasm-build directory\n", spinner="arc", placement="right"):
         run_command(commands["wasm-copy-wasm"].split(), run_verbose=opts.verbose)
         run_command(commands["wasm-copy-js"].split(), run_verbose=opts.verbose)
     print(f"{colors.OKGREEN}Copied generated files to wasm-build directory{colors.ENDC}")
 
     ##########
-    with Halo(text="Compressing generated WASM file to .gz", spinner="arc", placement="right"):
+    with Halo(text="Compressing generated WASM file to .gz\n", spinner="arc", placement="right"):
         run_command(commands["wasm-zip-wasm"].split(), run_verbose=opts.verbose, cwd="./wasm-build")
     print(f"{colors.OKGREEN}Compressed generated WASM file to .gz{colors.ENDC}")
-
 def build_entry(opts):
     if opts.clean_build:
         subprocess.run(["rm","-rf","./build"])
