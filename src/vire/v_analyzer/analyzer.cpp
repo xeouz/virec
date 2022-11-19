@@ -292,18 +292,22 @@ namespace vire
         {
             auto src_type=types::copyType(base);
             auto dst_type=types::copyType(target);
+
             auto new_cast_value=std::make_unique<CastExprAST>(std::move(expr), std::move(dst_type), true);
             new_cast_value->setSourceType(std::move(src_type));
+
+            base=new_cast_value->getSourceType();
+            target=new_cast_value->getDestType();
             
-            if(new_cast_value->getSourceType()->getSize() > new_cast_value->getDestType()->getSize())
+            if(base->getSize() > target->getSize())
             {
                 std::cout << "Warning: Analysis: Truncation, possible data loss while converting from "
-                << *new_cast_value->getSourceType() << " to " << *new_cast_value->getDestType() << std::endl;
+                << *base << " to " << *target << std::endl;
             }
-            else if(types::isTypeFloatingPoint(new_cast_value->getSourceType()) xor types::isTypeFloatingPoint(new_cast_value->getDestType()))
+            else if(types::isTypeFloatingPoint(base) && !types::isTypeFloatingPoint(target))
             {
-                std::cout << "Warning: Analysis: Decimal (Floating point) to Integer, possible data while converting from "
-                << *new_cast_value->getSourceType() << " to " << *new_cast_value->getDestType() << std::endl;
+                std::cout << "Warning: Analysis: Decimal (Floating point) to Integer, possible data loss while converting from "
+                << *base << " to " << *target << std::endl;
             }
 
             return std::move(new_cast_value);
@@ -751,20 +755,54 @@ namespace vire
         if(!verifyExpr(left))
         {
             // Left is not valid
-            is_valid=false;;
+            is_valid=false;
         }
         if(!verifyExpr(right))
         {
             // Right is not valid
             is_valid=false;
         }
-        
+
         if(is_valid)
         {
-            auto* type=getType(binop);
-            binop->setType(types::copyType(type));
+            auto* left_type=getType(left);
+            auto* right_type=getType(right);
+
+            left->setType(types::copyType(left_type));
+            right->setType(types::copyType(right_type));
+
+            left_type=left->getType();
+            right_type=right->getType();
+            
+            if(!types::isSame(left_type, right_type))
+            {
+                bool left_is_fp=types::isTypeFloatingPoint(left_type);
+                bool right_is_fp=types::isTypeFloatingPoint(right_type);
+
+                if(left_is_fp xor right_is_fp)
+                {
+                    if(left_is_fp)
+                    {
+                        binop->setRHS(tryCreateImplicitCast(left_type, right_type, binop->moveRHS()));
+                    }
+                    else
+                    {
+                        binop->setLHS(tryCreateImplicitCast(right_type, left_type, binop->moveLHS()));
+                    }
+                }
+                else if(left_type->getSize() > right_type->getSize())
+                {
+                    binop->setRHS(tryCreateImplicitCast(left_type, right_type, binop->moveRHS()));
+                }
+                else
+                {
+                    binop->setLHS(tryCreateImplicitCast(right_type, left_type, binop->moveLHS()));
+                }
+            }
+
+            binop->setType(types::copyType(binop->getLHS()->getType()));
         }
-        
+
         return is_valid;
     }
     bool VAnalyzer::verifyUnop(UnaryExprAST* const unop)

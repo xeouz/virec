@@ -1,15 +1,8 @@
 extern puti(n: int);
 
-func test(a:int)
-{
-    if(a==10)
-    {
-        puti(a);
-    }
-}
+let a=100;
 
-func main()
+if(a>=111.0f)
 {
-    let b=10;
-    test(b);
+    puti(1000);
 }

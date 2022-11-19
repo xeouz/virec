@@ -49,7 +49,7 @@ inline std::unordered_map<std::string, int> custom_type_sizes=
 { };
 
 // Prototypes
-inline std::string getMapFromType(TypeNames type);
+inline std::string getMapFromType(TypeNames const& type);
 inline TypeNames getTypeFromMap(std::string typestr);
 
 // Classes
@@ -70,7 +70,7 @@ public:
     }
 
     virtual ~Base()=default;
-    virtual TypeNames getType() const { return type; }
+    virtual TypeNames const& getType() const { return type; }
     virtual int8_t getSize() const { return size; }
 
     virtual unsigned int getDepth() const { return 0; }
@@ -94,7 +94,7 @@ inline bool isSame(Base* const a, Base* const b);
 inline bool isSame(Base* const a, const char*  b);
 
 inline std::unique_ptr<Base> construct(std::string typestr, bool create_custom=false);
-inline std::unique_ptr<Base> construct(TypeNames type);
+inline std::unique_ptr<Base> construct(TypeNames const& type);
 inline Base* getArrayRootType(Base* const type);
 
 inline std::ostream& operator<<(std::ostream& os, Base const& type)
@@ -386,7 +386,7 @@ inline TypeNames getTypeFromMap(std::string typestr)
     }
 }
 
-inline std::string getMapFromType(TypeNames type)
+inline std::string getMapFromType(TypeNames const& type)
 {
     if(type==TypeNames::Array)
     {
@@ -433,7 +433,7 @@ inline std::unique_ptr<Base> construct(std::string typestr, bool create_custom)
             return std::make_unique<Void>();
     }
 }
-inline std::unique_ptr<Base> construct(TypeNames type)
+inline std::unique_ptr<Base> construct(TypeNames const& type)
 {
     switch(type)
     {

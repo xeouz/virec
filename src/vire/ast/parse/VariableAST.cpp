@@ -125,11 +125,11 @@ public:
 class CastExprAST : public ExprAST
 {
     std::unique_ptr<ExprAST> expr;
-    std::unique_ptr<types::Base> source_type;
+    std::unique_ptr<types::Base> dest_type;
     bool is_non_user_defined;
 public:
     CastExprAST(std::unique_ptr<ExprAST> expr, std::unique_ptr<types::Base> type, bool is_non_user_defined=false)
-    : expr(std::move(expr)), source_type(std::move(type)), ExprAST("void",ast_cast), is_non_user_defined(is_non_user_defined)
+    : expr(std::move(expr)), dest_type(std::move(type)), ExprAST("void",ast_cast), is_non_user_defined(is_non_user_defined)
     {}
 
     ExprAST* const getExpr() const 
@@ -138,11 +138,11 @@ public:
     }
     types::Base* getType() const 
     {
-        return expr->getType();
+        return getDestType();
     }
     types::Base* getDestType() const 
     {
-        return source_type.get();
+        return dest_type.get();
     }
     types::Base* getSourceType() const 
     {
@@ -155,7 +155,7 @@ public:
 
     void setDestType(std::unique_ptr<types::Base> type) 
     {
-        source_type=std::move(type);
+        dest_type=std::move(type);
     }
     void setSourceType(std::unique_ptr<types::Base> type) 
     {

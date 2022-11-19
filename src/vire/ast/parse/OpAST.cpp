@@ -37,6 +37,15 @@ public:
     std::unique_ptr<ExprAST> moveLHS() {return std::move(lhs);}
     std::unique_ptr<ExprAST> moveRHS() {return std::move(rhs);}
 
+    void setLHS(std::unique_ptr<ExprAST> _lhs)
+    {
+        lhs=std::move(_lhs);
+    }
+    void setRHS(std::unique_ptr<ExprAST> _rhs)
+    {
+        rhs=std::move(_rhs);
+    }
+
     types::Base* getOpType()
     {
         switch (op->type)

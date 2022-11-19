@@ -76,6 +76,7 @@ namespace vire
     }
     llvm::Value* VCompiler::createBinaryOperation(llvm::Value* lhs, llvm::Value* rhs, VToken* const op, bool expr_is_fp)
     {
+        const char* cmpname="cmptmp";
         switch(op->type)
         {
             case tok_plus:
@@ -123,16 +124,45 @@ namespace vire
                 }
             }
             case tok_mod:
-                return Builder.CreateSRem(lhs, rhs, "modtmp");
+                return Builder.CreateSRem(lhs, rhs, cmpname);
             
             case tok_lessthan:
-                return Builder.CreateICmpSLT(lhs, rhs, "cmptmp");
+            {
+                if(expr_is_fp)
+                    return Builder.CreateFCmpOLT(lhs, rhs, cmpname);
+                return Builder.CreateICmpSLT(lhs, rhs, cmpname);
+            }
             case tok_morethan:
-                return Builder.CreateICmpSGT(lhs, rhs, "cmptmp");
+            {
+                if(expr_is_fp)
+                    return Builder.CreateFCmpOGT(lhs, rhs, cmpname);
+                return Builder.CreateICmpSGT(lhs, rhs, cmpname);
+            }
             case tok_dequal:
-                return Builder.CreateICmpEQ(lhs, rhs, "cmptmp");
+            {
+                if(expr_is_fp)
+                    return Builder.CreateFCmpOEQ(lhs, rhs, cmpname);
+                return Builder.CreateICmpEQ(lhs, rhs, cmpname);
+            }
             case tok_nequal:
-                return Builder.CreateICmpNE(lhs, rhs, "cmptmp");
+            {
+                if(expr_is_fp)
+                    return Builder.CreateFCmpONE(lhs, rhs, cmpname);
+                return Builder.CreateICmpNE(lhs, rhs, cmpname);
+            }
+            
+            case tok_moreeq:
+            {
+                if(expr_is_fp)
+                    return Builder.CreateFCmpOGE(lhs, rhs, cmpname);
+                return Builder.CreateICmpSGE(lhs, rhs, cmpname);
+            }
+            case tok_lesseq:
+            {
+                if(expr_is_fp)
+                    return Builder.CreateFCmpOLE(lhs, rhs, cmpname);
+                return Builder.CreateICmpSLE(lhs, rhs, cmpname);
+            }
             
             default:
                 std::cout << "Unhandled binary operator" << std::endl;

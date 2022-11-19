@@ -99,14 +99,13 @@ def build_cxx(opts):
     
     print(f"{colors.OKGREEN}Running executable{colors.ENDC}")
     
-    run_command(commands["cxx-run"].split(), run_verbose=True, cwd="./build")
+    cmd_text=commands["cxx-run"]
+    if opts.debug:
+        cmd_text="valgrind "+cmd_text
+    run_command(cmd_text.split(), run_verbose=True, cwd="./build")
     if opts.run_argument == "gen":
-        run_command(commands["cxx-run-gen"].split(), run_verbose=False, cwd="./build")
-
-        cmd=commands["cxx-run-gen-exec"]
-        if opts.debug:
-            cmd="valgrind " + cmd
-        run_command(cmd.split(), run_verbose=True, cwd="./build")
+        run_command(commands["cxx-run-gen"].split(), run_verbose=True, cwd="./build")
+        run_command(commands["cxx-run-gen-exec"].split(), run_verbose=True, cwd="./build")
 def build_wasm(opts):
     ##########
     print(f"{colors.OKBLUE}{colors.BOLD}Building to native target...{colors.ENDC}\n---")
