@@ -3,6 +3,7 @@
 #include "vire/parse/include.hpp"
 #include "vire/ast/include.hpp"
 #include "vire/errors/include.hpp"
+#include "vire/proto/iname.hpp"
 
 namespace vire
 {
@@ -30,16 +31,17 @@ class VAnalyzer
     // Functions
     void defineVariable(VariableDefAST* const var);
     void undefineVariable(VariableDefAST* const var);
-    void undefineVariable(std::string const& var);
+    void undefineVariable(proto::IName const& var);
 
     void addFunction(std::unique_ptr<FunctionBaseAST> func);
     void addClass(std::unique_ptr<ClassAST> class_);
-    bool isVarDefined(std::string const& name, bool check_globally_only=false);
+    bool isVariableDefined(proto::IName const& name);
 
-    VariableDefAST* const getVar(std::string const& name);
+    VariableDefAST* const getVariable(std::string const& name);
+    VariableDefAST* const getVariable(proto::IName const& name);
 public:
     VAnalyzer(errors::ErrorBuilder* const builder, std::string const& code="")
-    : builder(builder), code(code), scope_varref(nullptr) {}
+    : builder(builder), code(code), scope_varref(nullptr), current_func(nullptr) {}
 
     errors::ErrorBuilder* const getErrorBuilder() const { return builder; }
 
@@ -47,14 +49,16 @@ public:
     bool isUnionDefined(std::string const& name);
     bool isClassDefined(std::string const& name);
     bool isFuncDefined(std::string const& name);
-    unsigned int getFuncArgCount(std::string const& name);
+    unsigned int getFunctionArgCount(std::string const& name);
 
     types::Base* getType(ExprAST* const expr);
     types::Base* getType(ArrayExprAST* const arr);
     std::unique_ptr<types::Base> moveFuncReturnType(const std::string& name="");
 
-    FunctionBaseAST* const getFunc(const std::string& name);
+    FunctionBaseAST* const getFunction(const std::string& name);
     StructExprAST* const getStruct(const std::string& name);
+    FunctionBaseAST* const getFunction(const proto::IName& name);
+    StructExprAST* const getStruct(const proto::IName& name);
 
     ModuleAST* const getSourceModule();
 
@@ -64,7 +68,7 @@ public:
 
     bool verifyVar(VariableExprAST* const var);
     bool verifyIncrementDecrement(IncrementDecrementAST* const incrdecr);
-    bool verifyVarDef(VariableDefAST* const var, bool check_globally_only=false, bool add_to_scope=true);
+    bool verifyVariableDef(VariableDefAST* const var, bool add_to_scope=true);
     bool verifyVarAssign(VariableAssignAST* const var);
     bool verifyVarArrayAccess(VariableArrayAccessAST* const access);
 

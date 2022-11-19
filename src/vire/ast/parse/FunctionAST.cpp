@@ -83,8 +83,8 @@ public:
     virtual bool is_extern() const { return false; }
     virtual bool is_proto()  const { return false; }
 
-    //virtual bool isVarDefined(std::string const& name) const = 0;
-    //virtual VariableDefAST* const getVar(const std::string& name) const = 0;
+    //virtual bool isVariableDefined(std::string const& name) const = 0;
+    //virtual VariableDefAST* const getVariable(const std::string& name) const = 0;
 
     virtual ~FunctionBaseAST() = default;
 };
@@ -180,8 +180,8 @@ public:
     { statements.insert( statements.begin(), std::move(statement) ); }
 
     // Variable-based Functions
-    bool isVarDefined(std::string const& name)            const { return locals.count(name)>0; }
-    VariableDefAST* const getVar(std::string const& name) const { return locals.at(name); }
+    bool isVariableDefined(std::string const& name)            const { return locals.count(name)>0; }
+    VariableDefAST* const getVariable(std::string const& name) const { return locals.at(name); }
     void addVar(VariableDefAST* const var) {locals[var->getName()] = var;}
 };
 

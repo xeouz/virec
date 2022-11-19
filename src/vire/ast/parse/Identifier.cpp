@@ -29,9 +29,14 @@ public:
     {
         return std::move(token);
     }
+    
     virtual void setName(std::string const& _name)
     {
         name.setName(_name);
+    }
+    virtual void setName(proto::IName const& _name)
+    {
+        name=_name;
     }
 };
 
@@ -58,13 +63,13 @@ public:
         {
             auto* cast_child=(TypeAccessAST*)child.get();
             auto* cast_child_child=(VariableExprAST*)cast_child->getParent();
-            setName(cast_child_child->getName());
-            setToken(VToken::construct(cast_child_child->getName()));
+            setName(cast_child_child->getIName());
+            setToken(VToken::construct(cast_child_child->getIName().name));
         }
         else
         {
-            setName(child->getName());
-            setToken(VToken::construct(child->getName()));
+            setName(child->getIName());
+            setToken(VToken::construct(child->getIName().name));
         }
     }
 

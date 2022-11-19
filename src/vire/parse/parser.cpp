@@ -513,7 +513,7 @@ namespace vire
             if(current_token->type==tok_colon)
             {
                 getNextToken(tok_colon);
-                type=types::construct(current_token->value);
+                type=types::construct(proto::IName(current_token->value).get());
                 getNextToken(tok_id);
             }
             else

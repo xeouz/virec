@@ -24,6 +24,7 @@ class options:
     build_arg = "--debug"
     clean_build = False
     keep_cache = True
+    debug = False
 commands = {
     "cxx-cmake": "cmake . -GNinja -Bbuild ",
     "wasm-cmake": "emcmake cmake ./wasm-lib -Wno-dev -GNinja -Bbuild -DZLIB_LIBRARY=/home/dev0/Programming/emsdk/upstream/emscripten/cache/sysroot/lib/wasm32-emscripten/libz.a -DZLIB_INCLUDE_DIR=/usr/include/ -DLLVM_DIR=/home/dev0/Programming/llvm-project/build-wasm/lib/cmake/llvm",
@@ -32,7 +33,7 @@ commands = {
     "wasm-copy-wasm": "cp ./build/VIRELANG.wasm ./wasm-build/VIRELANG.wasm",
     "wasm-copy-js": "cp ./build/VIRELANG.js ./wasm-build/VIRELANG.js",
     "wasm-zip-wasm": "gzip -k --best -f ./VIRELANG.wasm",
-    "cxx-run": "valgrind ./VIRELANG",
+    "cxx-run": "./VIRELANG",
     "cxx-run-gen": "clang res/test.cpp test.o -o test",
     "cxx-run-gen-exec": "./test",
 }
@@ -101,7 +102,11 @@ def build_cxx(opts):
     run_command(commands["cxx-run"].split(), run_verbose=True, cwd="./build")
     if opts.run_argument == "gen":
         run_command(commands["cxx-run-gen"].split(), run_verbose=False, cwd="./build")
-        run_command(commands["cxx-run-gen-exec"].split(), run_verbose=True, cwd="./build")
+
+        cmd=commands["cxx-run-gen-exec"]
+        if opts.debug:
+            cmd="valgrind " + cmd
+        run_command(cmd.split(), run_verbose=True, cwd="./build")
 def build_wasm(opts):
     ##########
     print(f"{colors.OKBLUE}{colors.BOLD}Building to native target...{colors.ENDC}\n---")
@@ -181,6 +186,9 @@ def main():
     elif ("--silent" in sys.argv) or ("-s" in sys.argv):
         opts.verbose = False
         opts.verbose_commands = False
+    
+    if ("-dbg" in sys.argv) or ("--debug" in sys.argv):
+        opts.debug=True
 
     build_entry(opts)
 

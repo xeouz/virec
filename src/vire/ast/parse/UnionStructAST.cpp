@@ -5,25 +5,30 @@
 
 #include <memory>
 #include <vector>
+#include <map>
+#include <memory>
 
 namespace vire
 {
 
+typedef std::unordered_map<proto::IName, std::unique_ptr<ExprAST>, std::hash<proto::IName>, std::equal_to<proto::IName>> INameExprMap;
+typedef std::unordered_map<proto::IName, int, std::hash<proto::IName>, std::equal_to<proto::IName>> INameIntMap;
+
 class TypeAST : public ExprAST
 {
-    std::unordered_map<proto::IName, std::unique_ptr<ExprAST>> members;
-    std::unordered_map<proto::IName, int> members_indx;
+    INameExprMap members;
+    INameIntMap members_indx;
     proto::IName name;
     std::unique_ptr<VToken> name_token;
 public:
-    TypeAST(std::unordered_map<proto::IName, std::unique_ptr<ExprAST>> members, std::unique_ptr<VToken> name, int asttype=ast_type)
-    : members(std::move(members)), members_indx(std::unordered_map<proto::IName, int>()), name(name->value), ExprAST("void", asttype)
+    TypeAST(INameExprMap members, std::unique_ptr<VToken> name, int asttype=ast_type)
+    : members(std::move(members)), members_indx(INameIntMap()), name(name->value), ExprAST("void", asttype)
     {
         name_token=std::move(name);
         int i=this->members.size()-1;
-        for(auto& [str, ptr] : this->members)
+        for(auto& [iname, ptr] : this->members)
         {
-            this->members_indx[str]=i--;
+            this->members_indx[iname]=i--;
         }
     }
 
@@ -40,7 +45,7 @@ public:
         name.setName(new_name);
     }
 
-    virtual std::unordered_map<proto::IName, std::unique_ptr<ExprAST>> const& getMembers()
+    virtual INameExprMap const& getMembers()
     {
         return members;
     }
@@ -74,12 +79,16 @@ public:
     {
         return members.at(name).get();
     }
+    virtual ExprAST* getMember(std::string const& name)
+    {
+        return getMember(proto::IName(name, ""));
+    }
 };
 
 class UnionExprAST : public TypeAST
 {
 public:
-    UnionExprAST(std::unordered_map<proto::IName, std::unique_ptr<ExprAST>> members, std::unique_ptr<VToken> name)
+    UnionExprAST(INameExprMap members, std::unique_ptr<VToken> name)
     : TypeAST(std::move(members), std::move(name), ast_union)
     {
     }
@@ -88,7 +97,7 @@ public:
 class StructExprAST : public TypeAST
 {
 public:
-    StructExprAST(std::unordered_map<proto::IName, std::unique_ptr<ExprAST>> members, std::unique_ptr<VToken> name)
+    StructExprAST(INameExprMap members, std::unique_ptr<VToken> name)
     : TypeAST(std::move(members), std::move(name), ast_struct)
     {
     }

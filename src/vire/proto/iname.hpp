@@ -29,24 +29,34 @@ public:
 
     bool isSame(IName const& rhs) const;
     bool operator==(IName const& rhs) const;
+
+    friend std::ostream& operator<<(std::ostream& os, const IName& iname);
 };
 
 }
 }
 
-namespace std {
-
-  template <>
-  struct hash<vire::proto::IName>
+namespace std
+{
+template<>
+struct hash<vire::proto::IName>
+{
+  std::size_t operator()(const vire::proto::IName& k) const
   {
-    std::size_t operator()(const vire::proto::IName& k) const
-    {
-      using std::size_t;
-      using std::hash;
-      using std::string;
+    using std::size_t;
+    using std::hash;
+    using std::string;
 
-      return hash<string>()(k.get());
-    }
-  };
+    return hash<string>()(k.get());
+  }
+};
 
+template<>
+struct equal_to<vire::proto::IName>
+{
+  bool operator()(const vire::proto::IName& first, const vire::proto::IName& second) const
+  {
+    return first==second;
+  }
+};
 }

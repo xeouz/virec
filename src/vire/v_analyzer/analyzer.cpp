@@ -1,4 +1,5 @@
 #include "analyzer.hpp"
+
 #include <string>
 #include <memory>
 #include <vector>
@@ -6,22 +7,9 @@
 
 namespace vire
 {
-    bool VAnalyzer::isVarDefined(const std::string& name, bool check_globally_only)
+    bool VAnalyzer::isVariableDefined(const proto::IName& name)
     {
-        for(const auto& expr :ast->getPreExecutionStatements())
-        {
-            if(expr->asttype==ast_vardef)
-            {
-                if(((std::unique_ptr<VariableDefAST>const&)expr)->getName()==name)
-                {
-                    return true;
-                }
-            }
-        }
-
-        if(check_globally_only) return false;
-
-        return scope.count(name)==true;
+        return scope.count(name.get());
     }
 
     bool VAnalyzer::isStructDefined(const std::string& name)
@@ -72,9 +60,9 @@ namespace vire
     {
         undefineVariable(var->getName());
     }
-    void VAnalyzer::undefineVariable(std::string const& name)
+    void VAnalyzer::undefineVariable(proto::IName const& name)
     {
-        scope.erase(name);
+        scope.erase(name.get());
     }
 
     void VAnalyzer::addFunction(std::unique_ptr<FunctionBaseAST> func)
@@ -82,48 +70,58 @@ namespace vire
         ast->addFunction(std::move(func));
     }
 
-    FunctionBaseAST* const VAnalyzer::getFunc(std::string const& name)
-    {
-        const auto& functions=ast->getFunctions();
-
-        if(name=="")
-        {
-            return current_func;
-        }
-        for(int i=0; i<functions.size(); i++)
-        {
-            if(functions[i]->getName()==name)
-            {
-                return functions[i].get();
-            }
-        }
-
-        if(current_func->getName()==name)
-        {
-            return current_func;
-        }
-        
-        std::cout << "Function `" << name << "` not found" << std::endl;
-        return nullptr;
-    }
-
     ModuleAST* const VAnalyzer::getSourceModule()
     {
         return ast.get();
     }
 
-    VariableDefAST* const VAnalyzer::getVar(const std::string& name)
+    FunctionBaseAST* const VAnalyzer::getFunction(const std::string& name)
     {
-        if(!isVarDefined(name))
+        return getFunction(proto::IName(name, ""));
+    }
+    VariableDefAST* const VAnalyzer::getVariable(const std::string& name)
+    {
+        return getVariable(proto::IName(name, ""));
+    }
+    StructExprAST* const VAnalyzer::getStruct(const std::string& name)
+    {
+        return getStruct(proto::IName(name, ""));
+    }
+    FunctionBaseAST* const VAnalyzer::getFunction(const proto::IName& name)
+    {
+        const auto& functions=ast->getFunctions();
+
+        for(int i=0; i<functions.size(); i++)
+        {
+            if(functions[i]->getIName()==name)
+            {
+                return functions[i].get();
+            }
+        }
+
+        if(current_func)
+        {
+            if(current_func->getIName()==name || name.name=="")
+            {
+                return current_func;
+            }
+        }
+        
+        std::cout << "Function `" << name << "` not found" << std::endl;
+        return nullptr;
+    }
+    VariableDefAST* const VAnalyzer::getVariable(const proto::IName& name)
+    {
+        if(!isVariableDefined(name))
         {
            std::cout << "Variable `" << name << "` not found" << std::endl;
            return nullptr;
         }
-        return scope.at(name);
+        return scope.at(name.get());
     }
-    StructExprAST* const VAnalyzer::getStruct(const std::string& name)
+    StructExprAST* const VAnalyzer::getStruct(const proto::IName& name)
     {
-        if(!isStructDefined(name))
+        if(!isStructDefined(name.get()))
         {
             std::cout << "Struct with name not defined: " << name << std::endl;
             return nullptr;
@@ -147,7 +145,7 @@ namespace vire
 
         return nullptr;
     }
-
+    
     // !!- CHANGES REQUIRED -!!
     // str to be implemented
     types::Base* VAnalyzer::getType(ExprAST* const expr)
@@ -202,7 +200,7 @@ namespace vire
             }
             case ast_var:
             {
-                auto* var=getVar(((VariableExprAST*)expr)->getName());
+                auto* var=getVariable(((VariableExprAST*)expr)->getIName());
                 return var->getType();
             }
             case ast_array_access:
@@ -219,7 +217,7 @@ namespace vire
                 return array_type;
             }
 
-            case ast_call: return getFunc(((CallExprAST*)expr)->getName())->getReturnType();
+            case ast_call: return getFunction(((CallExprAST*)expr)->getName())->getReturnType();
 
             case ast_array: return getType((ArrayExprAST*)expr);
 
@@ -238,7 +236,7 @@ namespace vire
                     st=(StructExprAST*)st->getMember(name);
                 }
 
-                return st->getMember(access->getChild()->getName())->getType();
+                return st->getMember(access->getChild()->getIName())->getType();
             }
 
             default:
@@ -320,9 +318,10 @@ namespace vire
     bool VAnalyzer::verifyVar(VariableExprAST* const var)
     {
         // Check if it is defined
-        if(!isVarDefined(var->getName()))
+        if(!isVariableDefined(var->getIName()))
         {
-            // Var is not defined
+            // Variable is not defined
+            std::cout << "Variable " << var->getName() << " defined" << std::endl;
             return false;
         }
         
@@ -345,9 +344,9 @@ namespace vire
         
         return true;
     }
-    bool VAnalyzer::verifyVarDef(VariableDefAST* const var, bool check_globally_only, bool add_to_scope)
+    bool VAnalyzer::verifyVariableDef(VariableDefAST* const var, bool add_to_scope)
     {
-        if(!isVarDefined(var->getName(), check_globally_only))
+        if(!isVariableDefined(var->getName()))
         {
             bool is_var=!(var->isLet() || var->isConst());
 
@@ -665,7 +664,7 @@ namespace vire
         }
 
         auto args=call->moveArgs();
-        const auto& func_args=getFunc(name)->getArgs();
+        const auto& func_args=getFunction(name)->getArgs();
 
         if(args.size() != func_args.size())
         {
@@ -684,8 +683,8 @@ namespace vire
                 continue;
             }
 
+            // This is to be changed, implemented for arguments with default value
             auto* arg_type=getType(arg.get());
-
             if(!types::isSame(func_args[i]->getType(), arg_type))
             {
                 auto cast=tryCreateImplicitCast(func_args[i]->getType(), arg_type, std::move(arg));
@@ -714,7 +713,7 @@ namespace vire
 
     bool VAnalyzer::verifyReturn(ReturnExprAST* const ret)
     {
-        auto const& ret_type=getFunc(ret->getName())->getReturnType();
+        auto const& ret_type=getFunction(ret->getName())->getReturnType();
 
         if(!verifyExpr(ret->getValue()))
         {
@@ -799,7 +798,7 @@ namespace vire
         }
 
         const auto& args=proto->getArgs();
-        
+
         for(const auto& arg : args)
         {   
             if(types::isSame(arg->getType(),"auto") || types::isSame(arg->getType(),"any"))
@@ -808,7 +807,7 @@ namespace vire
                 is_valid=false;
             }
 
-            if(!verifyVarDef(arg.get(), true, false))
+            if(!verifyVariableDef(arg.get(), false))
             {
                 std::cout << "Argument is not valid" << std::endl;
 
@@ -816,7 +815,7 @@ namespace vire
                 is_valid=false;
             }
         }
-        
+
         return is_valid;
     }
     bool VAnalyzer::verifyProto(PrototypeAST* const proto)
@@ -965,7 +964,7 @@ namespace vire
 
         if(!is_valid)   return is_valid;
 
-        std::string st_name=struct_->getIName().name;
+        std::string st_name=struct_->getName();
         if(!types::isTypeinMap(st_name))
         {
             types::addTypeToMap(st_name);
@@ -992,6 +991,7 @@ namespace vire
             std::cout << "Parent is not a type" << std::endl;
             return false;
         }
+        
         auto* ptype_custom=(types::Custom*)ptype;
         if(!types::isTypeinMap(ptype_custom->getName()))
         {
@@ -1030,7 +1030,7 @@ namespace vire
                 possible_struct_child->setType(std::make_unique<types::Custom>(casted_pos_stchild->getName(), 1));
                 casted_pos_access->getParent()->setType(std::make_unique<types::Custom>(casted_pos_stchild->getName(), 1));
                 possible_access=child->getChild();
-                possible_struct_child=casted_pos_stchild->getMember(child->getName());
+                possible_struct_child=casted_pos_stchild->getMember(child->getIName());
             }
         }
 
@@ -1127,7 +1127,7 @@ namespace vire
     }
     bool VAnalyzer::verifyReference(ReferenceExprAST* const reference)
     {
-        const auto& expr=reference->getVar();
+        const auto& expr=reference->getVariable();
         if(!verifyExpr(expr))
         {
             // Expr is not valid
@@ -1150,7 +1150,7 @@ namespace vire
         bool is_valid=true;
         for(auto const& member : members)
         {
-            if(!verifyVarDef((VariableDefAST*const&)member))
+            if(!verifyVariableDef((VariableDefAST*const&)member))
             {
                 // Member is not valid
                 return false;
@@ -1232,14 +1232,8 @@ namespace vire
 
         bool has_main=false;
         unsigned int main_func_indx=0;
-        for(const auto& cls : classes)
-        {
-            if(!verifyClass(cls.get()))
-            {
-                // Class is not valid
-                is_valid=false;
-            }
-        }
+
+        // Verify all unions and structs
         for(unsigned int it=0; it<union_structs.size(); ++it)
         {
             const auto& union_struct=union_structs[it];
@@ -1262,9 +1256,12 @@ namespace vire
 
             ast->addUnionStruct(std::move(union_structs[it]));
         }
+
+        // Verify all functions
         for(unsigned int it=0; it<funcs.size(); ++it)
         {
             const auto& func=funcs[it];
+
             if(func->is_extern())
             {
                 if(!verifyExtern(((std::unique_ptr<ExternAST> const&)func).get()))
@@ -1297,9 +1294,13 @@ namespace vire
                     main_func_indx=it;
                 }
             }
-
+        
             addFunction(std::move(funcs[it]));
         }
+
+        // Verify all statements in global scope
+        auto* global_refscope=new std::vector<VariableDefAST*>();
+        this->scope_varref=global_refscope;
         for(const auto& expr : pre_stms)
         {
             if(!verifyExpr(expr.get()))
@@ -1307,6 +1308,8 @@ namespace vire
                 is_valid=false;
             }
         }
+        this->scope_varref=nullptr;
+        delete global_refscope;
 
         ast->addPreExecutionStatements(std::move(pre_stms));
 
@@ -1329,7 +1332,7 @@ namespace vire
 
             case ast_incrdecr: return verifyIncrementDecrement((IncrementDecrementAST*const&)expr);
             case ast_var: return verifyVar((VariableExprAST*const&)expr);
-            case ast_vardef: return verifyVarDef((VariableDefAST*const&)expr);
+            case ast_vardef: return verifyVariableDef((VariableDefAST*const&)expr);
             case ast_varassign: return verifyVarAssign((VariableAssignAST*const&)expr);
             case ast_array_access: return verifyVarArrayAccess((VariableArrayAccessAST*const&)expr);
 

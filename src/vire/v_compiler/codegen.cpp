@@ -648,7 +648,7 @@ namespace vire
     llvm::Value* VCompiler::compileCallExpr(CallExprAST* const expr)
     {
         std::string func_name;
-        auto* afunc=analyzer->getFunc(expr->getName());
+        auto* afunc=analyzer->getFunction(expr->getName());
 
         if(afunc->is_extern())
         {
@@ -684,7 +684,7 @@ namespace vire
     }
     llvm::Function* VCompiler::compilePrototype(std::string const& name)
     {
-        auto const& base_ast=analyzer->getFunc(name);
+        auto const& base_ast=analyzer->getFunction(name);
         auto const& proto=(std::unique_ptr<PrototypeAST> const&)base_ast;
         auto const& proto_args=proto->getArgs();
         std::vector<llvm::Type*> args(proto_args.size());
@@ -720,7 +720,7 @@ namespace vire
     llvm::Function* VCompiler::compileExtern(std::string const& name)
     {
         llvm::Function* func=compilePrototype(name);
-        func->setName(analyzer->getFunc(name)->getIName().name);
+        func->setName(analyzer->getFunction(name)->getIName().name);
 
         // Remove in release
         // func->print(error_os);
@@ -736,7 +736,7 @@ namespace vire
         currentFunctionEndBB=llvm::BasicBlock::Create(CTX, "end", function);
         Builder.SetInsertPoint(bb);
 
-        auto* func=(FunctionAST*)analyzer->getFunc(name);
+        auto* func=(FunctionAST*)analyzer->getFunction(name);
         auto& func_args=func->getArgs();
 
         namedValues.clear();
@@ -787,6 +787,7 @@ namespace vire
     llvm::StructType* VCompiler::compileStruct(std::string const& name, StructExprAST* struct_)
     {
         StructExprAST* st;
+
         if(struct_)
         {
             st=struct_;
@@ -855,7 +856,8 @@ namespace vire
             {
                 st=analyzer->getStruct(st_type->getName());
             }
-            int indx=st->getMemberIndex(current->getName());
+
+            int indx=st->getMemberIndex(current->getIName());
 
             sgep=Builder.CreateStructGEP(st_ltype, val, indx, "sgep");
             current_expr=current->getChild();

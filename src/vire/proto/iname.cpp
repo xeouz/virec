@@ -56,5 +56,11 @@ bool IName::operator==(IName const& rhs) const
     return isSame(rhs);
 }
 
+std::ostream& operator<<(std::ostream& os, const IName& iname)
+{
+    os<<iname.get();
+    return os;
+}
+
 }
 }
