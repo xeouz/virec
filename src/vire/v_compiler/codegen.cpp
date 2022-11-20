@@ -432,8 +432,10 @@ namespace vire
 
         llvm::Value* ptr;
 
-        if(assign->getLHS()->asttype==ast_array_access || assign->getLHS()->asttype==ast_type_access) // if lhs is an access
+        if(assign->getLHS()->asttype==ast_array_access || assign->getLHS()->asttype==ast_type_access)
         {
+            // If the lhs is an access, extract the pointer operand and delete the load
+
             auto* load_inst=llvm::dyn_cast<llvm::LoadInst>(lhs);
             ptr=load_inst->getPointerOperand();
             load_inst->eraseFromParent();
@@ -481,10 +483,15 @@ namespace vire
         auto* expr=getValueAsAlloca(compileExpr(access->getExpr()));
         auto* ty=getLLVMType(access->getType());
 
+        bool is_ptr=false;
         if(((llvm::AllocaInst*)expr)->getAllocatedType()->isOpaquePointerTy())
         {
             expr=Builder.CreateLoad(expr->getType(), expr);
+            ty=ty->getArrayElementType();
+            is_ptr=true;
         }
+
+        llvm::errs() << is_ptr << *ty << "\n";
 
         for(auto const& elem : access->getIndices())
         {
@@ -495,8 +502,14 @@ namespace vire
             }
             
             auto* indx=compileExpr(elem.get());
-            expr=Builder.CreateInBoundsGEP(ty, expr, {llvm::ConstantInt::get(CTX, llvm::APInt(64, 0, false)), indx}, "agep");
-            ty=ty->getArrayElementType();
+
+            if(!is_ptr)
+                expr=Builder.CreateInBoundsGEP(ty, expr, {llvm::ConstantInt::get(CTX, llvm::APInt(64, 0, false)), indx}, "agep");
+            else
+                expr=Builder.CreateInBoundsGEP(ty, expr, {indx}, "agep");
+            
+            if(ty->isArrayTy())
+                ty=ty->getArrayElementType();
         }
 
         return Builder.CreateLoad(ty, expr);

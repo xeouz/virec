@@ -1,8 +1,11 @@
 extern puti(n: int);
 
-let a=100;
-
-if(a>=111.0f)
+func abc(a:int[3])
 {
-    puti(1000);
+    puti(a[2]);
 }
+
+let a=[1,2,3];
+a[2]=100;
+puti(a[2]);
+abc(a);

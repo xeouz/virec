@@ -17,8 +17,7 @@ class VariableArrayAccessAST: public ExprAST
 public:
     VariableArrayAccessAST(std::unique_ptr<ExprAST> expr, std::vector<std::unique_ptr<ExprAST>> indx)
     : expr(std::move(expr)), indices(std::move(indx)), ExprAST("void",ast_array_access) 
-    {
-    }
+    { }
     
     ExprAST* const getExpr() const 
     {

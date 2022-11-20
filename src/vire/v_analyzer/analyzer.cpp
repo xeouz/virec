@@ -484,7 +484,6 @@ namespace vire
             }
         }
 
-        assign->getLHS()->setType(types::copyType(lhs_type));
         assign->getRHS()->setType(types::copyType(rhs_type));
         
         return is_valid;
