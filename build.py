@@ -34,7 +34,7 @@ commands = {
     "wasm-copy-js": "cp ./build/VIRELANG.js ./wasm-build/VIRELANG.js",
     "wasm-zip-wasm": "gzip -k --best -f ./VIRELANG.wasm",
     "cxx-run": "./VIRELANG",
-    "cxx-run-gen": "clang res/test.cpp test.o -o test",
+    "cxx-run-gen": "clang++ res/test.cpp test.o -o test -no-pie",
     "cxx-run-gen-exec": "./test",
 }
 build_types = {

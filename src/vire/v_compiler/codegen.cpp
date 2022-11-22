@@ -481,7 +481,7 @@ namespace vire
     {
         /* Multi index access */
         auto* expr=getValueAsAlloca(compileExpr(access->getExpr()));
-        auto* ty=getLLVMType(access->getType());
+        auto* ty=getLLVMType(access->getExpr()->getType());
 
         bool is_ptr=false;
         if(((llvm::AllocaInst*)expr)->getAllocatedType()->isOpaquePointerTy())
@@ -491,16 +491,8 @@ namespace vire
             is_ptr=true;
         }
 
-        llvm::errs() << is_ptr << *ty << "\n";
-
         for(auto const& elem : access->getIndices())
         {
-            // Implemented only for int expressions, WIP
-            if(elem->getType()->getType() != types::TypeNames::Int)
-            {
-                throw std::runtime_error("Array index must be an int expression, WIP");
-            }
-            
             auto* indx=compileExpr(elem.get());
 
             if(!is_ptr)
@@ -725,14 +717,26 @@ namespace vire
 
         return value;
     }
-    llvm::Function* VCompiler::compilePrototype(std::string const& name)
+    llvm::Function* VCompiler::compilePrototype(PrototypeAST* const proto)
     {
-        auto const& base_ast=analyzer->getFunction(name);
-        auto const& proto=(std::unique_ptr<PrototypeAST> const&)base_ast;
         auto const& proto_args=proto->getArgs();
         std::vector<llvm::Type*> args(proto_args.size());
 
-        llvm::Type* func_ret_type=getLLVMType(proto->getReturnType());
+        llvm::Type* func_ret_type;
+        bool func_ret_struct=false;
+
+        if(proto->getReturnType()->getType()==types::TypeNames::Custom)
+        {
+            auto* struct_ty=getLLVMType(proto->getReturnType());
+            func_ret_type=llvm::Type::getVoidTy(CTX);
+
+            args.push_back(struct_ty);
+            func_ret_struct=true;
+        }
+        else
+        {
+            func_ret_type=getLLVMType(proto->getReturnType());
+        }
 
         for(size_t i=0; i<proto_args.size(); i++)
         {
@@ -747,12 +751,23 @@ namespace vire
         }
 
         llvm::FunctionType* func_type=llvm::FunctionType::get(func_ret_type, args, false);
-        llvm::Function* func=llvm::Function::Create(func_type, llvm::Function::ExternalLinkage, name, Module.get());
+        llvm::Function* func=llvm::Function::Create(func_type, llvm::Function::ExternalLinkage, proto->getName(), Module.get());
 
-        unsigned idx=0;
-        for(auto& arg: func->args())
+        // if function returns struct, then normal indexes start from 1, otherwise 0
+        for(unsigned idx=0; idx<proto_args.size(); ++idx)
         {
-            arg.setName("a"+proto_args[idx]->getName());
+            auto arg=func->getArg(idx+func_ret_struct);
+            arg->setName("a"+proto_args[idx]->getName());
+        }
+
+        if(func_ret_struct)
+        {
+            llvm::AttrBuilder attrs(CTX);
+            attrs.addStructRetAttr(args[0]);
+
+            auto* arg=func->getArg(0);
+            arg->mutateType(llvm::PointerType::get(CTX, 0));
+            arg->addAttrs(attrs);
         }
 
         func->addFnAttr(llvm::Attribute::get(CTX, "wasm-export-name", func->getName()));
@@ -762,8 +777,9 @@ namespace vire
     }
     llvm::Function* VCompiler::compileExtern(std::string const& name)
     {
-        llvm::Function* func=compilePrototype(name);
-        func->setName(analyzer->getFunction(name)->getIName().name);
+        auto* ext=(ExternAST*)analyzer->getFunction(name);
+        llvm::Function* func=compilePrototype(ext->getProto());
+        func->setName(ext->getIName().name);
 
         // Remove in release
         // func->print(error_os);
@@ -772,20 +788,23 @@ namespace vire
     llvm::Function* VCompiler::compileFunction(std::string const& name)
     {
         llvm::Function* function=Module->getFunction(name);
+        auto* func=(FunctionAST*)analyzer->getFunction(name);
+
         if(!function)
-            function=compilePrototype(name);
+            function=compilePrototype(func->getProto());
 
         llvm::BasicBlock* bb=llvm::BasicBlock::Create(CTX, "entry", function);
         currentFunctionEndBB=llvm::BasicBlock::Create(CTX, "end", function);
         Builder.SetInsertPoint(bb);
 
-        auto* func=(FunctionAST*)analyzer->getFunction(name);
         auto& func_args=func->getArgs();
 
         namedValues.clear();
-        for(int i=0; i<function->arg_size(); ++i)
+        bool func_ret_struct=(func->getReturnType()->getType()==types::TypeNames::Custom);
+        for(int i=0; i<func->getArgs().size(); ++i)
         {
-            auto* arg=function->getArg(i);
+            // +func_ret_struct, the reason for that is defined in compilePrototype()
+            auto* arg=function->getArg(i+func_ret_struct);
             auto* alloca=Builder.CreateAlloca(arg->getType(), nullptr, func_args[i]->getName());
             Builder.CreateStore(arg, alloca);
             namedValues[func_args[i]->getName()]=alloca;
@@ -937,7 +956,8 @@ namespace vire
         {
             if(f->is_proto())
             {
-                compilePrototype(f->getName());
+                auto* proto=(PrototypeAST*)f.get();
+                compilePrototype(proto);
             }
             else if(f->is_extern())
             {
@@ -945,6 +965,7 @@ namespace vire
             }
             else
             {
+
                 compileFunction(f->getName());
             }
         }

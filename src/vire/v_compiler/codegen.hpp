@@ -118,7 +118,7 @@ public:
 
     llvm::Value* compileCallExpr(CallExprAST* const expr);
     llvm::Value* compileReturnExpr(ReturnExprAST* const expr);
-    llvm::Function* compilePrototype(std::string const& name);
+    llvm::Function* compilePrototype(PrototypeAST* const name);
     llvm::Function* compileExtern(std::string const& name);
     llvm::Function* compileFunction(std::string const& name);
 

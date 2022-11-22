@@ -120,6 +120,10 @@ public:
     {
         return name;
     }
+    void setName(std::string const& _name)
+    {
+        name=_name;
+    }
 };
 
 class Char : public Base
@@ -347,6 +351,11 @@ inline std::unique_ptr<Base> copyType(Base* const type)
         auto* ctype=(Custom*)type;
         return construct(ctype->getName(), true);
     }
+    else if(type->getType() == TypeNames::Void)
+    {
+        auto* vtype=(Void*)type;
+        return std::make_unique<types::Void>(vtype->getName());
+    }
     else
     {
         return construct(type->getType());
@@ -358,7 +367,6 @@ inline void printAsArray(Base* const type)
     auto* a= static_cast<Array*>(type);
     std::cout << *a->getChild() << "[" << a->getLength() << "]" << std::endl;
 }
-
 inline Base* getArrayRootType(Base* const arr)
 {
     Base* t;
@@ -385,7 +393,6 @@ inline TypeNames getTypeFromMap(std::string typestr)
         return TypeNames::Custom;
     }
 }
-
 inline std::string getMapFromType(TypeNames const& type)
 {
     if(type==TypeNames::Array)
@@ -422,7 +429,11 @@ inline std::unique_ptr<Base> construct(std::string typestr, bool create_custom)
             return std::make_unique<Bool>();
         case TypeNames::Custom:
         {
-            if(!create_custom)  return std::make_unique<Void>(typestr);
+            if(!create_custom)
+            {
+                // std::cout << "Typestr: " << typestr << std::endl;
+                return std::make_unique<Void>(typestr);
+            }
             
             return std::make_unique<Custom>(typestr, custom_type_sizes.at(typestr));
         }

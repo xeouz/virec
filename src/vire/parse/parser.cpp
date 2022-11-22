@@ -110,6 +110,11 @@ namespace vire
             getNextToken(tok_rbrack);
         }
 
+        if(main_type->getType() == types::TypeNames::Void)
+        {
+            ((types::Void*)main_type.get())->setName(proto::IName(main_type_tok->value).get());
+        }
+
         return std::move(main_type);
     }
     std::vector<std::unique_ptr<ExprAST>> VParser::ParseBlock()
@@ -499,8 +504,7 @@ namespace vire
             if(current_token->type==tok_colon)
             {
                 getNextToken(tok_colon);
-                type_ref->setChild(types::construct(current_token->value));
-                getNextToken(tok_id);
+                type_ref->setChild(ParseTypeIdentifier());
             }
             else
             {
@@ -513,8 +517,7 @@ namespace vire
             if(current_token->type==tok_colon)
             {
                 getNextToken(tok_colon);
-                type=types::construct(proto::IName(current_token->value).get());
-                getNextToken(tok_id);
+                type=ParseTypeIdentifier();
             }
             else
             {
@@ -684,7 +687,8 @@ namespace vire
             }
 
             auto type=ParseTypeIdentifier();
-            auto var=std::make_unique<VariableDefAST>(std::move(var_name),std::move(type),nullptr,isconst,!isconst);
+            auto var=std::make_unique<VariableDefAST>(std::move(var_name) , std::move(type), nullptr, isconst, !isconst);
+            
             args.push_back(std::move(var));
 
             if(current_token->type!=tok_comma)
@@ -709,7 +713,6 @@ namespace vire
 
         return std::make_unique<PrototypeAST>(std::move(fn_name), std::move(args), std::move(return_type));
     }
-
     std::unique_ptr<PrototypeAST> VParser::ParseProto()
     {
         getNextToken(tok_proto); // consume `proto`
@@ -731,7 +734,7 @@ namespace vire
         current_func_name=&proto->getIName();
     
         auto stms=ParseBlock();
-
+        
         return std::make_unique<FunctionAST>(std::move(proto), std::move(stms));
     }
     std::unique_ptr<ExprAST> VParser::ParseReturn()

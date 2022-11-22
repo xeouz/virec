@@ -58,7 +58,7 @@ namespace vire
     }
     void VAnalyzer::undefineVariable(VariableDefAST* const var)
     {
-        undefineVariable(var->getName());
+        undefineVariable(var->getIName());
     }
     void VAnalyzer::undefineVariable(proto::IName const& name)
     {
@@ -411,11 +411,6 @@ namespace vire
             }
             
             value_type=getType(value);
-            if(value_type->getType()==types::TypeNames::Array && value->asttype!=ast_array)
-            {
-                std::cout << "Error: Cannot assign arrays to variables without array literal" << std::endl;
-                return false;
-            }
             
             if(!is_auto)
             {
@@ -448,7 +443,8 @@ namespace vire
             return true;
         }
         
-        std::cout << "Variable " << var->getName() << " already defined" << std::endl;
+        std::cout << "Variable " << var->getName() << " is already defined" << std::endl;
+
         // Variable is already defined
         return false;
     }
@@ -539,7 +535,9 @@ namespace vire
             }
         }
         
-        access->setType(types::copyType(type));
+        auto* array_ty=(types::Array*)type;
+        access->setType(types::copyType(array_ty->getChild()));
+        access->getExpr()->setType(types::copyType(array_ty));
 
         return true;
     }
@@ -716,7 +714,8 @@ namespace vire
 
     bool VAnalyzer::verifyReturn(ReturnExprAST* const ret)
     {
-        auto const& ret_type=getFunction(ret->getName())->getReturnType();
+        auto* func=(FunctionAST*)getFunction(ret->getName());
+        auto* ret_type=func->getReturnType();
 
         if(!verifyExpr(ret->getValue()))
         {
@@ -725,7 +724,6 @@ namespace vire
         }
 
         auto* ret_expr_type=getType(ret->getValue());
-        
         if(!types::isSame(ret_type, ret_expr_type))
         {
             auto cast=tryCreateImplicitCast(ret_expr_type, ret_type, ret->moveValue());
@@ -833,20 +831,37 @@ namespace vire
             // Type is not valid
             is_valid=false;
         }
+        else if(proto->getReturnType()->getType() == types::TypeNames::Void)
+        {
+            auto* void_ty=(types::Void*)proto->getReturnType();
+
+            if(void_ty->getName() != "")
+            {
+                if(types::isTypeinMap(void_ty->getName()))
+                {
+                    proto->setReturnType(types::construct(void_ty->getName(), true));
+                }
+                else
+                {
+                    std::cout << "Prototype's return type is a non-defined struct" << std::endl;
+                }
+            }
+        }
 
         const auto& args=proto->getArgs();
-
         for(const auto& arg : args)
         {   
-            if(types::isSame(arg->getType(),"auto") || types::isSame(arg->getType(),"any"))
+            if(types::isSame(arg->getType(), "any"))
             {
                 // Type is not valid
                 is_valid=false;
+                
+                std::cout << "Type cannot be `auto` or `any`" << std::endl;
             }
 
             if(!verifyVariableDef(arg.get(), false))
             {
-                std::cout << "Argument is not valid" << std::endl;
+                std::cout << "Verification Error: Function Prototype argument is not valid" << std::endl;
 
                 // Argument is not valid
                 is_valid=false;
@@ -1009,7 +1024,7 @@ namespace vire
         }
         else
         {
-            std::cout << "Struct already defined" << std::endl;
+            std::cout << "Struct `" << st_name << "` already defined" << std::endl;
             is_valid=false;
         }
 

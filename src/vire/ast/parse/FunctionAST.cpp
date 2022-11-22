@@ -104,7 +104,7 @@ public:
     std::vector<std::unique_ptr<VariableDefAST>> args, 
     std::unique_ptr<types::Base> return_type)
     : FunctionBaseAST(return_type.get()), args(std::move(args)), asttype(ast_proto),
-    name(name->value) ,name_token(std::move(name))
+    name(name->value), name_token(std::move(name))
     {}
 
     proto::IName const& getIName()       const { return name; }
@@ -174,6 +174,8 @@ public:
 
     VToken* const getNameToken() const { return proto->getNameToken(); }
     std::unique_ptr<VToken> moveNameToken() { return proto->moveNameToken(); }
+
+    types::Base* getReturnType() const { return proto->getReturnType(); }
 
     // Block-based Functions
     void insertStatement(std::unique_ptr<ExprAST> statement) 
