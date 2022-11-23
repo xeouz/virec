@@ -1,8 +1,38 @@
 extern puti(n: int);
 
-let a=10;
-
-if(a>=111.0f)
+func sort(arr: int[5])
 {
-    puti(111);
+    let i=0;
+    let key=0;
+    let j=0;
+
+    for(i=0; i<5; ++i)
+    {
+        key = arr[i];
+        j = i-1;
+
+        while(j>=0)
+        {
+            if(arr[j] < key)
+            {
+                break;
+            }
+
+            arr[j + 1] = arr[j];
+            j-=1;
+        }
+
+        arr[j + 1] = key;
+    }
+}
+
+let arr=[61,86,53,19,61];
+for(let i=0; i<1000000; ++i)
+{
+    sort(arr);
+    arr[0] = 61;
+    arr[1] = 86;
+    arr[2] = 53;
+    arr[3] = 19;
+    arr[4] = 61;
 }

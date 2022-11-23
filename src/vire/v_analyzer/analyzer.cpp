@@ -325,7 +325,7 @@ namespace vire
         if(!isVariableDefined(var->getIName()))
         {
             // Variable is not defined
-            std::cout << "Variable " << var->getName() << " defined" << std::endl;
+            std::cout << "Variable " << var->getName() << " not defined" << std::endl;
             return false;
         }
         

@@ -41,9 +41,14 @@ int main()
     int arr[] = {61,86,53,19,61};
     int n = sizeof(arr) / sizeof(arr[0]);
   
-    for(int i=0; i<100; ++i)
+    for(int i=0; i<1000000; ++i)
 	{
 		insertionSort(arr, n);
+        arr[0] = 61;
+        arr[1] = 86;
+        arr[2] = 53;
+        arr[3] = 19;
+        arr[4] = 61;
 	}
   
     return 0;
