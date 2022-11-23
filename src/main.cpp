@@ -12,7 +12,7 @@ int entry()
     bool s=api->verifySourceModule();
     if(!s)
     {
-        std::cout << "Verification Failed" << std::endl;
+        std::cout << "Verification failed" << std::endl;
         return 1; 
     }
 
@@ -20,7 +20,7 @@ int entry()
     api->getErrorBuilder()->showErrors();
     if(!s)
     {
-        std::cout << "Compilation Failed" << std::endl;
+        std::cout << "Compilation failed" << std::endl;
         return 1;
     }
 

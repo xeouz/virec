@@ -1028,6 +1028,10 @@ namespace vire
     llvm::legacy::PassManager VCompiler::createPassManager() const
     {
         llvm::legacy::PassManager passmgr;
+        
+        passmgr.add(llvm::createPromoteMemoryToRegisterPass());
+        passmgr.add(llvm::createInstructionCombiningPass());
+        passmgr.add(llvm::createReassociatePass());
 
         return passmgr;
     }

@@ -241,7 +241,7 @@ namespace vire
 
             default:
             {
-                std::cout<<"Error: Unknown type in getType()"<<std::endl;
+                std::cout<<"Error: Unknown expr in getType()"<<std::endl;
                 return nullptr;
             }
         }
@@ -480,6 +480,7 @@ namespace vire
             }
         }
 
+        assign->getLHS()->setType(types::copyType(lhs_type));
         assign->getRHS()->setType(types::copyType(rhs_type));
         
         return is_valid;
@@ -514,18 +515,22 @@ namespace vire
                 for(auto const& index : indices)
                 {
                     auto* index_type=getType(index.get());
+                    
                     if(index_type->getType() == types::TypeNames::Int)
                     {
-                        auto* index_cast=(IntExprAST*)index.get();
-                        if(index_cast->getValue() >= child_array_type->getLength())
+                        if(index->asttype==ast_int)
                         {
-                            std::cout << "Error: Array index out of bounds" << std::endl;
-                            return false;
+                            auto* index_cast=(IntExprAST*)index.get();
+                            if(index_cast->getValue() >= child_array_type->getLength())
+                            {
+                                std::cout << "Error: Array index out of bounds" << std::endl;
+                                return false;
+                            } 
                         }
                     }
                     else
                     {
-                        std::cout << "Error: Array index is not an integer, and not " << *index_type << std::endl;
+                        std::cout << "Error: Array index is not of type integer, but is " << *index_type << std::endl;
                         return false;
                     }
                     index->setType(types::copyType(index_type));

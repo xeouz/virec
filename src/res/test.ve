@@ -1,16 +1,8 @@
 extern puti(n: int);
 
-struct abc
-{
-    int a;
-    int b;
-}
+let a=10;
 
-func test(a:abc)
+if(a>=111.0f)
 {
-    puti(a.a);
+    puti(111);
 }
-
-let a:abc;
-a.a=100;
-test(a);
