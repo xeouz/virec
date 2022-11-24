@@ -83,6 +83,7 @@ public:
     
     llvm::Type* getLLVMType(types::Base* type);
 
+    llvm::Value* createAllocaForVar(VariableDefAST* const& var);
     llvm::Value* createBinaryOperation(llvm::Value* lhs, llvm::Value* rhs, VToken* const op, bool expr_is_fp);
     llvm::BranchInst* createBrIfNoTerminator(llvm::BasicBlock* block);
     llvm::Value* getValueAsAlloca(llvm::Value* value);

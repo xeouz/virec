@@ -27,12 +27,11 @@ func sort(arr: int[5])
 }
 
 let arr=[61,86,53,19,61];
-for(let i=0; i<1000000; ++i)
+
+sort(arr);
+
+for(let i=0; i<5000000; ++i)
 {
-    sort(arr);
-    arr[0] = 61;
-    arr[1] = 86;
-    arr[2] = 53;
-    arr[3] = 19;
-    arr[4] = 61;
+    let rr=[1,2,3,4,444];
+    puti(arr[i]);
 }

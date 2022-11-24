@@ -152,7 +152,7 @@ class FunctionAST : public FunctionBaseAST
 {
     std::unique_ptr<PrototypeAST> proto;
     std::vector<std::unique_ptr<ExprAST>> statements;
-    std::map<std::string, VariableDefAST*> locals;
+    std::unordered_map<std::string, VariableDefAST*> locals;
 public:
     int asttype;
     
@@ -160,8 +160,6 @@ public:
     : FunctionBaseAST(prototype->getReturnType()), 
     asttype(ast_function), proto(std::move(prototype)), statements(std::move(stmts))
     {
-        for(auto const& arg : proto->getArgs())
-            locals[arg->getName()] = arg.get();
     }
 
     // Getter Functions
@@ -184,7 +182,9 @@ public:
     // Variable-based Functions
     bool isVariableDefined(std::string const& name)            const { return locals.count(name)>0; }
     VariableDefAST* const getVariable(std::string const& name) const { return locals.at(name); }
-    void addVar(VariableDefAST* const var) {locals[var->getName()] = var;}
+    std::unordered_map<std::string, VariableDefAST*> const& getLocals() const { return locals; }
+
+    void addVariable(VariableDefAST* const var) {locals[var->getName()] = var;}
 };
 
 class ReturnExprAST : public ExprAST

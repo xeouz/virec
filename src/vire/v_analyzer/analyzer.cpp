@@ -47,13 +47,19 @@ namespace vire
         return false;
     }
 
-    void VAnalyzer::defineVariable(VariableDefAST* const var)
+    void VAnalyzer::defineVariable(VariableDefAST* const var, bool is_arg)
     {
         scope.insert(std::make_pair(var->getName(), var));
         
         if(scope_varref != nullptr)
         {
             scope_varref->push_back(var);
+        }
+
+        if(is_arg) return;
+        if(current_func != nullptr)
+        {
+            current_func->addVariable(var);
         }
     }
     void VAnalyzer::undefineVariable(VariableDefAST* const var)
@@ -908,7 +914,7 @@ namespace vire
 
         for(auto const& var: func->getArgs())
         {
-            defineVariable(var.get());
+            defineVariable(var.get(), true);
         }
 
         if(!verifyBlock(func->getBody()))
@@ -1249,8 +1255,8 @@ namespace vire
 
     bool VAnalyzer::verifyBlock(std::vector<std::unique_ptr<ExprAST>> const& block)
     {
-        auto* refscope=new std::vector<VariableDefAST*>();
-        this->scope_varref=refscope;
+        auto refscope=std::vector<VariableDefAST*>();
+        this->scope_varref=&refscope;
 
         for(auto const& expr : block)
         {
@@ -1261,13 +1267,12 @@ namespace vire
                 return false;
             }
         }
-        for(const auto& var : *refscope)
+        for(const auto& var : refscope)
         {
             undefineVariable(var);
         }
 
         this->scope_varref=nullptr;
-        delete refscope;
         
         return true;
     }
@@ -1356,8 +1361,8 @@ namespace vire
         }
 
         // Verify all statements in global scope
-        auto* global_refscope=new std::vector<VariableDefAST*>();
-        this->scope_varref=global_refscope;
+        auto global_refscope=std::vector<VariableDefAST*>();
+        this->scope_varref=&global_refscope;
         for(const auto& expr : pre_stms)
         {
             if(!verifyExpr(expr.get()))
@@ -1366,9 +1371,9 @@ namespace vire
             }
         }
         this->scope_varref=nullptr;
-        delete global_refscope;
 
         ast->addPreExecutionStatements(std::move(pre_stms));
+        ast->addPreExecutionStatementVariables(global_refscope);
 
         return is_valid;
     }

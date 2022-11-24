@@ -1,6 +1,8 @@
 # -- Configuration setup
 cmake_minimum_required(VERSION 3.16.3)
 
+message(${CMAKE_BUILD_TYPE})
+
 project(VIRELANG VERSION 3.5.1)
 
 find_package(ZLIB REQUIRED)

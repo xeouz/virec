@@ -37,6 +37,13 @@ namespace vire
         }
     }
 
+    llvm::Value* VCompiler::createAllocaForVar(VariableDefAST* const& var)
+    {
+        auto* ty=getLLVMType(var->getType());
+        auto* alloca=Builder.CreateAlloca(ty, nullptr, var->getName());
+        namedValues[var->getName()]=alloca;
+        return alloca;
+    }
     llvm::BranchInst* VCompiler::createBrIfNoTerminator(llvm::BasicBlock* block)
     {
         if (Builder.GetInsertBlock()->getTerminator() == nullptr)
@@ -368,16 +375,11 @@ namespace vire
     }
     llvm::Value* VCompiler::compileVariableDef(VariableDefAST* const def)
     {
-        auto* var_type=getLLVMType(def->getType());
-        auto* current_blk=Builder.GetInsertBlock();
-
-        auto* alloca=Builder.CreateAlloca(var_type, nullptr, def->getName());
-
+        auto* alloca=namedValues[def->getName()];
         auto const& value=def->getValue();
 
         if(!value)
         {
-            namedValues[def->getName()]=alloca;
             return alloca;
         }
 
@@ -420,8 +422,6 @@ namespace vire
             // Create the memcpy call
             auto* call_inst=Builder.CreateMemCpy(ptr, align, val, align, llvm::ConstantInt::get(CTX, llvm::APInt(64, size, true)));
         }
-
-        namedValues[def->getName()]=alloca;
 
         return alloca;
     }
@@ -582,6 +582,12 @@ namespace vire
         std::vector<llvm::Value*> values;
         for(const auto& expr : block)
         {
+            if(expr->asttype==ast_vardef)
+            {
+                // Variable definitions are compiled at the start of the function
+                continue;
+            }
+
             values.push_back(compileExpr(expr.get()));
         }
 
@@ -801,14 +807,6 @@ namespace vire
 
         namedValues.clear();
         bool func_ret_struct=(func->getReturnType()->getType()==types::TypeNames::Custom);
-        for(int i=0; i<func->getArgs().size(); ++i)
-        {
-            // +func_ret_struct, the reason for that is defined in compilePrototype()
-            auto* arg=function->getArg(i+func_ret_struct);
-            auto* alloca=Builder.CreateAlloca(arg->getType(), nullptr, func_args[i]->getName());
-            Builder.CreateStore(arg, alloca);
-            namedValues[func_args[i]->getName()]=alloca;
-        }
 
         // Create return value
         llvm::Type* ret_type=getLLVMType(func->getReturnType());
@@ -820,6 +818,20 @@ namespace vire
 
         // Compile the block
         currentFunction=function;
+
+        for(auto& [name, var]: func->getLocals())
+        {
+            createAllocaForVar(var);
+        }
+        for(int i=0; i<func->getArgs().size(); ++i)
+        {
+            // +func_ret_struct, the reason for that is defined in compilePrototype()
+            auto* arg=function->getArg(i+func_ret_struct);
+            auto* alloca=namedValues[func_args[i]->getName()];
+            Builder.CreateStore(arg, alloca);
+            namedValues[func_args[i]->getName()]=alloca;
+        }
+
         compileBlock(func->getBody());
         createBrIfNoTerminator(currentFunctionEndBB);
 
@@ -978,8 +990,12 @@ namespace vire
         currentFunction=main_func;
         main_func->addFnAttr(llvm::Attribute::get(CTX, "wasm-export-name", "_main"));
         main_func->setVisibility(llvm::GlobalValue::DefaultVisibility);
-
-        for(auto const& e:mod->getPreExecutionStatements())
+        
+        for(auto const& var: mod->getPreExecutionStatementsVariables())
+        {
+            createAllocaForVar(var);
+        }
+        for(auto const& e: mod->getPreExecutionStatements())
         {
             compileExpr(e.get());
         }
@@ -1029,10 +1045,11 @@ namespace vire
     {
         llvm::legacy::PassManager passmgr;
         
+        /*
         passmgr.add(llvm::createPromoteMemoryToRegisterPass());
         passmgr.add(llvm::createInstructionCombiningPass());
         passmgr.add(llvm::createReassociatePass());
-
+        */
         return passmgr;
     }
     llvm::TargetMachine* VCompiler::compileInternal(std::string const& target_str)

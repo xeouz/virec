@@ -29,7 +29,7 @@ class VAnalyzer
     std::map<std::string, ExprAST*> types;
 
     // Functions
-    void defineVariable(VariableDefAST* const var);
+    void defineVariable(VariableDefAST* const var, bool is_arg=false);
     void undefineVariable(VariableDefAST* const var);
     void undefineVariable(proto::IName const& var);
 
