@@ -1,3 +1,22 @@
 extern puti(n: int);
 
-puti(42);
+func is_munch(a: int): bool
+{
+    if(a==a*10%10)
+    {
+        return true;
+    }
+
+    return false;
+}
+
+func main(): int
+{
+    for(let i=1; i<1; ++i)
+    {
+        if(is_munch(i))
+        {
+            puti(i);
+        }
+    }
+}

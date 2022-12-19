@@ -2,3 +2,4 @@ build/
 mingw-build/
 wasm-lib/
 gitignore/
+test.cpp
