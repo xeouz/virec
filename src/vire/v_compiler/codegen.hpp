@@ -39,6 +39,12 @@
 #include "llvm/Transforms/Scalar.h"
 #include "llvm/Transforms/Scalar/GVN.h"
 #include "llvm/Transforms/Utils.h"
+#include "llvm/Analysis/LoopAnalysisManager.h"
+#include "llvm/Analysis/CGSCCPassManager.h"
+#include "llvm/Passes/PassBuilder.h"
+#include "llvm/IR/PassManager.h"
+#include "llvm/Analysis/AliasAnalysis.h"
+#include "llvm/Transforms/Scalar/DeadStoreElimination.h"
 
 #include <memory>
 #include <map>
@@ -46,6 +52,17 @@
 
 namespace vire
 {
+
+enum class Optimization
+{
+    O0,
+    O1,
+    O2,
+    O3,
+    Os,
+    Oz,
+};
+
 class VCompiler
 {
     std::unique_ptr<VAnalyzer> analyzer;
@@ -68,7 +85,7 @@ class VCompiler
     std::string output_ir;
 private:
     llvm::TargetMachine* compileInternal(std::string const& target_str);
-    llvm::legacy::PassManager createPassManager() const;
+    void runOptimizationPasses(llvm::TargetMachine* tm, Optimization opt_level=Optimization::O0, bool enable_lto=false);
 
 public:
     VCompiler(std::unique_ptr<VAnalyzer> analyzer, std::string const& name="vire")
@@ -137,7 +154,7 @@ public:
     
     void resetModule();
     void compileModule();
-    void compileToFile(std::string const& filename, std::string const& target);
-    std::vector<unsigned char> compileToString(std::string const& target_str="");
+    void compileToFile(std::string const& filename, std::string const& target, Optimization opt_level=Optimization::O0, bool enable_lto=false);
+    std::vector<unsigned char> compileToString(std::string const& target_str="", Optimization opt_level=Optimization::O0, bool enable_lto=false);
 };
 } // namespace vire

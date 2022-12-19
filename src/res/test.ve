@@ -1,37 +1,40 @@
 extern puti(n: int);
+extern putd(n: double);
 
-func sort(arr: int[5])
+func pow(d: double, n: int): double
 {
-    let i=0;
-    let key=0;
-    let j=0;
+    let x:double = 1;
 
-    for(i=0; i<5; ++i)
+    for(let i=1; i<=n; ++i)
     {
-        key = arr[i];
-        j = i-1;
-
-        while(j>=0)
-        {
-            if(arr[j] < key)
-            {
-                break;
-            }
-
-            arr[j + 1] = arr[j];
-            j-=1;
-        }
-
-        arr[j + 1] = key;
+        x*=d;
     }
+
+    return x;
 }
 
-let arr=[61,86,53,19,61];
-
-sort(arr);
-
-for(let i=0; i<5000000; ++i)
+func is_munch(n: double): bool
 {
-    let rr=[1,2,3,4,444];
-    puti(arr[i]);
+    let dsum=0.0d;
+
+    let copy=n;
+
+    while(copy>10)
+    {
+        let dig=copy%10;
+        copy/=10;
+        dsum+=pow(dig,dig);
+    }
+
+    putd(dsum);
+    putd(n);
+
+    if(dsum==n)
+    {
+        return true;
+    }
+
+    return false;
 }
+
+is_munch(1375);

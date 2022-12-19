@@ -582,12 +582,6 @@ namespace vire
         std::vector<llvm::Value*> values;
         for(const auto& expr : block)
         {
-            if(expr->asttype==ast_vardef)
-            {
-                // Variable definitions are compiled at the start of the function
-                continue;
-            }
-
             values.push_back(compileExpr(expr.get()));
         }
 
@@ -819,13 +813,17 @@ namespace vire
         // Compile the block
         currentFunction=function;
 
+        for(auto& var: func->getArgs())
+        {
+            createAllocaForVar(var.get());
+        }
         for(auto& [name, var]: func->getLocals())
         {
             createAllocaForVar(var);
         }
         for(int i=0; i<func->getArgs().size(); ++i)
         {
-            // +func_ret_struct, the reason for that is defined in compilePrototype()
+            // +func_ret_struct, the reason for that is told in compilePrototype()
             auto* arg=function->getArg(i+func_ret_struct);
             auto* alloca=namedValues[func_args[i]->getName()];
             Builder.CreateStore(arg, alloca);
@@ -847,7 +845,7 @@ namespace vire
             Builder.CreateRetVoid();
         }
         auto& bbend=function->getBasicBlockList().back();
-        currentFunctionEndBB->moveAfter(&bbend); // Move the end block after the 
+        currentFunctionEndBB->moveAfter(&bbend); // Put the end block after the 
                                                  // last block of the function
         if(func->getIName().name=="main")
         {
@@ -1041,16 +1039,64 @@ namespace vire
         return analyzer.get();
     }
 
-    llvm::legacy::PassManager VCompiler::createPassManager() const
+    void VCompiler::runOptimizationPasses(llvm::TargetMachine* tm, Optimization opt_level, bool enable_lto)
     {
-        llvm::legacy::PassManager passmgr;
-        
-        /*
-        passmgr.add(llvm::createPromoteMemoryToRegisterPass());
-        passmgr.add(llvm::createInstructionCombiningPass());
-        passmgr.add(llvm::createReassociatePass());
-        */
-        return passmgr;
+        llvm::LoopAnalysisManager lam;
+        llvm::FunctionAnalysisManager fam;
+        llvm::CGSCCAnalysisManager cam;
+        llvm::ModuleAnalysisManager mam;
+
+        llvm::PipelineTuningOptions pio;
+        pio.LoopInterleaving=true;
+        pio.LoopUnrolling=true;
+        pio.LoopVectorization=true;
+        pio.SLPVectorization=true;
+        pio.MergeFunctions=true;
+        llvm::PassBuilder pass_builder(tm, pio);
+
+        fam.registerPass([&] { return pass_builder.buildDefaultAAPipeline(); });
+        pass_builder.registerModuleAnalyses(mam);
+        pass_builder.registerCGSCCAnalyses(cam);
+        pass_builder.registerFunctionAnalyses(fam);
+        pass_builder.registerLoopAnalyses(lam);
+        pass_builder.crossRegisterProxies(lam, fam, cam, mam);
+
+        pass_builder.registerOptimizerLastEPCallback([&] (llvm::ModulePassManager& mpm, llvm::OptimizationLevel)
+        {
+            mpm.addPass(llvm::createModuleToFunctionPassAdaptor(llvm::DSEPass{}));
+        });
+
+        llvm::ModulePassManager passmgr;
+        llvm::OptimizationLevel lvl;
+
+        if(opt_level == Optimization::O0)
+        {
+            passmgr=pass_builder.buildO0DefaultPipeline(llvm::OptimizationLevel::O0, enable_lto);
+        }
+        else
+        {
+            switch(opt_level)
+            {
+                case Optimization::O1: lvl=llvm::OptimizationLevel::O1;
+                case Optimization::O2: lvl=llvm::OptimizationLevel::O2;
+                case Optimization::O3: lvl=llvm::OptimizationLevel::O3;
+                case Optimization::Os: lvl=llvm::OptimizationLevel::Os;
+                case Optimization::Oz: lvl=llvm::OptimizationLevel::Oz;
+
+                default: lvl=llvm::OptimizationLevel::O0;
+            }
+
+            if(enable_lto)
+            {
+                passmgr=pass_builder.buildLTOPreLinkDefaultPipeline(lvl);
+            }
+            else
+            {
+                passmgr=pass_builder.buildPerModuleDefaultPipeline(lvl);
+            }
+        }
+
+        passmgr.run(*Module, mam);
     }
     llvm::TargetMachine* VCompiler::compileInternal(std::string const& target_str)
     {
@@ -1106,7 +1152,7 @@ namespace vire
 
         return target_machine;
     }
-    std::vector<unsigned char> VCompiler::compileToString(std::string const& target_str)
+    std::vector<unsigned char> VCompiler::compileToString(std::string const& target_str, Optimization opt_level, bool enable_lto)
     {
         llvm::SmallString<1> out;
         llvm::raw_svector_ostream os(out);
@@ -1118,9 +1164,11 @@ namespace vire
             return std::vector<unsigned char>();
         }
 
-        auto passmgr=createPassManager();
-        target_machine->addPassesToEmitFile(passmgr, os, nullptr, file_type);
-        passmgr.run(*Module);
+        runOptimizationPasses(target_machine, opt_level, enable_lto);
+
+        llvm::legacy::PassManager legacy_passmgr;
+        target_machine->addPassesToEmitFile(legacy_passmgr, os, nullptr, file_type);
+        legacy_passmgr.run(*Module);
 
         auto bytestr=out.str().str();
         std::vector<unsigned char> ret(bytestr.begin(), bytestr.end());
@@ -1129,7 +1177,7 @@ namespace vire
 
         return ret;
     }
-    void VCompiler::compileToFile(std::string const& filename, std::string const& target_str)
+    void VCompiler::compileToFile(std::string const& filename, std::string const& target_str, Optimization opt_level, bool enable_lto)
     {
         std::error_code ec;
         llvm::raw_fd_ostream os(filename, ec, llvm::sys::fs::OF_None);
@@ -1141,9 +1189,11 @@ namespace vire
             return;
         }
 
-        auto passmgr=createPassManager();
-        target_machine->addPassesToEmitFile(passmgr, os, nullptr, file_type);
-        passmgr.run(*Module);
+        runOptimizationPasses(target_machine, opt_level, enable_lto);
+
+        llvm::legacy::PassManager legacy_passmgr;
+        target_machine->addPassesToEmitFile(legacy_passmgr, os, nullptr, file_type);
+        legacy_passmgr.run(*Module);
         os.flush();
 
         delete target_machine;

@@ -28,7 +28,7 @@ add_executable(VIRELANG ${SRC_DIR}/src/main.cpp)
 
 # -- LLVM Libraries
 link_libraries()
-execute_process(COMMAND llvm-config --libs x86 OUTPUT_VARIABLE LIBS)
+execute_process(COMMAND llvm-config --libs x86 Passes OUTPUT_VARIABLE LIBS)
 execute_process(COMMAND llvm-config --system-libs OUTPUT_VARIABLE SYS_LIBS)
 execute_process(COMMAND llvm-config --ldflags OUTPUT_VARIABLE LDF)
 #message(STATUS "Found LLVM" ${LIBS})

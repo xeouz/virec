@@ -70,7 +70,7 @@ bool VApi::verifySourceModule()
     bool success=compiler->getAnalyzer()->verifySourceModule(std::move(ast));
     return success;
 }
-bool VApi::compileSourceModule(std::string output_file_path, bool write_to_file)
+bool VApi::compileSourceModule(std::string output_file_path, bool write_to_file, Optimization opt_level, bool enable_lto)
 {
     std::string out_file_path;
 
@@ -102,11 +102,11 @@ bool VApi::compileSourceModule(std::string output_file_path, bool write_to_file)
     
     if(!failure && write_to_file)
     {
-        compiler->compileToFile(output_file_path, target);
+        compiler->compileToFile(output_file_path, target, opt_level, enable_lto);
     }
     else if(!failure && !write_to_file)
     {
-        byte_output=compiler->compileToString(target);
+        byte_output=compiler->compileToString(target, opt_level, enable_lto);
     }
 
     return !failure;
