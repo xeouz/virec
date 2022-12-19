@@ -167,6 +167,10 @@ namespace vire
             case ast_binop:
             {
                 auto* binop=((BinaryExprAST*)expr);
+
+                if(binop->getType()->getType()!=types::TypeNames::Void)
+                    return binop->getType();
+
                 auto* t=binop->getOpType();
 
                 if(t==nullptr)

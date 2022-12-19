@@ -1,5 +1,4 @@
 build/
-gitignore/
-.vscode/
-wasm-lib/node_modules
 mingw-build/
+wasm-lib/
+gitignore/
