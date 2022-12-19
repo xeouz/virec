@@ -93,7 +93,7 @@ public:
     {
         Module = std::make_unique<llvm::Module>(name, CTX);
         CTX.setOpaquePointers(true);
-        file_type=llvm::CGFT_ObjectFile;
+        file_type=llvm::CGFT_AssemblyFile;
     }
 
     // Compilation Functions

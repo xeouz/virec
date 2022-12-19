@@ -1077,11 +1077,11 @@ namespace vire
         {
             switch(opt_level)
             {
-                case Optimization::O1: lvl=llvm::OptimizationLevel::O1;
-                case Optimization::O2: lvl=llvm::OptimizationLevel::O2;
-                case Optimization::O3: lvl=llvm::OptimizationLevel::O3;
-                case Optimization::Os: lvl=llvm::OptimizationLevel::Os;
-                case Optimization::Oz: lvl=llvm::OptimizationLevel::Oz;
+                case Optimization::O1: lvl=llvm::OptimizationLevel::O1; break;
+                case Optimization::O2: lvl=llvm::OptimizationLevel::O2; break;
+                case Optimization::O3: lvl=llvm::OptimizationLevel::O3; break;
+                case Optimization::Os: lvl=llvm::OptimizationLevel::Os; break;
+                case Optimization::Oz: lvl=llvm::OptimizationLevel::Oz; break;
 
                 default: lvl=llvm::OptimizationLevel::O0;
             }
