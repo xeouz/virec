@@ -13,10 +13,10 @@ int entry()
     if(!s)
     {
         std::cout << "Verification failed" << std::endl;
-        return 1; 
+        return 1;
     }
 
-    s=api->compileSourceModule("./test.asm", true, vire::Optimization::O0);
+    s=api->compileSourceModule("./test.asm", true, vire::Optimization::O3);
     api->getErrorBuilder()->showErrors();
     if(!s)
     {
@@ -25,6 +25,7 @@ int entry()
     }
 
     std::cout << "Compiled" << std::endl;
+    std::cout << api->getCompiledLLVMIR() << std::endl;
     std::cout << "---" << std::endl;
 
     return 0;

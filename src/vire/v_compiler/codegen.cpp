@@ -81,6 +81,8 @@ namespace vire
             return alloca;
         }
     }
+    
+    //-- CHANGES REQUIRED: NUW and NSW flag toggling --//
     llvm::Value* VCompiler::createBinaryOperation(llvm::Value* lhs, llvm::Value* rhs, VToken* const op, bool expr_is_fp)
     {
         const char* cmpname="cmptmp";
@@ -90,7 +92,7 @@ namespace vire
             {
                 if(!expr_is_fp)
                 {
-                    return Builder.CreateAdd(lhs, rhs, "addtmp");
+                    return Builder.CreateAdd(lhs, rhs, "addtmp", false, true);
                 }
                 else
                 {
@@ -101,7 +103,7 @@ namespace vire
             {
                 if(!expr_is_fp)
                 {
-                    return Builder.CreateSub(lhs, rhs, "subtmp");
+                    return Builder.CreateSub(lhs, rhs, "subtmp", false, true);
                 }
                 else
                 {
@@ -112,7 +114,7 @@ namespace vire
             {
                 if(!expr_is_fp)
                 {
-                    return Builder.CreateMul(lhs, rhs, "multmp");
+                    return Builder.CreateMul(lhs, rhs, "multmp", false, true);
                 }
                 else
                 {

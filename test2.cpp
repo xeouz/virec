@@ -1,18 +1,18 @@
-extern puti(n: int);
+extern void puti(int i);
 
-func is_munch(a: int): bool
+bool is_munch(int a)
 {
     if(a==a*10%10)
     {
         return true;
     }
-
+    
     return false;
 }
 
-func test()
+void test()
 {
-    for(let i=1; i<1; ++i)
+    for(int i=1; i<1; ++i)
     {
         if(is_munch(i))
         {
