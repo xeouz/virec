@@ -12,6 +12,8 @@
 namespace vire
 {
 
+class ReturnExprAST;
+
 // CallExprAST - Class for function calls, eg - `print()`
 class CallExprAST : public ExprAST
 {
@@ -66,10 +68,13 @@ public:
     FunctionBaseAST(types::Base* type)
     :   return_type(types::copyType(type))
     {}
+    FunctionBaseAST(std::unique_ptr<types::Base> type)
+    : return_type(std::move(type))
+    {}
     
     types::Base* getReturnType() const { return return_type.get(); }
-    std::unique_ptr<types::Base> moveReturnType() { return std::move(return_type); }
     void setReturnType(std::unique_ptr<types::Base> t) { this->return_type=std::move(t); }
+    void setReturnType(types::Base* t) { this->return_type=types::copyType(t); }
 
     virtual proto::IName const& getIName() const = 0;
 
@@ -93,31 +98,26 @@ public:
 class PrototypeAST : public FunctionBaseAST
 {
     proto::IName name;
-
     std::unique_ptr<VToken> name_token;
-
     std::vector<std::unique_ptr<VariableDefAST>> args;
 public:
     int asttype;
 
-    PrototypeAST(std::unique_ptr<VToken> name, 
-    std::vector<std::unique_ptr<VariableDefAST>> args, 
-    std::unique_ptr<types::Base> return_type)
-    : FunctionBaseAST(return_type.get()), args(std::move(args)), asttype(ast_proto),
+    PrototypeAST(std::unique_ptr<VToken> name, std::vector<std::unique_ptr<VariableDefAST>> args, std::unique_ptr<types::Base> return_type)
+    : FunctionBaseAST(std::move(return_type)), args(std::move(args)), asttype(ast_proto),
     name(name->value), name_token(std::move(name))
     {}
 
-    proto::IName const& getIName()       const { return name; }
+    proto::IName const& getIName()    const { return name; }
     std::string const getName()       const { return name.get(); }
+    VToken* const getNameToken()      const { return name_token.get(); }
 
-    VToken* const getNameToken()        const { return name_token.get(); }
-
-    std::unique_ptr<VToken> moveNameToken()       { return std::move(name_token); }
+    std::unique_ptr<VToken> moveNameToken() { return std::move(name_token); }
     
     unsigned int getArgCount() const {return args.size();}
     
     bool is_proto() const {return true;}
-    bool is_type_null() const {return return_type==nullptr;}
+    bool is_type_null() const {return FunctionBaseAST::return_type==nullptr;}
 
     std::vector<std::unique_ptr<VariableDefAST>> const& getArgs() const {return args;}
 };
@@ -152,6 +152,7 @@ class FunctionAST : public FunctionBaseAST
 {
     std::unique_ptr<PrototypeAST> proto;
     std::vector<std::unique_ptr<ExprAST>> statements;
+    std::vector<ReturnExprAST*> return_stms;
     std::unordered_map<std::string, VariableDefAST*> locals;
 public:
     int asttype;
@@ -170,10 +171,10 @@ public:
     proto::IName const& getIName()    const { return proto->getIName(); }
     std::string const getName()       const { return proto->getName(); }
 
-    VToken* const getNameToken() const { return proto->getNameToken(); }
+    VToken* const getNameToken()      const { return proto->getNameToken(); }
     std::unique_ptr<VToken> moveNameToken() { return proto->moveNameToken(); }
 
-    types::Base* getReturnType() const { return proto->getReturnType(); }
+    types::Base* getReturnType()      const { return proto->getReturnType(); }
 
     // Block-based Functions
     void insertStatement(std::unique_ptr<ExprAST> statement) 
@@ -183,6 +184,10 @@ public:
     bool isVariableDefined(std::string const& name)            const { return locals.count(name)>0; }
     VariableDefAST* const getVariable(std::string const& name) const { return locals.at(name); }
     std::unordered_map<std::string, VariableDefAST*> const& getLocals() const { return locals; }
+
+    // Return statement functions
+    std::vector<ReturnExprAST*> const& getReturnStatements() const { return return_stms; }
+    void addReturnStatement(ReturnExprAST* ret) { return_stms.push_back(ret); }
 
     void addVariable(VariableDefAST* const var) {locals[var->getName()] = var;}
 };

@@ -1,22 +1,20 @@
 extern puti(n: int);
 
-func is_munch(a: int): bool
+struct xyz
 {
-    if(a==a*10%10)
-    {
-        return true;
-    }
-
-    return false;
+    int a;
+    int b;
+    double c;
 }
 
-func test()
+func test(): xyz
 {
-    for(let i=1; i<1; ++i)
-    {
-        if(is_munch(i))
-        {
-            puti(i);
-        }
-    }
+    let a:xyz;
+    a.b=10;
+
+    return a;
 }
+
+let x=test();
+
+puti(x.b);

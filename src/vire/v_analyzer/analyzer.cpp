@@ -754,6 +754,13 @@ namespace vire
             }
         }
 
+        current_func->addReturnStatement(ret);
+        if(ret->getValue()->asttype==ast_var)
+        {
+            auto var_name=((VariableDefAST*)ret->getValue())->getName();
+            getVariable(var_name)->isReturned(true);
+        }
+
         return true;
     }
 
@@ -915,6 +922,7 @@ namespace vire
             // Prototype is not valid
             is_valid=false;
         }
+        func->setReturnType(types::copyType(func->getProto()->getReturnType()));
 
         for(auto const& var: func->getArgs())
         {

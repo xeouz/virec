@@ -57,28 +57,38 @@ namespace vire
     }
     llvm::Value* VCompiler::getValueAsAlloca(llvm::Value* expr)
     {
-        llvm::AllocaInst* alloca=nullptr;
-        // Check if expr is llvm::LoadInst
-        if (llvm::LoadInst* load=llvm::dyn_cast<llvm::LoadInst>(expr))
+        // Checks
+        if(llvm::AllocaInst* alloc=llvm::dyn_cast<llvm::AllocaInst>(expr))
         {
+            return alloc;
+        }
+        else if (llvm::LoadInst* load=llvm::dyn_cast<llvm::LoadInst>(expr))
+        {
+            // Get the alloca by the name in the load operation
             auto* alloca=namedValues[load->getPointerOperand()->getName()];
+            
             // remove the expr from the block
             load->eraseFromParent();
 
-            // return the alloca
             return alloca;
         }
         else if(llvm::GetElementPtrInst* gep=llvm::dyn_cast<llvm::GetElementPtrInst>(expr))
         {
+            // Get the alloca by the name in the GEP operation
             auto* alloca=namedValues[gep->getPointerOperand()->getName()];
-
+            
+            // remove the expr from the block
             gep->eraseFromParent();
 
             return alloca;
         }
         else
         {
-            return alloca;
+            std::cout << "Could not cast expr to llvm::AllocaInst*:" << std::endl;
+            llvm::errs() << "\t";
+            expr->print(llvm::errs());
+            llvm::errs() << "\n";
+            return nullptr;
         }
     }
     
@@ -361,6 +371,11 @@ namespace vire
     }
     llvm::Value* VCompiler::compileVariableExpr(VariableExprAST* const expr)
     { 
+        if(currentFunctionAST->getVariable(expr->getName())->isReturned() && types::isUserDefined(currentFunctionAST->getReturnType()))
+        {
+            return currentFunction->getArg(0);
+        }
+
         llvm::AllocaInst* val=namedValues[expr->getName()];
         llvm::Type* ty=val->getAllocatedType();
 
@@ -389,6 +404,26 @@ namespace vire
         if(def->getType()->getType()==types::TypeNames::Custom) // If it lhs is a struct
         {
             auto* val=compileExpr(value);
+
+            if(value->asttype==ast_call)
+            {
+                auto* call=(llvm::CallInst*)val;
+
+                // Create a new argument list for a new call inst
+                std::vector<llvm::Value*> new_args;
+                new_args.push_back(alloca); // The alloca is the first argument
+                for(auto const& arg: call->args()) // Add the rest of the arguments
+                {
+                    new_args.push_back(arg);
+                }
+
+                // Replace the old call with the new call
+                Builder.CreateCall(call->getCalledFunction(), new_args);
+                call->eraseFromParent();
+
+                return alloca;
+            }
+
             auto* alloca_rhs=(llvm::AllocaInst*)getValueAsAlloca(val);
 
             auto lhs_align=alloca->getAlign();
@@ -584,6 +619,20 @@ namespace vire
         std::vector<llvm::Value*> values;
         for(const auto& expr : block)
         {
+            // This happens if the function returns a struct or a list
+            if(expr->asttype==ast_return && currentFunction->getReturnType()->isVoidTy())
+            {
+                continue;
+            }
+            else if(expr->asttype==ast_vardef)
+            {
+                auto* var=(VariableDefAST*)expr.get();
+                if(var->isReturned() && types::isUserDefined(currentFunctionAST->getReturnType()) && currentFunctionAST->getReturnStatements().size()==1)
+                {
+                    continue;
+                }
+            }
+
             values.push_back(compileExpr(expr.get()));
         }
 
@@ -696,7 +745,7 @@ namespace vire
             func_name=afunc->getName();
         }
 
-        auto func=Module->getFunction(func_name);
+        auto* func=Module->getFunction(func_name);
 
         std::vector<llvm::Value*> args;
         for(auto& arg : expr->getArgs())
@@ -704,7 +753,7 @@ namespace vire
             args.push_back(compileExpr(arg.get()));
         }
 
-        if(expr->getType()->getType()==types::TypeNames::Void)
+        if(func->getReturnType()->isVoidTy())
         {
             return Builder.CreateCall(func, args);
         }
@@ -732,7 +781,7 @@ namespace vire
             auto* struct_ty=getLLVMType(proto->getReturnType());
             func_ret_type=llvm::Type::getVoidTy(CTX);
 
-            args.push_back(struct_ty);
+            args.push_back(llvm::PointerType::get(struct_ty, 0));
             func_ret_struct=true;
         }
         else
@@ -765,11 +814,11 @@ namespace vire
         if(func_ret_struct)
         {
             llvm::AttrBuilder attrs(CTX);
-            attrs.addStructRetAttr(args[0]);
+            attrs.addStructRetAttr(getLLVMType(proto->getReturnType()));
+            attrs.addAttribute(llvm::Attribute::NoAlias);
 
-            auto* arg=func->getArg(0);
-            arg->mutateType(llvm::PointerType::get(CTX, 0));
-            arg->addAttrs(attrs);
+            func->addParamAttrs(0, attrs);
+            // func->getArg(0)->mutateType(llvm::PointerType::get(CTX, 0));
         }
 
         func->addFnAttr(llvm::Attribute::get(CTX, "wasm-export-name", func->getName()));
@@ -791,6 +840,7 @@ namespace vire
     {
         llvm::Function* function=Module->getFunction(name);
         auto* func=(FunctionAST*)analyzer->getFunction(name);
+        auto func_ty=func->getReturnType()->getType();
 
         if(!function)
             function=compilePrototype(func->getProto());
@@ -802,11 +852,12 @@ namespace vire
         auto& func_args=func->getArgs();
 
         namedValues.clear();
-        bool func_ret_struct=(func->getReturnType()->getType()==types::TypeNames::Custom);
+        bool func_ret_struct=(func_ty==types::TypeNames::Custom);
 
         // Create return value
         llvm::Type* ret_type=getLLVMType(func->getReturnType());
-        if(func->getReturnType()->getType()!=types::TypeNames::Void)
+        bool func_returns=func_ty!=types::TypeNames::Void && !func_ret_struct;
+        if(func_returns)
         {
             auto* ret_val=Builder.CreateAlloca(ret_type, nullptr, "retval");
             namedValues["retval"]=ret_val;
@@ -814,6 +865,9 @@ namespace vire
 
         // Compile the block
         currentFunction=function;
+        currentFunctionAST=func;
+
+        bool func_returns_single_st=types::isUserDefined(func->getReturnType()) && func->getReturnStatements().size()==1;
 
         for(auto& var: func->getArgs())
         {
@@ -821,6 +875,9 @@ namespace vire
         }
         for(auto& [name, var]: func->getLocals())
         {
+            if(var->isReturned() && func_returns_single_st)
+                continue;
+            
             createAllocaForVar(var);
         }
         for(int i=0; i<func->getArgs().size(); ++i)
@@ -838,7 +895,7 @@ namespace vire
         // Create the return instruction
         Builder.SetInsertPoint(currentFunctionEndBB);
 
-        if(func->getReturnType()->getType()!=types::TypeNames::Void)
+        if(func_returns)
         {
             Builder.CreateRet(Builder.CreateLoad(ret_type, namedValues["retval"], "ret"));
         }
@@ -855,6 +912,7 @@ namespace vire
             function->setName("entry_main");
         }
 
+        std::cout << getCompiledOutput() << std::endl;
         return function;
     }
 
@@ -919,7 +977,17 @@ namespace vire
             }
             else
             {
-                val=getValueAsAlloca(compileExpr(current->getParent()));
+                auto* exp=compileExpr(current->getParent());
+                if(current->getParent()->asttype==ast_var)
+                {
+                    auto* var=currentFunctionAST->getVariable(((VariableExprAST*)current->getParent())->getName());
+                    if(var->isReturned())
+                        val=exp;
+                    else
+                        val=getValueAsAlloca(exp);
+                }
+                else
+                    val=getValueAsAlloca(exp);
             }
 
             if(first_iter_completed)

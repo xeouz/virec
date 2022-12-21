@@ -79,6 +79,7 @@ class VCompiler
     llvm::BasicBlock* currentFunctionEndBB;
     llvm::BasicBlock* currentLoopEndBB;
     llvm::BasicBlock* currentLoopBodyBB;
+    FunctionAST* currentFunctionAST;
 
     // Compilation
     enum llvm::CodeGenFileType file_type;
@@ -93,7 +94,7 @@ public:
     {
         Module = std::make_unique<llvm::Module>(name, CTX);
         CTX.setOpaquePointers(true);
-        file_type=llvm::CGFT_AssemblyFile;
+        file_type=llvm::CGFT_ObjectFile;
     }
 
     // Compilation Functions
