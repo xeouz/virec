@@ -277,7 +277,7 @@ class Custom : public Base
 {
     std::string name;
 public:
-    Custom(std::string name, int size, bool _is_const=true)
+    Custom(std::string name, long size, bool _is_const=true)
     : name(name)
     {
         this->type=TypeNames::Custom;

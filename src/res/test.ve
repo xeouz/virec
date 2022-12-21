@@ -12,7 +12,17 @@ func test(): xyz
     let a:xyz;
     a.b=10;
 
-    return a;
+    let b:xyz;
+    b.b=20;
+
+    if(a.b==b.b)
+    {
+        return a;
+    }
+    else
+    {
+        return b;
+    }
 }
 
 let x=test();

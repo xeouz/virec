@@ -1,5 +1,7 @@
 #include "codegen.hpp"
 
+//-- CHANGES REQUIRED: STRUCT PACKING --//
+
 namespace vire
 {
     llvm::Type* VCompiler::getLLVMType(types::Base* type)
@@ -619,15 +621,18 @@ namespace vire
         std::vector<llvm::Value*> values;
         for(const auto& expr : block)
         {
+            bool func_returns_1st=types::isUserDefined(currentFunctionAST->getReturnType()) && currentFunctionAST->getReturnStatements().size()==1;
+            
             // This happens if the function returns a struct or a list
-            if(expr->asttype==ast_return && currentFunction->getReturnType()->isVoidTy())
+            if(expr->asttype==ast_return && func_returns_1st)
             {
-                continue;
+                Builder.CreateBr(currentFunctionEndBB);
+                break;
             }
             else if(expr->asttype==ast_vardef)
             {
                 auto* var=(VariableDefAST*)expr.get();
-                if(var->isReturned() && types::isUserDefined(currentFunctionAST->getReturnType()) && currentFunctionAST->getReturnStatements().size()==1)
+                if(var->isReturned() && func_returns_1st)
                 {
                     continue;
                 }
@@ -763,6 +768,18 @@ namespace vire
     llvm::Value* VCompiler::compileReturnExpr(ReturnExprAST* const expr)
     {
         auto* expr_val=compileExpr(expr->getValue());
+
+        if(types::isUserDefined(currentFunctionAST->getReturnType()))
+        {
+            auto* arg0=currentFunction->getArg(0);
+
+            long nsize=types::custom_type_sizes[((types::Custom*)expr->getValue()->getType())->getName()];
+            auto* size=llvm::ConstantInt::get(CTX, llvm::APInt(64, nsize, false));
+            auto* memcpy=Builder.CreateMemCpy(arg0, arg0->getParamAlign(), expr_val, arg0->getParamAlign(), size);
+            Builder.CreateBr(currentFunctionEndBB);
+
+            return memcpy;
+        }
         auto* value=Builder.CreateStore(expr_val, namedValues["retval"]);
         Builder.CreateBr(currentFunctionEndBB);
 
