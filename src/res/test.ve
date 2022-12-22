@@ -4,27 +4,15 @@ struct xyz
 {
     int a;
     int b;
-    double c;
 }
 
-func test(): xyz
+func test(a:xyz): xyz
 {
-    let a:xyz;
-    a.b=10;
+    a.b=1000;
 
-    let b:xyz;
-    b.b=20;
-
-    if(a.b==b.b)
-    {
-        return a;
-    }
-    else
-    {
-        return b;
-    }
+    return a;
 }
 
-let x=test();
-
-puti(x.b);
+let a:xyz;
+let b=test(a);
+puti(b.b);

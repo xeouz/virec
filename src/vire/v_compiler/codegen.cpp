@@ -39,6 +39,21 @@ namespace vire
         }
     }
 
+    llvm::Value* VCompiler::pushFrontToCallInst(llvm::Value* arg, llvm::CallInst* call)
+    {
+        std::vector<llvm::Value*> new_args;
+        new_args.push_back(arg); // The alloca is the first argument
+        for(auto const& arg: call->args()) // Add the rest of the arguments
+        {
+            new_args.push_back(arg);
+        }
+
+        // Replace the old call with the new call
+        auto* ncall=Builder.CreateCall(call->getCalledFunction(), new_args);
+        call->eraseFromParent();
+
+        return ncall;
+    }
     llvm::Value* VCompiler::createAllocaForVar(VariableDefAST* const& var)
     {
         auto* ty=getLLVMType(var->getType());
@@ -378,8 +393,19 @@ namespace vire
             return currentFunction->getArg(0);
         }
 
-        llvm::AllocaInst* val=namedValues[expr->getName()];
-        llvm::Type* ty=val->getAllocatedType();
+        llvm::Value* val;
+        llvm::Type* ty;
+
+        if(current_func_single_sret) // We know that its an array if it returns a single sret BUT its not a struct
+        {
+            val=currentFunction->getArg(0);
+            ty=getLLVMType(expr->getType());
+        }
+        else
+        {
+            val=namedValues[expr->getName()];
+            ty=((llvm::AllocaInst*)val)->getAllocatedType();
+        }
 
         if(ty->isArrayTy())
         {
@@ -402,64 +428,62 @@ namespace vire
             return alloca;
         }
 
-        bool is_array=(value->asttype==ast_array);
-        if(def->getType()->getType()==types::TypeNames::Custom) // If it lhs is a struct
+        bool is_array=(def->getType()->getType()==types::TypeNames::Array);
+        if(types::isUserDefined(def->getType())) // If it lhs is a struct
         {
             auto* val=compileExpr(value);
 
             if(value->asttype==ast_call)
             {
                 auto* call=(llvm::CallInst*)val;
-
-                // Create a new argument list for a new call inst
-                std::vector<llvm::Value*> new_args;
-                new_args.push_back(alloca); // The alloca is the first argument
-                for(auto const& arg: call->args()) // Add the rest of the arguments
-                {
-                    new_args.push_back(arg);
-                }
-
-                // Replace the old call with the new call
-                Builder.CreateCall(call->getCalledFunction(), new_args);
-                call->eraseFromParent();
+                pushFrontToCallInst(alloca, call);
 
                 return alloca;
             }
+            else
+            {
+                auto* alloca_rhs=(llvm::AllocaInst*)getValueAsAlloca(val);
 
-            auto* alloca_rhs=(llvm::AllocaInst*)getValueAsAlloca(val);
+                auto lhs_align=alloca->getAlign();
+                auto rhs_align=alloca_rhs->getAlign();
 
-            auto lhs_align=alloca->getAlign();
-            auto rhs_align=alloca_rhs->getAlign();
-
-            auto size=llvm::APInt(64, def->getType()->getSize(), false);
-            auto* memcpy=Builder.CreateMemCpy(alloca, lhs_align, alloca_rhs, rhs_align, llvm::ConstantInt::get(CTX, size));
-
-            return memcpy;
+                auto size=llvm::APInt(64, def->getType()->getSize(), false);
+                auto* memcpy=Builder.CreateMemCpy(alloca, lhs_align, alloca_rhs, rhs_align, llvm::ConstantInt::get(CTX, size));
+            }
         }
-        else if(!is_array)
+        else if(is_array)
         {
-            auto* val=compileExpr(value);
-            Builder.CreateStore(val, alloca);
+            if(value->asttype==ast_call)
+            {
+                auto* call=(llvm::CallInst*)compileExpr(value);
+                pushFrontToCallInst(alloca, call);
+
+                return alloca;
+            }
+            else
+            {
+                /* Creating a Memcpy call */
+                
+                // Compile the Array constant
+                auto* val=compileConstantExpr((ArrayExprAST* const)value);
+
+                // Create an i8*
+                auto* ptr=Builder.CreateBitCast(alloca, llvm::IntegerType::getInt8PtrTy(CTX));
+
+                auto align=alloca->getAlign();
+
+                // Set the size of the array
+                auto* array_ast=(ArrayExprAST* const)value;
+                std::size_t size=array_ast->getType()->getSize();
+
+                // Create the memcpy call
+                auto* call_inst=Builder.CreateMemCpy(ptr, align, val, align, llvm::ConstantInt::get(CTX, llvm::APInt(64, size, true)));
+            }
         }
         else
         {   
-            /* Creating a Memcpy call */
-
-            auto* val=compileConstantExpr((ArrayExprAST* const)value);
-
-            // Create an i8*
-            auto* ptr=Builder.CreateBitCast(alloca, llvm::IntegerType::getInt8PtrTy(CTX));
-
-            auto align=alloca->getAlign();
-
-            // Set the size of the array
-            auto* array_ast=(ArrayExprAST* const)value;
-            auto elems=array_ast->getElements().size();
-            auto elem_size=array_ast->getElements()[0]->getType()->getSize();
-            auto size=elems*elem_size;
-
-            // Create the memcpy call
-            auto* call_inst=Builder.CreateMemCpy(ptr, align, val, align, llvm::ConstantInt::get(CTX, llvm::APInt(64, size, true)));
+            auto* val=compileExpr(value);
+            Builder.CreateStore(val, alloca);
         }
 
         return alloca;
@@ -621,10 +645,8 @@ namespace vire
         std::vector<llvm::Value*> values;
         for(const auto& expr : block)
         {
-            bool func_returns_1st=types::isUserDefined(currentFunctionAST->getReturnType()) && currentFunctionAST->getReturnStatements().size()==1;
-            
             // This happens if the function returns a struct or a list
-            if(expr->asttype==ast_return && func_returns_1st)
+            if(expr->asttype==ast_return && current_func_single_sret)
             {
                 Builder.CreateBr(currentFunctionEndBB);
                 break;
@@ -632,7 +654,8 @@ namespace vire
             else if(expr->asttype==ast_vardef)
             {
                 auto* var=(VariableDefAST*)expr.get();
-                if(var->isReturned() && func_returns_1st)
+                std::cout << var->isArgument() << std::endl;
+                if(var->isReturned() && !var->isArgument() && current_func_single_sret)
                 {
                     continue;
                 }
@@ -769,11 +792,21 @@ namespace vire
     {
         auto* expr_val=compileExpr(expr->getValue());
 
-        if(types::isUserDefined(currentFunctionAST->getReturnType()))
+        if(types::isUserDefined(currentFunctionAST->getReturnType()) 
+        || currentFunctionAST->getReturnType()->getType()==types::TypeNames::Array)
         {
             auto* arg0=currentFunction->getArg(0);
-
-            long nsize=types::custom_type_sizes[((types::Custom*)expr->getValue()->getType())->getName()];
+            
+            std::size_t nsize;
+            if(types::isUserDefined(currentFunctionAST->getReturnType()))
+            {
+                nsize=types::custom_type_sizes[((types::Custom*)expr->getValue()->getType())->getName()];
+            }
+            else
+            {
+                nsize=((types::Array*)expr->getValue()->getType())->getSize();
+            }
+            
             auto* size=llvm::ConstantInt::get(CTX, llvm::APInt(64, nsize, false));
             auto* memcpy=Builder.CreateMemCpy(arg0, arg0->getParamAlign(), expr_val, arg0->getParamAlign(), size);
             Builder.CreateBr(currentFunctionEndBB);
@@ -791,15 +824,16 @@ namespace vire
         std::vector<llvm::Type*> args(proto_args.size());
 
         llvm::Type* func_ret_type;
-        bool func_ret_struct=false;
+        bool func_rets_ty=false;
 
-        if(proto->getReturnType()->getType()==types::TypeNames::Custom)
+        if(types::isUserDefined(proto->getReturnType()) || proto->getReturnType()->getType()==types::TypeNames::Array)
         {
-            auto* struct_ty=getLLVMType(proto->getReturnType());
+            auto* ty=getLLVMType(proto->getReturnType());
             func_ret_type=llvm::Type::getVoidTy(CTX);
 
-            args.push_back(llvm::PointerType::get(struct_ty, 0));
-            func_ret_struct=true;
+            args.resize(args.size()+1);
+            args[0]=llvm::PointerType::get(ty, 0);
+            func_rets_ty=true;
         }
         else
         {
@@ -815,7 +849,7 @@ namespace vire
                 llvm_type=llvm::PointerType::get(llvm_type, 0);
             }
 
-            args[i]=llvm_type;
+            args[i+func_rets_ty]=llvm_type;
         }
 
         llvm::FunctionType* func_type=llvm::FunctionType::get(func_ret_type, args, false);
@@ -824,18 +858,17 @@ namespace vire
         // if function returns struct, then normal indexes start from 1, otherwise 0
         for(unsigned idx=0; idx<proto_args.size(); ++idx)
         {
-            auto arg=func->getArg(idx+func_ret_struct);
+            auto arg=func->getArg(idx+func_rets_ty);
             arg->setName("a"+proto_args[idx]->getName());
         }
 
-        if(func_ret_struct)
+        if(func_rets_ty)
         {
             llvm::AttrBuilder attrs(CTX);
             attrs.addStructRetAttr(getLLVMType(proto->getReturnType()));
             attrs.addAttribute(llvm::Attribute::NoAlias);
 
             func->addParamAttrs(0, attrs);
-            // func->getArg(0)->mutateType(llvm::PointerType::get(CTX, 0));
         }
 
         func->addFnAttr(llvm::Attribute::get(CTX, "wasm-export-name", func->getName()));
@@ -869,11 +902,11 @@ namespace vire
         auto& func_args=func->getArgs();
 
         namedValues.clear();
-        bool func_ret_struct=(func_ty==types::TypeNames::Custom);
+        bool func_ret_ty=(func_ty==types::TypeNames::Custom || func_ty==types::TypeNames::Array);
 
         // Create return value
         llvm::Type* ret_type=getLLVMType(func->getReturnType());
-        bool func_returns=func_ty!=types::TypeNames::Void && !func_ret_struct;
+        bool func_returns=func_ty!=types::TypeNames::Void && !func_ret_ty;
         if(func_returns)
         {
             auto* ret_val=Builder.CreateAlloca(ret_type, nullptr, "retval");
@@ -884,23 +917,21 @@ namespace vire
         currentFunction=function;
         currentFunctionAST=func;
 
-        bool func_returns_single_st=types::isUserDefined(func->getReturnType()) && func->getReturnStatements().size()==1;
+        current_func_single_sret=
+        (types::isUserDefined(func->getReturnType()) || func->getReturnType()->getType()==types::TypeNames::Array) 
+        && (func->getReturnStatements().size()==1);
 
-        for(auto& var: func->getArgs())
+        for(auto& [vname, var]: func->getLocals())
         {
-            createAllocaForVar(var.get());
-        }
-        for(auto& [name, var]: func->getLocals())
-        {
-            if(var->isReturned() && func_returns_single_st)
+            if(var->isReturned() && !var->isArgument() && current_func_single_sret)
                 continue;
             
             createAllocaForVar(var);
         }
         for(int i=0; i<func->getArgs().size(); ++i)
         {
-            // +func_ret_struct, the reason for that is told in compilePrototype()
-            auto* arg=function->getArg(i+func_ret_struct);
+            // i+func_ret_ty, the reason for that is told in compilePrototype()
+            auto* arg=function->getArg(i+func_ret_ty);
             auto* alloca=namedValues[func_args[i]->getName()];
             Builder.CreateStore(arg, alloca);
             namedValues[func_args[i]->getName()]=alloca;
@@ -928,8 +959,7 @@ namespace vire
             function->removeFnAttr("wasm-export-name");
             function->setName("entry_main");
         }
-
-        std::cout << getCompiledOutput() << std::endl;
+        
         return function;
     }
 
@@ -1018,6 +1048,8 @@ namespace vire
 
             int indx=st->getMemberIndex(current->getIName());
 
+            std::cout << getCompiledOutput() << std::endl;
+
             sgep=Builder.CreateStructGEP(st_ltype, val, indx, "sgep");
             current_expr=current->getChild();
             first_iter_completed=true;
@@ -1067,6 +1099,7 @@ namespace vire
             }
         }
 
+        current_func_single_sret=false;
         llvm::FunctionType* main_type=llvm::FunctionType::get(llvm::Type::getInt32Ty(CTX), false);
         llvm::Function* main_func=llvm::Function::Create(main_type, llvm::GlobalValue::ExternalLinkage, "main", Module.get());
         llvm::BasicBlock* bb=llvm::BasicBlock::Create(CTX, "entry", main_func);
@@ -1075,10 +1108,19 @@ namespace vire
         currentFunction=main_func;
         main_func->addFnAttr(llvm::Attribute::get(CTX, "wasm-export-name", "_main"));
         main_func->setVisibility(llvm::GlobalValue::DefaultVisibility);
+
+        /* Create a temp main function */
+        auto name=std::make_unique<VToken>("main", tok_id);
+        std::vector<std::unique_ptr<VariableDefAST>> args;
+        std::vector<std::unique_ptr<ExprAST>> stms;
+
+        auto main_func_ast=std::make_unique<FunctionAST>(std::make_unique<PrototypeAST>(std::move(name), std::move(args), types::construct("int")), std::move(stms));
+        currentFunctionAST=main_func_ast.get();
         
         for(auto const& var: mod->getPreExecutionStatementsVariables())
         {
             createAllocaForVar(var);
+            main_func_ast->addVariable(var);
         }
         for(auto const& e: mod->getPreExecutionStatements())
         {

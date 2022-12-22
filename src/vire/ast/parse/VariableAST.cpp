@@ -82,6 +82,7 @@ class VariableDefAST : public ExprAST
     bool is_const, is_let, is_array;
     bool use_value_type;
     bool is_returned;
+    bool is_argument;
 public:
     VariableDefAST(std::unique_ptr<VToken> name, std::unique_ptr<types::Base> type, std::unique_ptr<ExprAST> value,
     bool is_const=false, bool is_let=false)
@@ -123,6 +124,9 @@ public:
 
     void isReturned(bool value) { is_returned=value; }
     bool isReturned() { return is_returned; }
+
+    void isArgument(bool value) { is_argument=value; }
+    bool isArgument() { return is_argument; }
 };
 
 class CastExprAST : public ExprAST

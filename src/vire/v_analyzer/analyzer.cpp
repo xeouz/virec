@@ -575,6 +575,11 @@ namespace vire
                 return false;
             }
         }
+        
+        std::size_t elem_size=array->getElements()[0]->getType()->getSize();
+        std::size_t size=elem_size*elems.size();
+        array->getType()->setSize(size);
+
         return true;
     }
 
@@ -757,7 +762,7 @@ namespace vire
         current_func->addReturnStatement(ret);
         if(ret->getValue()->asttype==ast_var)
         {
-            auto var_name=((VariableDefAST*)ret->getValue())->getName();
+            auto var_name=((VariableExprAST*)ret->getValue())->getName();
             getVariable(var_name)->isReturned(true);
         }
 
@@ -888,6 +893,8 @@ namespace vire
                 // Argument is not valid
                 is_valid=false;
             }
+            
+            arg->isArgument(true);
         }
 
         return is_valid;
@@ -937,6 +944,7 @@ namespace vire
         
         for(auto const& var: func->getArgs())
         {
+            func->addVariable(var.get());
             undefineVariable(var.get());
         }
 
@@ -1373,6 +1381,7 @@ namespace vire
         }
 
         // Verify all statements in global scope
+        current_func=nullptr;
         auto global_refscope=std::vector<VariableDefAST*>();
         this->scope_varref=&global_refscope;
         for(const auto& expr : pre_stms)

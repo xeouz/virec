@@ -80,6 +80,7 @@ class VCompiler
     llvm::BasicBlock* currentLoopEndBB;
     llvm::BasicBlock* currentLoopBodyBB;
     FunctionAST* currentFunctionAST;
+    bool current_func_single_sret;
 
     // Compilation
     enum llvm::CodeGenFileType file_type;
@@ -101,6 +102,7 @@ public:
     
     llvm::Type* getLLVMType(types::Base* type);
 
+    llvm::Value* pushFrontToCallInst(llvm::Value* arg, llvm::CallInst* call);
     llvm::Value* createAllocaForVar(VariableDefAST* const& var);
     llvm::Value* createBinaryOperation(llvm::Value* lhs, llvm::Value* rhs, VToken* const op, bool expr_is_fp);
     llvm::BranchInst* createBrIfNoTerminator(llvm::BasicBlock* block);
