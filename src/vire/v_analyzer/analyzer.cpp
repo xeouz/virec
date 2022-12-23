@@ -720,6 +720,7 @@ namespace vire
                     arg=std::move(cast);
                 }
             }
+            arg->setType(types::copyType(arg_type));
 
             args[i]=std::move(arg);
         }
@@ -765,6 +766,8 @@ namespace vire
             auto var_name=((VariableExprAST*)ret->getValue())->getName();
             getVariable(var_name)->isReturned(true);
         }
+
+        ret->getValue()->setType(types::copyType(ret_expr_type));
 
         return true;
     }

@@ -87,7 +87,7 @@ public:
     VariableDefAST(std::unique_ptr<VToken> name, std::unique_ptr<types::Base> type, std::unique_ptr<ExprAST> value,
     bool is_const=false, bool is_let=false)
     : name(name->value), value(std::move(value)), ExprAST(std::move(type),ast_vardef), 
-    is_const(is_const),is_let(is_let), use_value_type(false), is_returned(false)
+    is_const(is_const),is_let(is_let), use_value_type(false), is_returned(false), is_argument(false)
     {
         setToken(std::move(name));
     }

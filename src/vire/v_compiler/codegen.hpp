@@ -71,6 +71,7 @@ class VCompiler
     llvm::LLVMContext CTX;
     llvm::IRBuilder<> Builder;
     std::unique_ptr<llvm::Module> Module;
+    std::unique_ptr<llvm::DataLayout> data_layout;
 
     // Memory
     std::map<llvm::StringRef, llvm::AllocaInst*> namedValues;
@@ -81,6 +82,7 @@ class VCompiler
     llvm::BasicBlock* currentLoopBodyBB;
     FunctionAST* currentFunctionAST;
     bool current_func_single_sret;
+    bool current_func_ret_ty;
 
     // Compilation
     enum llvm::CodeGenFileType file_type;
@@ -94,15 +96,17 @@ public:
     : analyzer(std::move(analyzer)), Builder(llvm::IRBuilder<>(CTX))
     {
         Module = std::make_unique<llvm::Module>(name, CTX);
+        data_layout = std::make_unique<llvm::DataLayout>(Module.get());
         CTX.setOpaquePointers(true);
         file_type=llvm::CGFT_ObjectFile;
     }
 
     // Compilation Functions
     
-    llvm::Type* getLLVMType(types::Base* type);
+    llvm::Type* getLLVMType(types::Base* type, bool allow_opaque_ptr=true);
 
-    llvm::Value* pushFrontToCallInst(llvm::Value* arg, llvm::CallInst* call);
+    void createSRetMemCpyForArg(ReturnExprAST* ret);
+    llvm::CallInst* pushFrontToCallInst(llvm::Value* arg, llvm::CallInst* call);
     llvm::Value* createAllocaForVar(VariableDefAST* const& var);
     llvm::Value* createBinaryOperation(llvm::Value* lhs, llvm::Value* rhs, VToken* const op, bool expr_is_fp);
     llvm::BranchInst* createBrIfNoTerminator(llvm::BasicBlock* block);
