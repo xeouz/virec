@@ -48,9 +48,7 @@ namespace vire
     {
         auto* ty=getLLVMType(ret->getValue()->getType());
 
-        auto* val=(llvm::LoadInst*)compileExpr(ret->getValue());
-        auto* src=val->getPointerOperand();
-        val->eraseFromParent();
+        auto* src=compileExpr(ret->getValue());
         auto* dest=currentFunction->getArg(0);
         auto align=data_layout->getStructLayout((llvm::StructType*)ty)->getAlignment();
 
@@ -76,7 +74,7 @@ namespace vire
     }
     llvm::Value* VCompiler::createAllocaForVar(VariableDefAST* const& var)
     {
-        auto* ty=getLLVMType(var->getType());
+        auto* ty=getLLVMType(var->getType(), false);
         auto* alloca=Builder.CreateAlloca(ty, nullptr, var->getName());
         namedValues[var->getName()]=alloca;
         return alloca;
@@ -409,7 +407,7 @@ namespace vire
     llvm::Value* VCompiler::compileVariableExpr(VariableExprAST* const expr)
     { 
         auto* var=currentFunctionAST->getVariable(expr->getName());
-        if(var->isReturned() && !var->isArgument() && current_func_ret_ty)
+        if(var->isReturned() && !var->isArgument() && current_func_single_sret)
         {
             return currentFunction->getArg(0);
         }
@@ -417,32 +415,27 @@ namespace vire
         llvm::Value* val;
         llvm::Type* ty;
 
-        if(current_func_single_sret && !var->isArgument() && var->isReturned()) // We know that its an array if it returns a single sret BUT its not a struct
+        if(var->isArgument())
         {
-            val=currentFunction->getArg(0);
-            ty=getLLVMType(expr->getType());
+            return currentFunction->getArg(currentFunctionAST->getArgumentIndex(var->getName()) + current_func_ret_ty);
         }
         else
         {
-            if(var->isArgument())
-            {
-                val=currentFunction->getArg(currentFunctionAST->getVariableIndex(var->getName()) + current_func_ret_ty);
-                ty=val->getType();
-            }
-            else
-            {
-                val=namedValues[expr->getName()];
-                ty=((llvm::AllocaInst*)val)->getType();
-            }
+            val=namedValues[expr->getName()];
+            ty=val->getType();
         }
 
-        if(ty->isArrayTy())
+        if(expr->getType()->getType()==types::TypeNames::Array)
         {
             auto* gep=Builder.CreateInBoundsGEP(ty, val, 
             {llvm::ConstantInt::get(CTX, llvm::APInt(1, 0, false)),
             llvm::ConstantInt::get(CTX, llvm::APInt(1, 0, false)),}
             , "lgep");
             return gep;
+        }
+        else if(types::isUserDefined(expr->getType()))
+        {
+            return val;
         }
 
         return Builder.CreateLoad(ty, val, expr->getName());
@@ -832,15 +825,6 @@ namespace vire
         for(auto& arg : expr->getArgs())
         {
             auto* carg=compileExpr(arg.get());
-
-            if(types::isUserDefined(arg->getType()))
-            {
-                auto* load=(llvm::LoadInst*)carg;
-                args.push_back(load->getPointerOperand());
-                load->eraseFromParent();
-                continue;
-            }
-
             args.push_back(carg);
         }
 
@@ -1013,9 +997,24 @@ namespace vire
         currentFunction=function;
         currentFunctionAST=func;
 
-        current_func_single_sret=
-        (types::isUserDefined(func->getReturnType()) || func->getReturnType()->getType()==types::TypeNames::Array) 
-        && (func->getReturnStatements().size()==1);
+        // Check if only a single variable is returned
+        bool single_var_ret=true;
+        auto it=func->getLocals().begin();
+        auto first_var_name=it->first;
+        std::advance(it, 1);
+        while(it!=func->getLocals().end())
+        {
+            if(it->first != first_var_name)
+            {
+                single_var_ret=false;
+                break;
+            }
+            ++it;
+        }
+
+        current_func_single_sret=((types::isUserDefined(func->getReturnType()) 
+                                || func->getReturnType()->getType()==types::TypeNames::Array) 
+                                && single_var_ret);
         current_func_ret_ty=func_ret_ty;
 
         for(auto& [vname, var]: func->getLocals())
@@ -1125,9 +1124,8 @@ namespace vire
                     }
                     else if(var->isArgument())
                     {
-                        ((llvm::LoadInst*)exp)->eraseFromParent();
                         bool offset=(current_func_ret_ty);
-                        val=currentFunction->getArg(currentFunctionAST->getVariableIndex(var->getName()) + offset);
+                        val=currentFunction->getArg(currentFunctionAST->getArgumentIndex(var->getName()) + offset);
                     }
                     else
                         val=getValueAsAlloca(exp);
@@ -1153,6 +1151,7 @@ namespace vire
         }
 
         auto* ty=getLLVMType(expr->getType());
+        
         return Builder.CreateLoad(ty, sgep);
     }
 

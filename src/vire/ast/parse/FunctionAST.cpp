@@ -154,7 +154,7 @@ class FunctionAST : public FunctionBaseAST
     std::vector<std::unique_ptr<ExprAST>> statements;
     std::vector<ReturnExprAST*> return_stms;
     std::unordered_map<std::string, VariableDefAST*> locals;
-    std::unordered_map<std::string, unsigned int> local_indxs;
+    std::unordered_map<std::string, unsigned int> arg_indxs;
 public:
     int asttype;
     
@@ -190,8 +190,8 @@ public:
     std::vector<ReturnExprAST*> const& getReturnStatements() const { return return_stms; }
     void addReturnStatement(ReturnExprAST* ret) { return_stms.push_back(ret); }
 
-    void addVariable(VariableDefAST* const var) { local_indxs[var->getName()] = locals.size(); locals[var->getName()] = var;}
-    unsigned int getVariableIndex(std::string const& name) { return local_indxs[name]; }
+    void addVariable(VariableDefAST* const var) { if(var->isArgument()) arg_indxs[var->getName()] = arg_indxs.size(); locals[var->getName()] = var;}
+    unsigned int getArgumentIndex(std::string const& name) { return arg_indxs[name]; }
 };
 
 class ReturnExprAST : public ExprAST
