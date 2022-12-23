@@ -6,13 +6,17 @@ struct xyz
     int b;
 }
 
-func test(a:xyz): xyz
+func test(a:xyz, b:xyz): xyz
 {
-    a.b=1000;
+    a.b=b.b+1;
 
     return a;
 }
 
 let a:xyz;
-let b=test(a);
-puti(b.b);
+let b:xyz;
+b.b=10;
+
+let c=test(a,b);
+
+puti(c.b);
