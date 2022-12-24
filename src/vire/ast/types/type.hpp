@@ -468,7 +468,7 @@ inline std::unique_ptr<Base> construct(TypeNames const& type)
 
 inline bool isUserDefined(TypeNames type)
 {
-    return (type == TypeNames::Custom) && !(type == TypeNames::Void) && !(type == TypeNames::Array);
+    return (type == TypeNames::Custom);
 }
 inline bool isUserDefined(Base* _type)
 {

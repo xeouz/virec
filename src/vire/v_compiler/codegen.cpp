@@ -427,7 +427,9 @@ namespace vire
 
         if(expr->getType()->getType()==types::TypeNames::Array)
         {
-            auto* gep=Builder.CreateInBoundsGEP(ty, val, 
+            auto* alloca=(llvm::AllocaInst*)val;
+            ty=getLLVMType(expr->getType());
+            auto* gep=Builder.CreateInBoundsGEP(ty, alloca, 
             {llvm::ConstantInt::get(CTX, llvm::APInt(1, 0, false)),
             llvm::ConstantInt::get(CTX, llvm::APInt(1, 0, false)),}
             , "lgep");
@@ -442,15 +444,28 @@ namespace vire
     }
     llvm::Value* VCompiler::compileVariableDef(VariableDefAST* const def) // CHANGES REQUIRED: SRET ATTRIBUTE FOR ARRAYS
     {
-        auto* alloca=namedValues[def->getName()];
+        llvm::Value* lhs;
+        llvm::MaybeAlign lhs_align;
         auto const& value=def->getValue();
+
+        if(def->isReturned() && current_func_single_sret)
+        {
+            auto* arg=currentFunction->getArg(0);
+            lhs=arg;
+            lhs_align=arg->getParamAlign();
+        }
+        else
+        {
+            auto* alloca=namedValues[def->getName()];
+            lhs=alloca;
+            lhs_align=alloca->getAlign();
+        }
 
         if(!value)
         {
-            return alloca;
+            return lhs;
         }
 
-        bool is_array=(def->getType()->getType()==types::TypeNames::Array);
         if(types::isUserDefined(def->getType())) // If it lhs is a struct
         {
             auto* val=compileExpr(value);
@@ -458,62 +473,54 @@ namespace vire
             if(value->asttype==ast_call)
             {
                 auto* call=(llvm::CallInst*)val;
-                call=pushFrontToCallInst(alloca, call);
+                call=pushFrontToCallInst(lhs, call);
 
                 auto* ty=call->getCalledFunction()->getParamStructRetType(0);
                 uint64_t align=data_layout->getStructLayout((llvm::StructType*)ty)->getAlignment().value();
                 call->addParamAttr(0, llvm::Attribute::get(CTX, llvm::Attribute::StructRet, ty));
                 call->addParamAttr(0, llvm::Attribute::get(CTX, llvm::Attribute::Alignment, align));
 
-                return alloca;
+                return lhs;
             }
             else
             {
                 auto* alloca_rhs=(llvm::AllocaInst*)getValueAsAlloca(val);
 
-                auto lhs_align=alloca->getAlign();
-                auto rhs_align=alloca_rhs->getAlign();
-
                 auto size=llvm::APInt(64, def->getType()->getSize(), false);
-                auto* memcpy=Builder.CreateMemCpy(alloca, lhs_align, alloca_rhs, rhs_align, llvm::ConstantInt::get(CTX, size));
+                auto* memcpy=Builder.CreateMemCpy(lhs, lhs_align, alloca_rhs, lhs_align, llvm::ConstantInt::get(CTX, size));
             }
         }
-        else if(is_array)
+        else if(def->getType()->getType()==types::TypeNames::Array)
         {
             if(value->asttype==ast_call)
             {
                 auto* call=(llvm::CallInst*)compileExpr(value);
-                pushFrontToCallInst(alloca, call);
+                pushFrontToCallInst(lhs, call);
 
-                return alloca;
+                return lhs;
             }
             else
             {
                 /* Creating a Memcpy call */
-                
+
                 // Compile the Array constant
-                auto* val=compileConstantExpr((ArrayExprAST* const)value);
-
-                // Create an i8*
-                auto* ptr=Builder.CreateBitCast(alloca, llvm::IntegerType::getInt8PtrTy(CTX));
-
-                auto align=alloca->getAlign();
+                auto* val=compileExpr(value);
 
                 // Set the size of the array
                 auto* array_ast=(ArrayExprAST* const)value;
                 std::size_t size=array_ast->getType()->getSize();
 
                 // Create the memcpy call
-                auto* call_inst=Builder.CreateMemCpy(ptr, align, val, align, llvm::ConstantInt::get(CTX, llvm::APInt(64, size, true)));
+                auto* call_inst=Builder.CreateMemCpy(lhs, lhs_align, val, lhs_align, llvm::ConstantInt::get(CTX, llvm::APInt(64, size, true)));
             }
         }
         else
         {   
             auto* val=compileExpr(value);
-            Builder.CreateStore(val, alloca);
+            Builder.CreateStore(val, lhs);
         }
 
-        return alloca;
+        return lhs;
     }
     llvm::Value* VCompiler::compileVariableAssign(VariableAssignAST* const assign)
     {
@@ -569,27 +576,33 @@ namespace vire
     }
     llvm::Value* VCompiler::compileVariableArrayAccess(VariableArrayAccessAST* const access)
     {
-        /* Multi index access */
-        auto* expr=getValueAsAlloca(compileExpr(access->getExpr()));
-        auto* ty=getLLVMType(access->getExpr()->getType());
-
-        bool is_ptr=false;
-        if(((llvm::AllocaInst*)expr)->getAllocatedType()->isOpaquePointerTy())
+        /* Updated to multi index access */
+        llvm::Value* expr;
+        auto* exp=compileExpr(access->getExpr());
+        if(access->getExpr()->asttype==ast_var)
         {
-            expr=Builder.CreateLoad(expr->getType(), expr);
-            ty=ty->getArrayElementType();
-            is_ptr=true;
+            auto* var=currentFunctionAST->getVariable(((VariableExprAST*)access->getExpr())->getName());
+            if(var->isReturned() && !var->isArgument())
+            {
+                expr=exp;
+            }
+            else if(var->isArgument())
+            {
+                bool offset=(current_func_ret_ty);
+                expr=currentFunction->getArg(currentFunctionAST->getArgumentIndex(var->getName()) + offset);
+            }
+            else
+                expr=getValueAsAlloca(exp);
         }
+        else
+            expr=getValueAsAlloca(exp);
+        
+        auto* ty=getLLVMType(access->getExpr()->getType());
 
         for(auto const& elem : access->getIndices())
         {
             auto* indx=compileExpr(elem.get());
-
-            if(!is_ptr)
-                expr=Builder.CreateInBoundsGEP(ty, expr, {llvm::ConstantInt::get(CTX, llvm::APInt(64, 0, false)), indx}, "agep");
-            else
-                expr=Builder.CreateInBoundsGEP(ty, expr, {indx}, "agep");
-            
+            expr=Builder.CreateInBoundsGEP(ty, expr, {llvm::ConstantInt::get(CTX, llvm::APInt(64, 0, false)), indx}, "agep");
             if(ty->isArrayTy())
                 ty=ty->getArrayElementType();
         }
@@ -702,8 +715,6 @@ namespace vire
                 auto* var=(VariableDefAST*)expr.get();
                 
                 if(var->isArgument())
-                    continue;
-                if(var->isReturned() && current_func_single_sret)
                     continue;
             }
 
@@ -862,20 +873,29 @@ namespace vire
         if(types::isUserDefined(currentFunctionAST->getReturnType()) 
         || currentFunctionAST->getReturnType()->getType()==types::TypeNames::Array)
         {
-            auto* arg0=currentFunction->getArg(0);
+            llvm::Value* arg0=currentFunction->getArg(0);
             
             std::size_t nsize;
+            auto align=((llvm::Argument*)arg0)->getParamAlign();
             if(types::isUserDefined(currentFunctionAST->getReturnType()))
             {
+                // If its a struct
                 nsize=types::custom_type_sizes[((types::Custom*)expr->getValue()->getType())->getName()];
             }
             else
             {
+                // If its an array
                 nsize=((types::Array*)expr->getValue()->getType())->getSize();
+
+                if(auto* gep=llvm::dyn_cast<llvm::GetElementPtrInst>(expr_val))
+                {
+                    expr_val=gep->getPointerOperand();
+                    gep->eraseFromParent();
+                }
             }
             
             auto* size=llvm::ConstantInt::get(CTX, llvm::APInt(64, nsize, false));
-            auto* memcpy=Builder.CreateMemCpy(arg0, arg0->getParamAlign(), expr_val, arg0->getParamAlign(), size);
+            auto* memcpy=Builder.CreateMemCpy(arg0, align, expr_val, align, size);
             Builder.CreateBr(currentFunctionEndBB);
 
             return memcpy;
