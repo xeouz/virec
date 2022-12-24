@@ -704,11 +704,6 @@ namespace vire
                         break;
                     }
                 }
-                else
-                {
-                    Builder.CreateBr(currentFunctionEndBB);
-                    break;
-                }
             }
             else if(expr->asttype==ast_vardef)
             {
@@ -1019,19 +1014,23 @@ namespace vire
 
         // Check if only a single variable is returned
         bool single_var_ret=true;
-        auto it=func->getLocals().begin();
-        auto first_var_name=it->first;
-        std::advance(it, 1);
-        while(it!=func->getLocals().end())
-        {
-            if(it->first != first_var_name)
-            {
-                single_var_ret=false;
-                break;
-            }
-            ++it;
-        }
 
+        if(func->getLocals().size()>0)
+        {
+            auto it=func->getLocals().begin();
+            auto first_var_name=it->first;
+            std::advance(it, 1);
+            while(it!=func->getLocals().end())
+            {
+                if(it->first != first_var_name)
+                {
+                    single_var_ret=false;
+                    break;
+                }
+                ++it;
+            }
+        }
+        
         current_func_single_sret=((types::isUserDefined(func->getReturnType()) 
                                 || func->getReturnType()->getType()==types::TypeNames::Array) 
                                 && single_var_ret);

@@ -6,21 +6,10 @@ struct xyz
     int b;
 }
 
-func test(a:xyz, b:xyz, something: bool): xyz
+func test(): int[3]
 {
-    if(something)
-    {
-        return a;
-    }
-
-    return b;
+    return [1,2,3];
 }
 
-let a:xyz;
-let b:xyz;
-a.b=100;
-b.b=200;
-
-let c=test(a,b,false);
-
-puti(c.b);
+let c=test();
+puti(c[1]);
