@@ -1114,8 +1114,9 @@ namespace vire
         definedStructs[st->getName()]=struct_type;
 
         // Create the constructor
-        //auto* func=struct_->getConstructor();
-        //compileFunction(func);
+        compileFunction(st->getConstructor());
+
+        std::cout << getCompiledOutput() << std::endl;
 
         return struct_type;
     }

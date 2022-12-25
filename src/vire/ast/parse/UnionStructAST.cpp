@@ -105,11 +105,11 @@ public:
     {
     }
     StructExprAST(INameExprMap members, std::unique_ptr<VToken> name)
-    : TypeAST(std::move(members), std::move(name), ast_struct), constructor(nullptr)
+    : TypeAST(std::move(members), std::move(name), ast_struct)
     {
     }
 
-    FunctionAST* getConstructor() { return constructor.get(); }
+    FunctionAST* const getConstructor() const { return constructor.get(); }
     void setConstructor(std::unique_ptr<FunctionAST> new_constructor) { constructor=std::move(new_constructor); }
 };
 

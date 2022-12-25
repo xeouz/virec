@@ -62,6 +62,9 @@ public:
     std::vector<std::unique_ptr<ExprAST>> moveUnionStructs() {
         return std::move(UnionStructs);
     }
+    std::vector<FunctionAST*> moveConstructors() {
+        return Constructors;
+    }
 
     void addFunction(std::unique_ptr<FunctionBaseAST> func) {
         Functions.push_back(std::move(func));
@@ -76,17 +79,20 @@ public:
     }
 
     void addPreExecutionStatements(std::vector<std::unique_ptr<ExprAST>> stms){
-        int pes_size=PreExecutionStatements.size();
-        PreExecutionStatements.resize(pes_size+stms.size());
-        for(size_t i=0; i<stms.size(); ++i)
-        {
-            PreExecutionStatements[pes_size+i]=std::move(stms[i]);
-        }
+        this->PreExecutionStatements.reserve(this->PreExecutionStatements.size() + stms.size());
+        this->PreExecutionStatements.insert(this->PreExecutionStatements.end(), std::make_move_iterator(stms.begin()), std::make_move_iterator(stms.end()));
     }
 
     void addPreExecutionStatementVariables(std::vector<VariableDefAST*> const& vars)
     {
-        this->PreExecutionStatementsVariables=vars;
+        this->PreExecutionStatementsVariables.reserve(this->PreExecutionStatementsVariables.size() + vars.size());
+        this->PreExecutionStatementsVariables.insert(this->PreExecutionStatementsVariables.end(), vars.begin(), vars.end());
+    }
+
+    void addConstructors(std::vector<FunctionAST*> const& consts)
+    {
+        this->Constructors.reserve(this->Constructors.size() + consts.size());
+        this->Constructors.insert(this->Constructors.end(), consts.begin(), consts.end());
     }
 };
 

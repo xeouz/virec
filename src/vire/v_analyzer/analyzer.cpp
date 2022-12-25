@@ -138,6 +138,9 @@ namespace vire
             return nullptr;
         }
 
+        if(current_struct->getIName().name==name)
+            return current_struct;
+
         auto const& structs=ast->getUnionStructs();
         for(auto const& expr : structs)
         {
@@ -232,7 +235,7 @@ namespace vire
                 return array_type;
             }
 
-            case ast_call: return getFunction(((CallExprAST*)expr)->getName())->getReturnType();
+            case ast_call: return getFunction(((CallExprAST*)expr)->getIName().name)->getReturnType();
 
             case ast_array: return getType((ArrayExprAST*)expr);
 
@@ -692,7 +695,8 @@ namespace vire
         }
 
         auto args=call->moveArgs();
-        const auto& func_args=getFunction(name)->getArgs();
+        const auto* func=getFunction(name);
+        const auto& func_args=func->getArgs();
 
         if(args.size() != func_args.size())
         {
@@ -707,6 +711,7 @@ namespace vire
             if(!verifyExpr(arg.get()))
             {
                 // Argument is not valid
+                std::cout << "Call argument is not valid" << std::endl;
                 is_valid=false;
                 continue;
             }
@@ -1069,9 +1074,11 @@ namespace vire
             is_valid=false;
         }
 
-        /*
+        current_struct=struct_;
+
         if(auto* constructor=struct_->getConstructor())
         {
+            current_func=struct_->getConstructor();
             if(!verifyFunction(constructor))
             {
                 is_valid=false;
@@ -1081,14 +1088,16 @@ namespace vire
         {
             // Create a default constructor //
 
+            auto st_iname=struct_->getIName();
+            auto func_name=proto::IName(st_iname.name, "struct_construct_");
             constexpr const char* self_ref_name="self";
 
             std::vector<std::unique_ptr<VariableDefAST>> args;
             std::vector<std::unique_ptr<ExprAST>> new_constructor_body;
+            std::vector<VariableDefAST*> vars;
+            ReturnExprAST* ret_stm;
 
             // Create the args
-            std::unique_ptr<ExprAST> self_val=nullptr;
-            args.push_back(std::make_unique<VariableDefAST>(VToken::construct(self_ref_name, tok_id), types::construct(st_name, true), std::move(self_val)));
             for(auto const& member : members)
             {
                 std::unique_ptr<VariableDefAST> arg;
@@ -1096,46 +1105,71 @@ namespace vire
                 if(member->asttype==ast_struct)
                 {
                     auto* st=(StructExprAST*)member;
-                    arg=std::make_unique<VariableDefAST>(VToken::construct(st->getName(), tok_id), types::construct(st->getName(), true), std::move(empty_val));
+                    arg=std::make_unique<VariableDefAST>(VToken::construct(st->getIName().name, tok_id), types::construct(st->getName(), true), std::move(empty_val));
                 }
                 else if(member->asttype==ast_vardef)
                 {
                     auto* var=(VariableDefAST*)member;
-                    arg=std::make_unique<VariableDefAST>(VToken::construct(var->getName(), tok_id), types::copyType(var->getType()), std::move(empty_val));
+                    arg=std::make_unique<VariableDefAST>(VToken::construct(var->getIName().name, tok_id), types::copyType(var->getType()), std::move(empty_val));
                 }
 
+                arg->isArgument(true);
+                vars.push_back(arg.get());
                 args.push_back(std::move(arg));
             }
 
             // Create the body
+            std::unique_ptr<ExprAST> empty_val;
+            auto vardef=std::make_unique<VariableDefAST>(VToken::construct("", tok_id), types::construct(st_name, true), std::move(empty_val), false, true);
+            vardef->setName(proto::IName(self_ref_name, ""));
+            vars.push_back(vardef.get());
+            new_constructor_body.push_back(std::move(vardef));
+
             for(auto const& member : members)
             {
                 std::string member_name;
 
                 if(member->asttype==ast_struct)
-                    member_name=((StructExprAST*)member)->getName();
+                    member_name=((StructExprAST*)member)->getIName().name;
                 else if(member->asttype==ast_vardef)
-                    member_name=((VariableDefAST*)member)->getName();
+                    member_name=((VariableDefAST*)member)->getIName().name;
 
-                auto lhs=std::make_unique<TypeAccessAST>
-                (std::make_unique<VariableExprAST>(VToken::construct(self_ref_name, tok_id)), 
-                 std::make_unique<VariableExprAST>(VToken::construct(member_name, tok_id)));
+                auto self_ref=std::make_unique<VariableExprAST>(VToken::construct("", tok_id));
+                self_ref->setName(proto::IName(self_ref_name, ""));
+                self_ref->setType(types::construct(st_name, true));
+                auto mem=std::make_unique<VariableExprAST>(VToken::construct(member_name, tok_id));
+                mem->setType(types::copyType(member->getType()));
+
+                auto lhs=std::make_unique<TypeAccessAST>(std::move(self_ref), std::move(mem));
+                lhs->setType(types::copyType(member->getType()));
                 
                 auto rhs=std::make_unique<VariableExprAST>(VToken::construct(member_name, tok_id));
+                rhs->setType(types::copyType(member->getType()));
 
                 new_constructor_body.push_back(std::make_unique<VariableAssignAST>(std::move(lhs), std::move(rhs)));
             }
+            
+            auto ref=std::make_unique<VariableExprAST>(VToken::construct("", tok_id));
+            ref->setName(proto::IName(self_ref_name, ""));
+            ref->setType(types::construct(st_name, true));
+            auto ret=std::make_unique<ReturnExprAST>(std::move(ref));
+            ret->setName(func_name);
+            ret_stm=ret.get();
+            new_constructor_body.push_back(std::move(ret));
 
-            auto func_name=struct_->getIName();
-            auto new_constructor_proto=std::make_unique<PrototypeAST>(VToken::construct(func_name.name), std::move(args), types::construct(st_name, true));
+            // Set the constructor
+            auto new_constructor_proto=std::make_unique<PrototypeAST>(VToken::construct(st_iname.name), std::move(args), types::construct(st_name, true));
             auto new_constructor=std::make_unique<FunctionAST>(std::move(new_constructor_proto), std::move(new_constructor_body));
 
-            new_constructor->setName(proto::IName(func_name.name, "struct_construct_"));
+            new_constructor->setName(func_name);
+            new_constructor->isConstructor(true);
+            new_constructor->addVariables(vars, true);
+            new_constructor->addReturnStatement(ret_stm);
+
             struct_->setConstructor(std::move(new_constructor));
         }
 
         addConstructor(struct_->getConstructor());
-        */
 
         return is_valid;
     }
@@ -1389,6 +1423,7 @@ namespace vire
         auto funcs=ast->moveFunctions();
         auto union_structs=ast->moveUnionStructs();
         auto pre_stms=ast->movePreExecutionStatements();
+        auto constructors=ast->moveConstructors();
 
         bool has_main=false;
         unsigned int main_func_indx=0;
@@ -1399,7 +1434,7 @@ namespace vire
             const auto& union_struct=union_structs[it];
             if(union_struct->asttype==ast_union)
             {
-                if(!verifyUnion(((std::unique_ptr<UnionExprAST> const&)union_struct).get()))
+                if(!verifyUnion((UnionExprAST*)union_struct.get()))
                 {
                     // Union is not valid
                     is_valid=false;
@@ -1407,7 +1442,7 @@ namespace vire
             }
             else
             {
-                if(!verifyStruct(((std::unique_ptr<StructExprAST> const&)union_struct).get()))
+                if(!verifyStruct((StructExprAST*)union_struct.get()))
                 {
                     // Struct is not valid
                     is_valid=false;
@@ -1421,7 +1456,7 @@ namespace vire
         for(unsigned int it=0; it<funcs.size(); ++it)
         {
             const auto& func=funcs[it];
-
+            
             if(func->is_extern())
             {
                 if(!verifyExtern(((std::unique_ptr<ExternAST> const&)func).get()))
@@ -1473,6 +1508,7 @@ namespace vire
 
         ast->addPreExecutionStatements(std::move(pre_stms));
         ast->addPreExecutionStatementVariables(global_refscope);
+        ast->addConstructors(constructors);
 
         return is_valid;
     }

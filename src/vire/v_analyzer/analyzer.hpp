@@ -14,6 +14,7 @@ class VAnalyzer
     std::unique_ptr<ModuleAST> ast;
 
     FunctionAST* current_func;
+    StructExprAST* current_struct;
 
     // Error Builder
     errors::ErrorBuilder* const builder;
@@ -42,7 +43,7 @@ class VAnalyzer
     VariableDefAST* const getVariable(proto::IName const& name);
 public:
     VAnalyzer(errors::ErrorBuilder* const builder, std::string const& code="")
-    : builder(builder), code(code), scope_varref(nullptr), current_func(nullptr) {}
+    : builder(builder), code(code), scope_varref(nullptr), current_func(nullptr), current_struct(nullptr) {}
 
     errors::ErrorBuilder* const getErrorBuilder() const { return builder; }
 

@@ -91,6 +91,8 @@ public:
     virtual bool is_extern() const { return false; }
     virtual bool is_proto()  const { return false; }
 
+    virtual void isConstructor(bool val) = 0;
+    virtual bool isConstructor() const = 0;
     //virtual bool isVariableDefined(std::string const& name) const = 0;
     //virtual VariableDefAST* const getVariable(const std::string& name) const = 0;
 
@@ -125,6 +127,9 @@ public:
     bool is_proto() const {return true;}
     bool is_type_null() const {return FunctionBaseAST::return_type==nullptr;}
 
+    void isConstructor(bool val) {}
+    bool isConstructor() const { return false; }
+
     std::vector<std::unique_ptr<VariableDefAST>> const& getArgs() const {return args;}
 };
 
@@ -154,6 +159,9 @@ public:
 
     PrototypeAST* const getProto() const {return proto.get();}
     std::vector<std::unique_ptr<VariableDefAST>> const& getArgs() const {return proto->getArgs();}
+
+    void isConstructor(bool val) { }
+    bool isConstructor() const { return false; }
 };
 
 // FunctionAST - Class for functions which can be called by the user
@@ -164,11 +172,12 @@ class FunctionAST : public FunctionBaseAST
     std::vector<ReturnExprAST*> return_stms;
     std::unordered_map<std::string, VariableDefAST*> locals;
     std::unordered_map<std::string, unsigned int> arg_indxs;
+    bool is_constructor;
 public:
     int asttype;
     
-    FunctionAST(std::unique_ptr<PrototypeAST> prototype, std::vector<std::unique_ptr<ExprAST>> stmts)
-    : FunctionBaseAST(prototype->getReturnType()), 
+    FunctionAST(std::unique_ptr<PrototypeAST> prototype, std::vector<std::unique_ptr<ExprAST>> stmts, bool is_constructor=false)
+    : FunctionBaseAST(prototype->getReturnType()), is_constructor(is_constructor),
     asttype(ast_function), proto(std::move(prototype)), statements(std::move(stmts))
     {
     }
@@ -203,7 +212,19 @@ public:
     void addReturnStatement(ReturnExprAST* ret) { return_stms.push_back(ret); }
 
     void addVariable(VariableDefAST* const var) { if(var->isArgument()) arg_indxs[var->getName()] = arg_indxs.size(); locals[var->getName()] = var;}
+    void addVariables(std::vector<VariableDefAST*> const& vars, bool are_args=false) 
+    {
+        if(are_args)
+            arg_indxs.reserve(arg_indxs.size()+vars.size());
+        locals.reserve(locals.size()+vars.size());
+
+        for(auto const& var : vars)
+            addVariable(var);
+    }
     unsigned int getArgumentIndex(std::string const& name) { return arg_indxs[name]; }
+
+    void isConstructor(bool val) { is_constructor=val; }
+    bool isConstructor() const { return is_constructor; }
 };
 
 class ReturnExprAST : public ExprAST
@@ -216,6 +237,7 @@ public:
     {}
 
     void setName(std::string name) {func_name = name;}
+    void setName(proto::IName const& name) {func_name = name;}
     std::string const& getName() const {return func_name.get();}
     ExprAST* const getValue() const {return expr.get();}
     std::unique_ptr<ExprAST> const moveValue() { return std::move(expr); }
