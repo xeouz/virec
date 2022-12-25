@@ -11,6 +11,8 @@
 namespace vire
 {
 
+class FunctionAST;
+
 typedef std::unordered_map<proto::IName, std::unique_ptr<ExprAST>, std::hash<proto::IName>, std::equal_to<proto::IName>> INameExprMap;
 typedef std::unordered_map<proto::IName, int, std::hash<proto::IName>, std::equal_to<proto::IName>> INameIntMap;
 
@@ -96,11 +98,19 @@ public:
 
 class StructExprAST : public TypeAST
 {
+    std::unique_ptr<FunctionAST> constructor;
 public:
-    StructExprAST(INameExprMap members, std::unique_ptr<VToken> name)
-    : TypeAST(std::move(members), std::move(name), ast_struct)
+    StructExprAST(INameExprMap members, std::unique_ptr<FunctionAST> constructor, std::unique_ptr<VToken> name)
+    : TypeAST(std::move(members), std::move(name), ast_struct), constructor(std::move(constructor))
     {
     }
+    StructExprAST(INameExprMap members, std::unique_ptr<VToken> name)
+    : TypeAST(std::move(members), std::move(name), ast_struct), constructor(nullptr)
+    {
+    }
+
+    FunctionAST* getConstructor() { return constructor.get(); }
+    void setConstructor(std::unique_ptr<FunctionAST> new_constructor) { constructor=std::move(new_constructor); }
 };
 
 }

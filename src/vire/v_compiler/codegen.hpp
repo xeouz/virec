@@ -45,6 +45,7 @@
 #include "llvm/IR/PassManager.h"
 #include "llvm/Analysis/AliasAnalysis.h"
 #include "llvm/Transforms/Scalar/DeadStoreElimination.h"
+#include "llvm/Support/JSON.h"
 
 #include <memory>
 #include <map>
@@ -147,8 +148,9 @@ public:
 
     llvm::Value* compileCallExpr(CallExprAST* const expr);
     llvm::Value* compileReturnExpr(ReturnExprAST* const expr);
-    llvm::Function* compilePrototype(PrototypeAST* const name);
+    llvm::Function* compilePrototype(PrototypeAST* const proto);
     llvm::Function* compileExtern(std::string const& name);
+    llvm::Function* compileFunction(FunctionAST* const func);
     llvm::Function* compileFunction(std::string const& name);
 
     llvm::StructType* compileUnion(std::string const& name);

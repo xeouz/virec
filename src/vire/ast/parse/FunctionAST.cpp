@@ -81,6 +81,9 @@ public:
     virtual std::string const getName() const = 0;
     virtual VToken* const getNameToken() const = 0;
 
+    virtual void setName(std::string const& name) = 0;
+    virtual void setName(proto::IName const& name) = 0;
+
     virtual std::unique_ptr<VToken> moveNameToken() = 0;
 
     virtual std::vector<std::unique_ptr<VariableDefAST>> const& getArgs() const = 0;
@@ -112,6 +115,9 @@ public:
     std::string const getName()       const { return name.get(); }
     VToken* const getNameToken()      const { return name_token.get(); }
 
+    void setName(std::string const& nname) { name=proto::IName(nname); }
+    void setName(proto::IName const& nname) { name=nname; }
+
     std::unique_ptr<VToken> moveNameToken() { return std::move(name_token); }
     
     unsigned int getArgCount() const {return args.size();}
@@ -136,6 +142,9 @@ public:
 
     proto::IName const& getIName()    const { return proto->getIName(); }
     std::string const getName()       const { return proto->getName(); }
+    
+    void setName(std::string const& name) { proto->setName(name); }
+    void setName(proto::IName const& name) { proto->setName(name); } 
 
     VToken* const getNameToken() const { return proto->getNameToken(); }
     std::unique_ptr<VToken> moveNameToken() { return proto->moveNameToken(); }
@@ -171,6 +180,9 @@ public:
 
     proto::IName const& getIName()    const { return proto->getIName(); }
     std::string const getName()       const { return proto->getName(); }
+
+    void setName(std::string const& name) { proto->setName(name); }
+    void setName(proto::IName const& name) { proto->setName(name); } 
 
     VToken* const getNameToken()      const { return proto->getNameToken(); }
     std::unique_ptr<VToken> moveNameToken() { return proto->moveNameToken(); }

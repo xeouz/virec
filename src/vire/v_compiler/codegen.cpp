@@ -421,8 +421,9 @@ namespace vire
         }
         else
         {
-            val=namedValues[expr->getName()];
-            ty=val->getType();
+            auto* named=namedValues[expr->getName()];
+            val=named;
+            ty=named->getAllocatedType();
         }
 
         if(expr->getType()->getType()==types::TypeNames::Array)
@@ -814,7 +815,7 @@ namespace vire
     llvm::Value* VCompiler::compileCallExpr(CallExprAST* const expr)
     {
         std::string func_name;
-        auto* afunc=analyzer->getFunction(expr->getName());
+        auto* afunc=analyzer->getFunction(expr->getIName().name);
 
         if(afunc->is_extern())
         {
@@ -981,10 +982,9 @@ namespace vire
         // func->print(error_os);
         return func;
     }
-    llvm::Function* VCompiler::compileFunction(std::string const& name)
+    llvm::Function* VCompiler::compileFunction(FunctionAST* const func)
     {
-        llvm::Function* function=Module->getFunction(name);
-        auto* func=(FunctionAST*)analyzer->getFunction(name);
+        llvm::Function* function=Module->getFunction(func->getName());
         auto func_ty=func->getReturnType()->getType();
 
         if(!function)
@@ -1071,6 +1071,10 @@ namespace vire
         
         return function;
     }
+    llvm::Function* VCompiler::compileFunction(std::string const& name)
+    {
+        return compileFunction((FunctionAST*)analyzer->getFunction(name));
+    }
 
     llvm::StructType* VCompiler::compileStruct(std::string const& name, StructExprAST* struct_)
     {
@@ -1108,6 +1112,10 @@ namespace vire
         struct_type->setName(struct_name);
 
         definedStructs[st->getName()]=struct_type;
+
+        // Create the constructor
+        //auto* func=struct_->getConstructor();
+        //compileFunction(func);
 
         return struct_type;
     }
@@ -1205,12 +1213,12 @@ namespace vire
             }
             else if(f->is_extern())
             {
-                compileExtern(f->getName());
+                compileExtern(f->getIName().name);
             }
             else
             {
-
-                compileFunction(f->getName());
+                auto* func=(FunctionAST*)f.get();
+                compileFunction(func);
             }
         }
 

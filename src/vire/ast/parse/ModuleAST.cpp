@@ -16,6 +16,7 @@ namespace vire
 class ModuleAST
 {
     std::vector<VariableDefAST*> PreExecutionStatementsVariables;
+    std::vector<FunctionAST*> Constructors;
     std::vector<std::unique_ptr<ExprAST>> PreExecutionStatements;
     std::vector<std::unique_ptr<FunctionBaseAST>> Functions;
     std::vector<std::unique_ptr<ClassAST>> Classes;
@@ -45,6 +46,9 @@ public:
     std::vector<VariableDefAST*> const& getPreExecutionStatementsVariables() const {
         return PreExecutionStatementsVariables;
     }
+    std::vector<FunctionAST*> const& getConstructors() const {
+        return Constructors;
+    }
 
     std::vector<std::unique_ptr<ExprAST>> movePreExecutionStatements() {
         return std::move(PreExecutionStatements);
@@ -61,6 +65,9 @@ public:
 
     void addFunction(std::unique_ptr<FunctionBaseAST> func) {
         Functions.push_back(std::move(func));
+    }
+    void addConstructor(FunctionAST* constructor) {
+        Constructors.push_back(constructor);
     }
 
     void addUnionStruct(std::unique_ptr<ExprAST> union_struct)

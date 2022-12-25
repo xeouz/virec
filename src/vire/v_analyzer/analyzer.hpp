@@ -34,6 +34,7 @@ class VAnalyzer
     void undefineVariable(proto::IName const& var);
 
     void addFunction(std::unique_ptr<FunctionBaseAST> func);
+    void addConstructor(FunctionAST* constructor);
     void addClass(std::unique_ptr<ClassAST> class_);
     bool isVariableDefined(proto::IName const& name);
 
@@ -48,7 +49,7 @@ public:
     bool isStructDefined(std::string const& name);
     bool isUnionDefined(std::string const& name);
     bool isClassDefined(std::string const& name);
-    bool isFuncDefined(std::string const& name);
+    bool isFunctionDefined(std::string const& name);
     unsigned int getFunctionArgCount(std::string const& name);
 
     types::Base* getType(ExprAST* const expr);

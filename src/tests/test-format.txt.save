@@ -1,0 +1,19 @@
+# This is a comment, COMMENTS CANNOT BE PRESENT IN TEST FILES, THERE ARE ONLY GIVEN HERE TO GUIDE YOU
+
+####
+# A TEST CONSISTS OF A TEST FILE AND A OUTPUT FILE, The test file contains INPUT CODE and output file contains EXPECTED OUTPUT of the program.
+# THE BELOW GUIDE IS FOR WRITING A TEST FILE
+####
+
+# a level can be one of the values listed - `core`, `imp` or `opt`, the author of the test needs to WRITE ONLY THE WORDS GIVEN IN BRACKETS.
+# if the test checks a core feature then it should be set as `core`, and same for `imp` and `opt`.
+# example `core` features: parsing, compilation.
+# example `opt` features: verification (checking the correctness of code).
+<level: core (core) | important (imp) | optional (opt)>
+
+<start>
+
+# YOUR CODE GOES HERE
+extern puti(n: int);
+
+p

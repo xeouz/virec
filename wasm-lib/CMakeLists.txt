@@ -19,7 +19,7 @@ set(CXX_COMPILE_FLAGS "-I${SRC_DIR}/src -lembind")
 set(CXX_COMPILE_FLAGS "${CXX_COMPILE_FLAGS} -s MODULARIZE -s WASM=1 -s EXPORT_ES6 -s ENVIRONMENT=web -s EXPORT_NAME=\"createGlobalModule\"")
 set(CXX_COMPILE_FLAGS "${CXX_COMPILE_FLAGS} --pre-js ${SRC_DIR}/wasm-lib/emcc-pre.js --extern-pre-js ${SRC_DIR}/wasm-lib/emcc-extern-pre.js")
 set(CXX_COMPILE_FLAGS "${CXX_COMPILE_FLAGS} -s -Wno-unused-command-line-argument -sERROR_ON_UNDEFINED_SYMBOLS=0 -sNO_DISABLE_EXCEPTION_CATCHING")
-set(CXX_COMPILE_FLAGS "${CXX_COMPILE_FLAGS} --closure 1 --closure-args=--compilation_level=SIMPLE_OPTIMIZATIONS -Oz -sFILESYSTEM=0")
+set(CXX_COMPILE_FLAGS "${CXX_COMPILE_FLAGS} --closure 1 --closure-args=--compilation_level=SIMPLE_OPTIMIZATIONS -Oz -sFILESYSTEM=0 -ferror-limit=2")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CXX_COMPILE_FLAGS}")
 
 # -- LLVM
@@ -33,7 +33,7 @@ add_executable(VIRELANG ${SRC_DIR}/src/main.cpp)
 
 # -- LLVM Libraries
 link_libraries()
-execute_process(COMMAND llvm-config --libs WebAssembly OUTPUT_VARIABLE LIBS)
+execute_process(COMMAND llvm-config --libs WebAssembly Passes OUTPUT_VARIABLE LIBS)
 execute_process(COMMAND llvm-config --system-libs OUTPUT_VARIABLE SYS_LIBS)
 execute_process(COMMAND llvm-config --ldflags OUTPUT_VARIABLE LDF)
 

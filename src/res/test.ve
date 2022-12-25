@@ -1,15 +1,36 @@
 extern puti(n: int);
 
-struct xyz
+func sort(arr: int[5])
 {
-    int a;
-    int b;
+    let i=0;
+    let key=0;
+    let j=0;
+
+    for(i=0; i<5; ++i)
+    {
+        key = arr[i];
+        j = i-1;
+
+        while(j>=0)
+        {
+            if(arr[j] < key)
+            {
+                break;
+            }
+
+            arr[j + 1] = arr[j];
+            j-=1;
+        }
+
+        arr[j + 1] = key;
+    }
 }
 
-func test(): int[3]
-{
-    return [1,2,3];
-}
+let arr=[61,86,53,19,61];
 
-let c=test();
-puti(c[1]);
+sort(arr);
+
+for(let i=0; i<5; ++i)
+{
+    puti(arr[i]);
+}

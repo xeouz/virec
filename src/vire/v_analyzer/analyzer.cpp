@@ -16,19 +16,24 @@ namespace vire
     {
         return types::isTypeinMap(name);
     }
-    bool VAnalyzer::isFuncDefined(const std::string& name)
+    bool VAnalyzer::isFunctionDefined(const std::string& name)
     {
         const auto& functions=ast->getFunctions();
         if(!functions.empty())
         {
             for(int i=0; i<functions.size(); ++i)
-            {
-                if(functions[i]->getName()==name)
-                {
+                if(functions[i]->getIName().name==name)
                     return true;
-                }
-            }
         }
+        
+        const auto& constructors=ast->getConstructors();
+        if(!constructors.empty())
+        {
+            for(int i=0; i<constructors.size(); ++i)
+                if(constructors[i]->getIName().name==name)
+                    return true;
+        }
+        
         return false;
     }
     bool VAnalyzer::isClassDefined(const std::string& name)
@@ -71,6 +76,10 @@ namespace vire
         scope.erase(name.get());
     }
 
+    void VAnalyzer::addConstructor(FunctionAST* func)
+    {
+        ast->addConstructor(func);
+    }
     void VAnalyzer::addFunction(std::unique_ptr<FunctionBaseAST> func)
     {
         ast->addFunction(std::move(func));
@@ -96,22 +105,18 @@ namespace vire
     FunctionBaseAST* const VAnalyzer::getFunction(const proto::IName& name)
     {
         const auto& functions=ast->getFunctions();
-
         for(int i=0; i<functions.size(); i++)
-        {
-            if(functions[i]->getIName()==name)
-            {
+            if(functions[i]->getIName().name==name.name)
                 return functions[i].get();
-            }
-        }
+
+        const auto& constructors=ast->getConstructors();
+        for(int i=0; i<constructors.size(); i++)
+            if(constructors[i]->getIName().name==name.name)
+                return constructors[i];
 
         if(current_func)
-        {
-            if(current_func->getIName()==name || name.name=="")
-            {
+            if(current_func->getIName().name==name.name || name.name=="")
                 return current_func;
-            }
-        }
         
         std::cout << "Function `" << name << "` not found" << std::endl;
         return nullptr;
@@ -524,6 +529,9 @@ namespace vire
                 auto* child_array_type=array_type;
                 for(auto const& index : indices)
                 {
+                    if(!verifyExpr(index.get()))
+                        return false;
+
                     auto* index_type=getType(index.get());
                     
                     if(index_type->getType() == types::TypeNames::Int)
@@ -543,7 +551,6 @@ namespace vire
                         std::cout << "Error: Array index is not of type integer, but is " << *index_type << std::endl;
                         return false;
                     }
-                    index->setType(types::copyType(index_type));
 
                     child_array_type=(types::Array*)child_array_type->getChild();
                 }
@@ -660,7 +667,7 @@ namespace vire
     bool VAnalyzer::verifyCall(CallExprAST* const call)
     {
         bool is_valid=true;
-        auto name=call->getName();
+        auto name=call->getIName().name;
 
         bool is_recursive_call=false;
         if(current_func)
@@ -671,14 +678,14 @@ namespace vire
             }
         }
 
-        if(!isFuncDefined(name) && !is_recursive_call)
+        if(!isFunctionDefined(name) && !is_recursive_call)
         {
             std::cout << "Function `" << name << "` is not defined" << std::endl;
             // Function is not defined
             return false;
         }
 
-        if(call->getIName().name == "main")
+        if(name == "main")
         {
             std::cout << "Verification Error: Cannot call the main function, it is an entry point" << std::endl;
             is_valid=false;
@@ -849,7 +856,7 @@ namespace vire
     {
         bool is_valid=true;
 
-        if(isFuncDefined(proto->getName()))
+        if(isFunctionDefined(proto->getIName().name))
         {
             // Function is already defined
             return false;
@@ -1061,6 +1068,74 @@ namespace vire
             std::cout << "Struct `" << st_name << "` already defined" << std::endl;
             is_valid=false;
         }
+
+        /*
+        if(auto* constructor=struct_->getConstructor())
+        {
+            if(!verifyFunction(constructor))
+            {
+                is_valid=false;
+            }
+        }
+        else
+        {
+            // Create a default constructor //
+
+            constexpr const char* self_ref_name="self";
+
+            std::vector<std::unique_ptr<VariableDefAST>> args;
+            std::vector<std::unique_ptr<ExprAST>> new_constructor_body;
+
+            // Create the args
+            std::unique_ptr<ExprAST> self_val=nullptr;
+            args.push_back(std::make_unique<VariableDefAST>(VToken::construct(self_ref_name, tok_id), types::construct(st_name, true), std::move(self_val)));
+            for(auto const& member : members)
+            {
+                std::unique_ptr<VariableDefAST> arg;
+                std::unique_ptr<ExprAST> empty_val=nullptr;
+                if(member->asttype==ast_struct)
+                {
+                    auto* st=(StructExprAST*)member;
+                    arg=std::make_unique<VariableDefAST>(VToken::construct(st->getName(), tok_id), types::construct(st->getName(), true), std::move(empty_val));
+                }
+                else if(member->asttype==ast_vardef)
+                {
+                    auto* var=(VariableDefAST*)member;
+                    arg=std::make_unique<VariableDefAST>(VToken::construct(var->getName(), tok_id), types::copyType(var->getType()), std::move(empty_val));
+                }
+
+                args.push_back(std::move(arg));
+            }
+
+            // Create the body
+            for(auto const& member : members)
+            {
+                std::string member_name;
+
+                if(member->asttype==ast_struct)
+                    member_name=((StructExprAST*)member)->getName();
+                else if(member->asttype==ast_vardef)
+                    member_name=((VariableDefAST*)member)->getName();
+
+                auto lhs=std::make_unique<TypeAccessAST>
+                (std::make_unique<VariableExprAST>(VToken::construct(self_ref_name, tok_id)), 
+                 std::make_unique<VariableExprAST>(VToken::construct(member_name, tok_id)));
+                
+                auto rhs=std::make_unique<VariableExprAST>(VToken::construct(member_name, tok_id));
+
+                new_constructor_body.push_back(std::make_unique<VariableAssignAST>(std::move(lhs), std::move(rhs)));
+            }
+
+            auto func_name=struct_->getIName();
+            auto new_constructor_proto=std::make_unique<PrototypeAST>(VToken::construct(func_name.name), std::move(args), types::construct(st_name, true));
+            auto new_constructor=std::make_unique<FunctionAST>(std::move(new_constructor_proto), std::move(new_constructor_body));
+
+            new_constructor->setName(proto::IName(func_name.name, "struct_construct_"));
+            struct_->setConstructor(std::move(new_constructor));
+        }
+
+        addConstructor(struct_->getConstructor());
+        */
 
         return is_valid;
     }
