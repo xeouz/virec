@@ -431,14 +431,18 @@ namespace vire
         while(1)
         {  
             int prec=config->getBinopPrecedence(current_token->value);
-
-            //Debug line, uncomment to use:
-            //std::cout << *current_token << std::to_string(prec) << std::endl;
  
-            if(prec<ExprPrec)
+            if(prec<ExprPrec && !(current_token->type==tok_and || current_token->type==tok_or))
                 return LHS;
+            else if(current_token->type==tok_and || current_token->type==tok_or)
+            {
+                auto binop=copyCurrentToken();
+                getNextToken();
+                auto RHS=ParseExpression();
+                return std::make_unique<BinaryExprAST>(std::move(binop), std::move(LHS), std::move(RHS));
+            }
             
-            auto Binop=copyCurrentToken();
+            auto binop=copyCurrentToken();
             getNextToken(); // consume the binop
             
             auto RHS=ParsePrimary();
@@ -453,7 +457,7 @@ namespace vire
                     return nullptr;
             }
 
-            LHS=std::make_unique<BinaryExprAST>(std::move(Binop),std::move(LHS),std::move(RHS));
+            LHS=std::make_unique<BinaryExprAST>(std::move(binop), std::move(LHS), std::move(RHS));
             if(current_token->type==tok_eof)
             {
                 return std::move(LHS);

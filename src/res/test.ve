@@ -1,16 +1,9 @@
 extern puti(n: int);
 
-struct car
+let a=120;
+let b=2;
+
+if(a==10 || b==20)
 {
-    int wheels;
-    int seats;
-
-    constructor()
-    {
-        self.wheels=100;
-        self.seats=2;
-    }
+    puti(42);
 }
-
-let a=car();
-puti(a.wheels);

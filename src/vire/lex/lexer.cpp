@@ -220,6 +220,14 @@ public:
             {
                 toktype=tok_func;
             }
+            else if(id_str=="and")
+            {
+                toktype=tok_and;
+            }
+            else if(id_str=="or")
+            {
+                toktype=tok_or;
+            }
             else if(id_str=="if")
             {
                 toktype=tok_if;

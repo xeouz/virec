@@ -217,7 +217,7 @@ namespace vire
                     return Builder.CreateFCmpOLE(lhs, rhs, cmpname);
                 return Builder.CreateICmpSLE(lhs, rhs, cmpname);
             }
-            
+
             default:
                 std::cout << "Unhandled binary operator" << std::endl;
                 return nullptr;
@@ -679,14 +679,40 @@ namespace vire
     llvm::Value* VCompiler::compileBinopExpr(BinaryExprAST* const expr)
     {
         auto* lhs=compileExpr(expr->getLHS());
-        auto* rhs=compileExpr(expr->getRHS());
 
-        if(!lhs || !rhs)
-            return nullptr;
+        if(expr->getOp()->type!=tok_and && expr->getOp()->type!=tok_or)
+        {   
+            auto* rhs=compileExpr(expr->getRHS());
+            bool expr_is_fp=types::isTypeFloatingPoint(expr->getType());
+            return createBinaryOperation(lhs, rhs, expr->getOp(), expr_is_fp);
+        }
         
-        bool expr_is_fp=types::isTypeFloatingPoint(expr->getType());
+        // Operator is either `and` or `or`
+        bool type_is_and=(expr->getOp()->type==tok_and);
+        const char* bb_rhs_name="",* bb_end_name="";
+        if(type_is_and) { bb_rhs_name="and.op.rhs"; bb_end_name="and.op.end"; }
+        else            { bb_rhs_name="or.op.rhs";  bb_end_name="or.op.end"; }
 
-        return createBinaryOperation(lhs, rhs, expr->getOp(), expr_is_fp);
+        auto* entry_bb=Builder.GetInsertBlock();
+        auto* bb_rhs=llvm::BasicBlock::Create(CTX, bb_rhs_name, currentFunction);
+        auto* bb_end=llvm::BasicBlock::Create(CTX, bb_end_name, currentFunction);
+
+        if(type_is_and)
+            Builder.CreateCondBr(lhs, bb_rhs, bb_end);
+        else
+            Builder.CreateCondBr(lhs, bb_end, bb_rhs);
+        
+        Builder.SetInsertPoint(bb_rhs);
+        auto* rhs=compileExpr(expr->getRHS());
+        Builder.CreateBr(bb_end);
+
+        Builder.SetInsertPoint(bb_end);
+        auto* phi=Builder.CreatePHI(llvm::Type::getInt1Ty(CTX), 2, "op.res");
+
+        phi->addIncoming(llvm::ConstantInt::get(CTX, llvm::APInt(1, !type_is_and)), entry_bb);
+        phi->addIncoming(rhs, bb_rhs);
+
+        return phi;
     }
 
     std::vector<llvm::Value*> VCompiler::compileBlock(std::vector<std::unique_ptr<ExprAST>> const& block)
