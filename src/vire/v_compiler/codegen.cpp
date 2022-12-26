@@ -1148,8 +1148,6 @@ namespace vire
         // Create the constructor
         compileFunction(st->getConstructor());
 
-        std::cout << getCompiledOutput() << std::endl;
-
         return struct_type;
     }
     llvm::Value* VCompiler::compileTypeAccess(TypeAccessAST* const expr)

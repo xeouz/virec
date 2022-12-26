@@ -1094,6 +1094,7 @@ namespace vire
             constructor->setName(proto::IName(struct_->getIName().name, "struct_construct_"));
             
             auto self_ref=std::make_unique<VariableDefAST>(VToken::construct("self", tok_id), types::copyType(struct_ty.get()), nullptr);
+            self_ref->isArgument(true);
             defineVariable(self_ref.get(), true);
             constructor->getModifyableArgs().insert(constructor->getArgs().begin(), std::move(self_ref));
 
