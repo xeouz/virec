@@ -11,7 +11,6 @@ namespace vire
     {
         return scope.count(name.get());
     }
-
     bool VAnalyzer::isStructDefined(const std::string& name)
     {
         return types::isTypeinMap(name);
@@ -368,6 +367,12 @@ namespace vire
     }
     bool VAnalyzer::verifyVariableDef(VariableDefAST* const var, bool add_to_scope)
     {
+        if(var->getIName().name=="self")
+        {
+            std::cout << "Cannot name variable `self` as it is a keyword" << std::endl;
+            return false;
+        }
+
         if(!isVariableDefined(var->getName()))
         {
             bool is_var=!(var->isLet() || var->isConst());
@@ -742,6 +747,8 @@ namespace vire
             call->setArgs(std::move(args));
         }
 
+        call->setType(types::copyType(func->getReturnType()));
+
         return is_valid;
     }
 
@@ -890,9 +897,11 @@ namespace vire
             }
         }
 
-        const auto& args=proto->getArgs();
-        for(const auto& arg : args)
+        auto it=proto->getArgs().begin();
+        if(proto->doesRequireSelfRef()) ++it;
+        for(; it!=proto->getArgs().end(); ++it)
         {   
+            auto const& arg=*it;
             if(types::isSame(arg->getType(), "any"))
             {
                 // Type is not valid
@@ -1073,17 +1082,28 @@ namespace vire
             std::cout << "Struct `" << st_name << "` already defined" << std::endl;
             is_valid=false;
         }
+        auto struct_ty=types::construct(st_name, true);
 
         current_struct=struct_;
 
         if(auto* constructor=struct_->getConstructor())
         {
-            current_func=struct_->getConstructor();
+            constructor->isConstructor(true);
+            constructor->doesRequireSelfRef(true);
+            constructor->setReturnType(types::copyType(struct_ty.get()));
+            constructor->setName(proto::IName(struct_->getIName().name, "struct_construct_"));
+            
+            auto self_ref=std::make_unique<VariableDefAST>(VToken::construct("self", tok_id), types::copyType(struct_ty.get()), nullptr);
+            defineVariable(self_ref.get(), true);
+            constructor->getModifyableArgs().insert(constructor->getArgs().begin(), std::move(self_ref));
+
+            current_func=constructor;
             if(!verifyFunction(constructor))
             {
                 is_valid=false;
             }
-            constructor->doesRequireSelfRef(true);
+        
+            undefineVariable(self_ref->getIName());
         }
         else
         {
@@ -1100,7 +1120,7 @@ namespace vire
 
             // Create the args
             std::unique_ptr<ExprAST> empty_val;
-            auto vardef=std::make_unique<VariableDefAST>(VToken::construct("", tok_id), types::construct(st_name, true), std::move(empty_val), false, true);
+            auto vardef=std::make_unique<VariableDefAST>(VToken::construct("", tok_id), types::copyType(struct_ty.get()), std::move(empty_val), false, true);
             vardef->setName(proto::IName(self_ref_name, ""));
             vardef->isArgument(true);
             vars.push_back(vardef.get());
@@ -1137,7 +1157,7 @@ namespace vire
 
                 auto self_ref=std::make_unique<VariableExprAST>(VToken::construct("", tok_id));
                 self_ref->setName(proto::IName(self_ref_name, ""));
-                self_ref->setType(types::construct(st_name, true));
+                self_ref->setType(types::copyType(struct_ty.get()));
                 auto mem=std::make_unique<VariableExprAST>(VToken::construct(member_name, tok_id));
                 mem->setType(types::copyType(member->getType()));
 
@@ -1151,7 +1171,7 @@ namespace vire
             }
 
             // Set the constructor
-            auto new_constructor_proto=std::make_unique<PrototypeAST>(VToken::construct(st_iname.name), std::move(args), types::construct(st_name, true));
+            auto new_constructor_proto=std::make_unique<PrototypeAST>(VToken::construct(st_iname.name), std::move(args), types::copyType(struct_ty.get()));
             auto new_constructor=std::make_unique<FunctionAST>(std::move(new_constructor_proto), std::move(new_constructor_body));
 
             new_constructor->setName(func_name);

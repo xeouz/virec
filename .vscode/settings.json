@@ -96,6 +96,7 @@
         "regex": "cpp",
         "strstream": "cpp",
         "valarray": "cpp",
-        "filesystem": "cpp"
+        "filesystem": "cpp",
+        "span": "cpp"
     }
 }

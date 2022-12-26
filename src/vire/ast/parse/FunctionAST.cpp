@@ -139,6 +139,7 @@ public:
     bool isConstructor() const { return is_constructor; }
 
     std::vector<std::unique_ptr<VariableDefAST>> const& getArgs() const {return args;}
+    std::vector<std::unique_ptr<VariableDefAST>>& getModifyableArgs() {return args;}
 };
 
 // ExternAST - Class for extern functions which are defined in some other language like C
@@ -194,6 +195,7 @@ public:
     // Getter Functions
     PrototypeAST*                                const getProto() const { return proto.get(); }
     std::vector<std::unique_ptr<VariableDefAST>> const& getArgs() const { return proto->getArgs(); }
+    std::vector<std::unique_ptr<VariableDefAST>>& getModifyableArgs()   { return proto->getModifyableArgs(); }
     std::vector<std::unique_ptr<ExprAST>>        const& getBody() const { return statements; }
 
     proto::IName const& getIName()    const { return proto->getIName(); }
@@ -205,7 +207,7 @@ public:
     VToken* const getNameToken()      const { return proto->getNameToken(); }
     std::unique_ptr<VToken> moveNameToken() { return proto->moveNameToken(); }
 
-    types::Base* getReturnType()      const { return proto->getReturnType(); }
+    void setReturnType(std::unique_ptr<types::Base> type) { proto->setReturnType(types::copyType(type.get())); this->return_type=std::move(type); }
 
     // Block-based Functions
     void insertStatement(std::unique_ptr<ExprAST> statement) 

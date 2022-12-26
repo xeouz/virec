@@ -4,7 +4,13 @@ struct car
 {
     int wheels;
     int seats;
+
+    constructor()
+    {
+        self.wheels=100;
+        self.seats=2;
+    }
 }
 
-let a=car(10, 20);
+let a=car();
 puti(a.wheels);

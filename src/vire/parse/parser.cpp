@@ -49,14 +49,14 @@ namespace vire
         va_end(args);
         return std::vector<std::unique_ptr<ExprAST>>();
     }
-    std::unordered_map<proto::IName, std::unique_ptr<ExprAST>> VParser::LogErrorPB(const char* str,...)
+    std::pair<std::unordered_map<proto::IName, std::unique_ptr<ExprAST>>, std::unique_ptr<FunctionAST>> VParser::LogErrorPB(const char* str,...)
     {
         std::va_list args;
         va_start(args,str);
         fprintf(ERR_OUT,"Parse Error: ");
         std::vfprintf(ERR_OUT,str,args);
         va_end(args);
-        return std::unordered_map<proto::IName, std::unique_ptr<ExprAST>>();
+        return std::pair<std::unordered_map<proto::IName, std::unique_ptr<ExprAST>>, std::unique_ptr<FunctionAST>>();
     }
 
     void VParser::getNextToken(bool first_token)
@@ -679,15 +679,8 @@ namespace vire
                 return LogErrorP("Expected ':' for type specifier after arg name");
             getNextToken(tok_colon); // consume colon
 
-            unsigned char isconst=0;
-            if(current_token->type==tok_const)
-            {
-                isconst=1;
-                getNextToken();
-            }
-
             auto type=ParseTypeIdentifier();
-            auto var=std::make_unique<VariableDefAST>(std::move(var_name) , std::move(type), nullptr, isconst, !isconst);
+            auto var=std::make_unique<VariableDefAST>(std::move(var_name) , std::move(type), nullptr, true, false);
             
             args.push_back(std::move(var));
 
@@ -884,11 +877,36 @@ namespace vire
         return std::move(x);
     }
 
-    std::unordered_map<proto::IName, std::unique_ptr<ExprAST>> VParser::ParsePrimitiveBody()
+    std::unique_ptr<FunctionAST> VParser::ParseConstructor()
+    {
+        getNextToken(tok_constructor);
+        getNextToken(tok_lparen);
+
+        std::vector<std::unique_ptr<VariableDefAST>> args;
+        while(current_token->type==tok_id)
+        {
+            auto var_name=copyCurrentToken();
+            getNextToken(tok_id);
+            getNextToken(tok_colon);
+            
+            auto type=ParseTypeIdentifier();
+            auto var=std::make_unique<VariableDefAST>(std::move(var_name), std::move(type), nullptr, true, false);
+            args.push_back(std::move(var));
+        }
+        getNextToken(tok_rparen);
+
+        auto block=ParseBlock();
+
+        auto proto=std::make_unique<PrototypeAST>(VToken::construct("", tok_id), std::move(args), types::construct("void"), true, true);
+        return std::make_unique<FunctionAST>(std::move(proto), std::move(block), true, true);
+    }
+    std::pair<std::unordered_map<proto::IName, std::unique_ptr<ExprAST>>, std::unique_ptr<FunctionAST>> VParser::ParsePrimitiveBody()
     {
         getNextToken(tok_lbrace);
+        std::unique_ptr<FunctionAST> constructor;
         std::unordered_map<proto::IName, std::unique_ptr<ExprAST>> members;
 
+        bool found_constructor=false;
         while(current_token->type!=tok_rbrace)
         {
             if(current_token->type==tok_eof) return LogErrorPB("Expected '}' found end of file");
@@ -917,6 +935,13 @@ namespace vire
                 member_name=name->value;
                 member=std::make_unique<VariableDefAST>(std::move(name), types::construct(type->value), nullptr);
             }
+            else if(current_token->type==tok_constructor)
+            {
+                auto cons=ParseConstructor();
+                if(found_constructor) std::cout << "Already encountered constructor, multiple constructors yet to be added" << std::endl;
+                else constructor=std::move(cons);
+                continue;
+            }
             else
             {
                 std::cout << "Invalid Token: " << current_token->value << std::endl;
@@ -928,7 +953,7 @@ namespace vire
         
         getNextToken(tok_rbrace);
 
-        return std::move(members);
+        return std::make_pair(std::move(members), std::move(constructor));
     }
     std::unique_ptr<ExprAST> VParser::ParseUnion()
     {
@@ -944,7 +969,7 @@ namespace vire
         }
 
         auto body=ParsePrimitiveBody();
-        return std::make_unique<UnionExprAST>(std::move(body), std::move(name));
+        return std::make_unique<UnionExprAST>(std::move(body.first), std::move(name));
     }
     std::unique_ptr<ExprAST> VParser::ParseStruct()
     {
@@ -961,7 +986,9 @@ namespace vire
 
         auto body=ParsePrimitiveBody();
 
-        return std::make_unique<StructExprAST>(std::move(body), std::move(name));
+        auto cons=std::move(body.second);
+        auto members=std::move(body.first);
+        return std::make_unique<StructExprAST>(std::move(members), std::move(cons), std::move(name));
     }
 
     std::unique_ptr<ExprAST> VParser::ParseUnsafe()

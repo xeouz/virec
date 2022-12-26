@@ -96,6 +96,8 @@ enum token
     tok_muleq=-65,
     tok_diveq=-66,
     tok_modeq=-67,
+
+    tok_constructor=-68,
 };
 
 static const char* tokToStr(int tok);

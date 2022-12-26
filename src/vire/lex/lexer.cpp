@@ -88,7 +88,6 @@ public:
 
         return id;
     }
-
     std::unique_ptr<VToken> gatherNum()
     {
         std::string numstr;
@@ -140,7 +139,6 @@ public:
 
         return makeTokenInplace(numstr,ttype);
     }
-
     std::unique_ptr<VToken> gatherChar()
     {
         std::string ch;
@@ -180,7 +178,6 @@ public:
         auto tok=std::make_unique<VToken>(value, type, this->line, this->charpos);
         return std::move(tok);
     }
-
     std::unique_ptr<VToken> makeToken(std::string value, int type, char move=0)
     {
         this->cur=this->getNext(move);
@@ -188,7 +185,6 @@ public:
 
         return std::move(tok);
     }
-
     std::unique_ptr<VToken> makeToken(const char* value, int type, char move=0)
     {
         this->cur=this->getNext(move);
@@ -323,6 +319,10 @@ public:
             else if(id_str=="unsafe")
             {
                 toktype=tok_unsafe;
+            }
+            else if(id_str=="constructor")
+            {
+                toktype=tok_constructor;
             }
             else
             {

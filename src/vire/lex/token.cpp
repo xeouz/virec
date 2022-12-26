@@ -150,6 +150,8 @@ static const char* tokToStr(int tok)
 
         case tok_dot: return "tok_dot";
 
+        case tok_constructor: return "tok_constructor";
+
         default: return "unknown";
     }
 }
