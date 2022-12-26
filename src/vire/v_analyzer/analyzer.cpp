@@ -406,7 +406,6 @@ namespace vire
             types::Base* value_type;
 
             auto const& value=var->getValue();
-
             if(value==nullptr)
             {
                 var->refreshType();
@@ -698,13 +697,14 @@ namespace vire
         const auto* func=getFunction(name);
         const auto& func_args=func->getArgs();
 
-        if(args.size() != func_args.size())
+        if(args.size() != (func_args.size()-func->doesRequireSelfRef()))
         {
             // Argument count mismatch
+            std::cout << "Call arg count mismatch" << std::endl;
             is_valid=false;
         }
 
-        for(unsigned int i=0; i<args.size(); ++i)
+        for(unsigned int i=func->doesRequireSelfRef(); i<args.size(); ++i)
         {
             auto arg=std::move(args[i]);
 
@@ -1083,6 +1083,7 @@ namespace vire
             {
                 is_valid=false;
             }
+            constructor->doesRequireSelfRef(true);
         }
         else
         {
@@ -1098,6 +1099,12 @@ namespace vire
             ReturnExprAST* ret_stm;
 
             // Create the args
+            std::unique_ptr<ExprAST> empty_val;
+            auto vardef=std::make_unique<VariableDefAST>(VToken::construct("", tok_id), types::construct(st_name, true), std::move(empty_val), false, true);
+            vardef->setName(proto::IName(self_ref_name, ""));
+            vardef->isArgument(true);
+            vars.push_back(vardef.get());
+            args.push_back(std::move(vardef));
             for(auto const& member : members)
             {
                 std::unique_ptr<VariableDefAST> arg;
@@ -1119,12 +1126,6 @@ namespace vire
             }
 
             // Create the body
-            std::unique_ptr<ExprAST> empty_val;
-            auto vardef=std::make_unique<VariableDefAST>(VToken::construct("", tok_id), types::construct(st_name, true), std::move(empty_val), false, true);
-            vardef->setName(proto::IName(self_ref_name, ""));
-            vars.push_back(vardef.get());
-            new_constructor_body.push_back(std::move(vardef));
-
             for(auto const& member : members)
             {
                 std::string member_name;
@@ -1148,23 +1149,16 @@ namespace vire
 
                 new_constructor_body.push_back(std::make_unique<VariableAssignAST>(std::move(lhs), std::move(rhs)));
             }
-            
-            auto ref=std::make_unique<VariableExprAST>(VToken::construct("", tok_id));
-            ref->setName(proto::IName(self_ref_name, ""));
-            ref->setType(types::construct(st_name, true));
-            auto ret=std::make_unique<ReturnExprAST>(std::move(ref));
-            ret->setName(func_name);
-            ret_stm=ret.get();
-            new_constructor_body.push_back(std::move(ret));
 
             // Set the constructor
             auto new_constructor_proto=std::make_unique<PrototypeAST>(VToken::construct(st_iname.name), std::move(args), types::construct(st_name, true));
             auto new_constructor=std::make_unique<FunctionAST>(std::move(new_constructor_proto), std::move(new_constructor_body));
 
             new_constructor->setName(func_name);
-            new_constructor->isConstructor(true);
             new_constructor->addVariables(vars, true);
             new_constructor->addReturnStatement(ret_stm);
+            new_constructor->doesRequireSelfRef(true);
+            new_constructor->isConstructor(true);
 
             struct_->setConstructor(std::move(new_constructor));
         }

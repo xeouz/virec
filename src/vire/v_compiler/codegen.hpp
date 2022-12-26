@@ -146,7 +146,7 @@ public:
     llvm::Value* compileBreakExpr(BreakExprAST* const breakexpr);
     llvm::Value* compileContinueExpr(ContinueExprAST* const continueexpr);
 
-    llvm::Value* compileCallExpr(CallExprAST* const expr);
+    llvm::Value* compileCallExpr(CallExprAST* const expr, llvm::Value* parent_struct=nullptr);
     llvm::Value* compileReturnExpr(ReturnExprAST* const expr);
     llvm::Function* compilePrototype(PrototypeAST* const proto);
     llvm::Function* compileExtern(std::string const& name);

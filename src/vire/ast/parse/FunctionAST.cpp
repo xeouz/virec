@@ -91,8 +91,11 @@ public:
     virtual bool is_extern() const { return false; }
     virtual bool is_proto()  const { return false; }
 
-    virtual void isConstructor(bool val) = 0;
-    virtual bool isConstructor() const = 0;
+    virtual void doesRequireSelfRef(bool val) = 0;
+    virtual bool doesRequireSelfRef() const = 0;
+
+    virtual void isConstructor(bool val) {}
+    virtual bool isConstructor() const { return false; }
     //virtual bool isVariableDefined(std::string const& name) const = 0;
     //virtual VariableDefAST* const getVariable(const std::string& name) const = 0;
 
@@ -105,11 +108,13 @@ class PrototypeAST : public FunctionBaseAST
     proto::IName name;
     std::unique_ptr<VToken> name_token;
     std::vector<std::unique_ptr<VariableDefAST>> args;
+    bool is_constructor;
+    bool requires_selfref;
 public:
     int asttype;
 
-    PrototypeAST(std::unique_ptr<VToken> name, std::vector<std::unique_ptr<VariableDefAST>> args, std::unique_ptr<types::Base> return_type)
-    : FunctionBaseAST(std::move(return_type)), args(std::move(args)), asttype(ast_proto),
+    PrototypeAST(std::unique_ptr<VToken> name, std::vector<std::unique_ptr<VariableDefAST>> args, std::unique_ptr<types::Base> return_type, bool requires_selfref=false, bool is_constructor=false)
+    : FunctionBaseAST(std::move(return_type)), args(std::move(args)), asttype(ast_proto), requires_selfref(requires_selfref), is_constructor(is_constructor),
     name(name->value), name_token(std::move(name))
     {}
 
@@ -127,8 +132,11 @@ public:
     bool is_proto() const {return true;}
     bool is_type_null() const {return FunctionBaseAST::return_type==nullptr;}
 
-    void isConstructor(bool val) {}
-    bool isConstructor() const { return false; }
+    void doesRequireSelfRef(bool val) { requires_selfref=val; }
+    bool doesRequireSelfRef() const { return requires_selfref; }
+
+    void isConstructor(bool val) { is_constructor=val; }
+    bool isConstructor() const { return is_constructor; }
 
     std::vector<std::unique_ptr<VariableDefAST>> const& getArgs() const {return args;}
 };
@@ -160,8 +168,8 @@ public:
     PrototypeAST* const getProto() const {return proto.get();}
     std::vector<std::unique_ptr<VariableDefAST>> const& getArgs() const {return proto->getArgs();}
 
-    void isConstructor(bool val) { }
-    bool isConstructor() const { return false; }
+    void doesRequireSelfRef(bool val) { }
+    bool doesRequireSelfRef() const { return false; }
 };
 
 // FunctionAST - Class for functions which can be called by the user
@@ -172,12 +180,13 @@ class FunctionAST : public FunctionBaseAST
     std::vector<ReturnExprAST*> return_stms;
     std::unordered_map<std::string, VariableDefAST*> locals;
     std::unordered_map<std::string, unsigned int> arg_indxs;
+    bool requires_selfref;
     bool is_constructor;
 public:
     int asttype;
     
-    FunctionAST(std::unique_ptr<PrototypeAST> prototype, std::vector<std::unique_ptr<ExprAST>> stmts, bool is_constructor=false)
-    : FunctionBaseAST(prototype->getReturnType()), is_constructor(is_constructor),
+    FunctionAST(std::unique_ptr<PrototypeAST> prototype, std::vector<std::unique_ptr<ExprAST>> stmts, bool requires_selfref=false, bool is_constructor=false)
+    : FunctionBaseAST(prototype->getReturnType()),
     asttype(ast_function), proto(std::move(prototype)), statements(std::move(stmts))
     {
     }
@@ -223,8 +232,11 @@ public:
     }
     unsigned int getArgumentIndex(std::string const& name) { return arg_indxs[name]; }
 
-    void isConstructor(bool val) { is_constructor=val; }
-    bool isConstructor() const { return is_constructor; }
+    void doesRequireSelfRef(bool val) { proto->doesRequireSelfRef(val); }
+    bool doesRequireSelfRef() const { return proto->doesRequireSelfRef(); }
+
+    void isConstructor(bool val) { proto->isConstructor(val); }
+    bool isConstructor() const { return proto->isConstructor(); }
 };
 
 class ReturnExprAST : public ExprAST
