@@ -10,11 +10,13 @@ namespace vire
 namespace types
 {
 // Enum for the different types of Type-AST nodes
-enum class TypeNames
+enum class EType
 {
     Void,
     Char,
+    Short,
     Int,
+    Long,
     Float,
     Double,
     Bool,
@@ -24,39 +26,43 @@ enum class TypeNames
 };
 
 // Type Map
-inline std::unordered_map<std::string, TypeNames> type_map=
+inline std::unordered_map<std::string, EType> type_map=
 {
-    {"void", TypeNames::Void},
-    {"char", TypeNames::Char},
-    {"int", TypeNames::Int},
-    {"float", TypeNames::Float},
-    {"double", TypeNames::Double},
-    {"bool", TypeNames::Bool},
-    {"any", TypeNames::Any}
+    {"void", EType::Void},
+    {"char", EType::Char},
+    {"short", EType::Short},
+    {"int", EType::Int},
+    {"long", EType::Long},
+    {"float", EType::Float},
+    {"double", EType::Double},
+    {"bool", EType::Bool},
+    {"any", EType::Any}
 };
-inline std::unordered_map<TypeNames, std::string> typestr_map=
+inline std::unordered_map<EType, std::string> typestr_map=
 {
-    {TypeNames::Void, "void"},
-    {TypeNames::Char, "char"},
-    {TypeNames::Int, "int"},
-    {TypeNames::Float, "float"},
-    {TypeNames::Double, "double"},
-    {TypeNames::Bool, "bool"},
-    {TypeNames::Custom, "custom"},
-    {TypeNames::Any, "any"},
+    {EType::Void, "void"},
+    {EType::Char, "char"},
+    {EType::Short, "short"},
+    {EType::Int, "int"},
+    {EType::Long, "long"},
+    {EType::Float, "float"},
+    {EType::Double, "double"},
+    {EType::Bool, "bool"},
+    {EType::Custom, "custom"},
+    {EType::Any, "any"},
 };
 inline std::unordered_map<std::string, int> custom_type_sizes=
 { };
 
 // Prototypes
-inline std::string getMapFromType(TypeNames const& type);
-inline TypeNames getTypeFromMap(std::string typestr);
+inline std::string getMapFromType(EType const& type);
+inline EType getTypeFromMap(std::string typestr);
 
 // Classes
 class Base
 {
 protected:
-    TypeNames type;
+    EType type;
     int8_t size;
 public:
     int8_t precedence;
@@ -65,14 +71,14 @@ public:
     
     Base(bool _is_const=true)
     {
-        type = TypeNames::Void;
+        type = EType::Void;
         size = 0;
         is_const = _is_const;
         is_signed = true;
     }
 
     virtual ~Base()=default;
-    virtual TypeNames const& getType() const { return type; }
+    virtual EType const& getType() const { return type; }
     virtual int8_t getSize() const { return size; }
 
     virtual unsigned int getDepth() const { return 0; }
@@ -96,7 +102,7 @@ inline bool isSame(Base* const a, Base* const b);
 inline bool isSame(Base* const a, const char*  b);
 
 inline std::unique_ptr<Base> construct(std::string typestr, bool create_custom=false);
-inline std::unique_ptr<Base> construct(TypeNames const& type);
+inline std::unique_ptr<Base> construct(EType const& type);
 inline Base* getArrayRootType(Base* const type);
 
 inline std::ostream& operator<<(std::ostream& os, Base const& type)
@@ -111,7 +117,7 @@ class Void : public Base
 public:
     Void(std::string name="", bool _is_const=true)
     {
-        type = TypeNames::Void;
+        type = EType::Void;
         size = 0;
         precedence = 0;
         is_const=_is_const;
@@ -133,8 +139,20 @@ class Char : public Base
 public:
     Char(bool _is_const=true)
     {
-        type = TypeNames::Char;
+        type = EType::Char;
         size = 1;
+        precedence = 1;
+        is_const=_is_const;
+    }
+};
+
+class Short : public Base
+{
+public:
+    Short(bool _is_const=true)
+    {
+        type = EType::Short;
+        size = 2;
         precedence = 2;
         is_const=_is_const;
     }
@@ -145,8 +163,20 @@ class Int : public Base
 public:
     Int(bool _is_const=true)
     {
-        type = TypeNames::Int;
+        type = EType::Int;
         size = 4; 
+        precedence = 3;
+        is_const=_is_const;
+    }
+};
+
+class Long : public Base
+{
+public:
+    Long(bool _is_const=true)
+    {
+        type = EType::Long;
+        size = 8;
         precedence = 4;
         is_const=_is_const;
     }
@@ -157,7 +187,7 @@ class Float : public Base
 public:
     Float(bool _is_const=true)
     {
-        type = TypeNames::Float;
+        type = EType::Float;
         size = 4; 
         precedence = 5;
         is_const=_is_const;
@@ -169,7 +199,7 @@ class Double : public Base
 public:
     Double(bool _is_const=true)
     {
-        type = TypeNames::Double;
+        type = EType::Double;
         size = 8;
         precedence = 8;
         is_const=_is_const;
@@ -181,7 +211,7 @@ class Bool : public Base
 public:
     Bool(bool _is_const=true)
     {
-        type = TypeNames::Bool;
+        type = EType::Bool;
         size = 1;
         is_const=_is_const;
         is_signed=false;
@@ -195,7 +225,7 @@ class Array : public Base
 public:
     Array(std::unique_ptr<Base> b, int length, bool _is_const=true)
     {
-        this->type = TypeNames::Array;
+        this->type = EType::Array;
         this->child = std::move(b);
         this->length = length;
         this->size = child->getSize() * length;
@@ -203,7 +233,7 @@ public:
     }
     Array(Base* b, int length, bool _is_const=true)
     {
-        this->type = TypeNames::Array;
+        this->type = EType::Array;
         this->child = std::unique_ptr<Base>(b);
         this->length = length;
         this->size = child->getSize() * length;
@@ -214,7 +244,7 @@ public:
     {
         return child.get(); 
     }
-    TypeNames getChildType() const
+    EType getChildType() const
     {
         return child->getType();
     }
@@ -241,7 +271,7 @@ public:
 
     bool isSame(Base* const other)
     {
-        if(other->getType() == TypeNames::Array)
+        if(other->getType() == EType::Array)
         {
             Array* other_array = static_cast<Array*>(other);
 
@@ -250,15 +280,15 @@ public:
        
             bool b=false;
 
-            bool other_has_auto=getArrayRootType(other_array)->getType()==TypeNames::Void;
+            bool other_has_auto=getArrayRootType(other_array)->getType()==EType::Void;
             bool this_has_auto=false;
-            if(child->getType()==TypeNames::Array)
+            if(child->getType()==EType::Array)
             {
-                this_has_auto=getArrayRootType(static_cast<Array*>(child.get()))->getType()==TypeNames::Void;
+                this_has_auto=getArrayRootType(static_cast<Array*>(child.get()))->getType()==EType::Void;
             }
             else
             {
-                this_has_auto=child->getType()==TypeNames::Void;
+                this_has_auto=child->getType()==EType::Void;
             }
 
             if(this_has_auto || other_has_auto)
@@ -283,7 +313,7 @@ public:
     Custom(std::string name, long size, bool _is_const=true)
     : name(name)
     {
-        this->type=TypeNames::Custom;
+        this->type=EType::Custom;
         this->size=size;
         this->is_const=_is_const;
     }
@@ -304,7 +334,7 @@ class Any : public Base
 public:
     Any(bool _is_const=true)
     {
-        this->type=TypeNames::Any;
+        this->type=EType::Any;
         this->size=0;
         this->is_const=_is_const;
     }
@@ -315,9 +345,9 @@ inline bool isSame(Base* const a, Base* const b)
 {
     if(a->getType() == b->getType())
     {
-        if(a->getType() != TypeNames::Array)
+        if(a->getType() != EType::Array)
         {
-            if(a->getType() == TypeNames::Custom)
+            if(a->getType() == EType::Custom)
             {
                 return a->isSame(b);
             }
@@ -344,17 +374,17 @@ inline bool isSame(Base* const a, const char* b)
 
 inline std::unique_ptr<Base> copyType(Base* const type)
 {
-    if(type->getType() == TypeNames::Array)
+    if(type->getType() == EType::Array)
     {
         Array* array = static_cast<Array*>(type);
         return std::make_unique<Array>(copyType(array->getChild()), array->getLength());
     }
-    else if(type->getType() == TypeNames::Custom)
+    else if(type->getType() == EType::Custom)
     {
         auto* ctype=(Custom*)type;
         return construct(ctype->getName(), true);
     }
-    else if(type->getType() == TypeNames::Void)
+    else if(type->getType() == EType::Void)
     {
         auto* vtype=(Void*)type;
         return std::make_unique<types::Void>(vtype->getName());
@@ -377,7 +407,7 @@ inline Base* getArrayRootType(Base* const arr)
     auto* a=static_cast<Array*>(arr);
     t=a->getChild();
 
-    while(t->getType() == TypeNames::Array)
+    while(t->getType() == EType::Array)
     {
         a=static_cast<Array*>(t);
         t=a->getChild();
@@ -385,7 +415,7 @@ inline Base* getArrayRootType(Base* const arr)
     return t;
 }
 
-inline TypeNames getTypeFromMap(std::string typestr)
+inline EType getTypeFromMap(std::string typestr)
 {
     if(type_map.contains(typestr))
     {
@@ -393,12 +423,12 @@ inline TypeNames getTypeFromMap(std::string typestr)
     }
     else
     {
-        return TypeNames::Custom;
+        return EType::Custom;
     }
 }
-inline std::string getMapFromType(TypeNames const& type)
+inline std::string getMapFromType(EType const& type)
 {
-    if(type==TypeNames::Array)
+    if(type==EType::Array)
     {
         return "array";
     }
@@ -408,29 +438,32 @@ inline std::string getMapFromType(TypeNames const& type)
     }
     else
     {
-
         return "undefined";
     }
 }
 
 inline std::unique_ptr<Base> construct(std::string typestr, bool create_custom)
 {
-    TypeNames type=getTypeFromMap(typestr);
+    EType type=getTypeFromMap(typestr);
     switch(type)
     {
-        case TypeNames::Void:
+        case EType::Void:
             return std::make_unique<Void>();
-        case TypeNames::Char:
+        case EType::Char:
             return std::make_unique<Char>();
-        case TypeNames::Int:
+        case EType::Short:
+            return std::make_unique<Short>();
+        case EType::Int:
             return std::make_unique<Int>();
-        case TypeNames::Float:
+        case EType::Long:
+            return std::make_unique<Long>();
+        case EType::Float:
             return std::make_unique<Float>();
-        case TypeNames::Double:
+        case EType::Double:
             return std::make_unique<Double>();
-        case TypeNames::Bool:
+        case EType::Bool:
             return std::make_unique<Bool>();
-        case TypeNames::Custom:
+        case EType::Custom:
         {
             if(!create_custom)
             {
@@ -440,28 +473,32 @@ inline std::unique_ptr<Base> construct(std::string typestr, bool create_custom)
             
             return std::make_unique<Custom>(typestr, custom_type_sizes.at(typestr));
         }
-        case TypeNames::Any:
+        case EType::Any:
             return std::make_unique<Any>();
 
         default:
             return std::make_unique<Void>();
     }
 }
-inline std::unique_ptr<Base> construct(TypeNames const& type)
+inline std::unique_ptr<Base> construct(EType const& type)
 {
     switch(type)
     {
-        case TypeNames::Void:
+        case EType::Void:
             return std::make_unique<Void>();
-        case TypeNames::Char:
+        case EType::Char:
             return std::make_unique<Char>();
-        case TypeNames::Int:
+        case EType::Short:
+            return std::make_unique<Short>();
+        case EType::Int:
             return std::make_unique<Int>();
-        case TypeNames::Float:
+        case EType::Long:
+            return std::make_unique<Long>();
+        case EType::Float:
             return std::make_unique<Float>();
-        case TypeNames::Double:
+        case EType::Double:
             return std::make_unique<Double>();
-        case TypeNames::Bool:
+        case EType::Bool:
             return std::make_unique<Bool>();
         
         default:
@@ -469,18 +506,18 @@ inline std::unique_ptr<Base> construct(TypeNames const& type)
     }
 }
 
-inline bool isUserDefined(TypeNames type)
+inline bool isUserDefined(EType type)
 {
-    return (type == TypeNames::Custom);
+    return (type == EType::Custom);
 }
 inline bool isUserDefined(Base* _type)
 {
-    TypeNames type=_type->getType();
+    EType type=_type->getType();
     return isUserDefined(type);
 }
-inline bool isTypeFloatingPoint(TypeNames type)
+inline bool isTypeFloatingPoint(EType type)
 {
-    return (type==TypeNames::Double) || (type==TypeNames::Float);
+    return (type==EType::Double) || (type==EType::Float);
 }
 inline bool isTypeFloatingPoint(Base* type)
 {
@@ -489,7 +526,7 @@ inline bool isTypeFloatingPoint(Base* type)
 
 inline void addTypeToMap(std::string name)
 {
-    type_map.insert(std::make_pair(name,TypeNames::Custom));
+    type_map.insert(std::make_pair(name,EType::Custom));
 }
 inline bool isTypeinMap(std::string name)
 {
@@ -506,12 +543,12 @@ inline void addTypeSizeToMap(std::string name, unsigned int size)
     custom_type_sizes.insert(std::make_pair(name,size));
 }
 
-inline bool isNumericType(TypeNames type)
+inline bool isNumericType(EType type)
 {
-    if(type==TypeNames::Int
-    || type==TypeNames::Char
-    || type==TypeNames::Float
-    || type==TypeNames::Double)
+    if(type==EType::Int
+    || type==EType::Char
+    || type==EType::Float
+    || type==EType::Double)
     {
         return true;
     }

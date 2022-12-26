@@ -1,8 +1,6 @@
 extern puti(n: int);
 extern putd(n: double);
 
-let a=true;
+let a:short = 123;
 
-let b=(a as double);
-
-putd(b);
+putd(a);

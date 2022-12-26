@@ -8,26 +8,22 @@ namespace vire
     {
         switch(type->getType())
         {
-            case types::TypeNames::Void:
-                return llvm::Type::getVoidTy(CTX);
-            case types::TypeNames::Bool:
-                return llvm::Type::getInt1Ty(CTX);
-            case types::TypeNames::Char:
-                return llvm::Type::getInt8Ty(CTX);
-            case types::TypeNames::Int:
-                return llvm::Type::getInt32Ty(CTX);
-            case types::TypeNames::Float:
-                return llvm::Type::getFloatTy(CTX);
-            case types::TypeNames::Double:
-                return llvm::Type::getDoubleTy(CTX);
-            case types::TypeNames::Array:
+            case types::EType::Void:    return llvm::Type::getVoidTy(CTX);
+            case types::EType::Bool:    return llvm::Type::getInt1Ty(CTX);
+            case types::EType::Char:    return llvm::Type::getInt8Ty(CTX);
+            case types::EType::Short:   return llvm::Type::getInt16Ty(CTX);
+            case types::EType::Int:     return llvm::Type::getInt32Ty(CTX);
+            case types::EType::Long:    return llvm::Type::getInt64Ty(CTX);
+            case types::EType::Float:   return llvm::Type::getFloatTy(CTX);
+            case types::EType::Double:  return llvm::Type::getDoubleTy(CTX);
+            case types::EType::Array:
             {
                 auto* array=(types::Array*)type;
                 
                 return llvm::ArrayType::get(getLLVMType(array->getChild()), array->getLength());
             }
             
-            case types::TypeNames::Custom:
+            case types::EType::Custom:
             {
                 auto* custom=(types::Custom*)type;
                 auto* ty=definedStructs[custom->getName()];
@@ -288,15 +284,15 @@ namespace vire
     {
         switch(expr->getType()->getType())
         {
-            case types::TypeNames::Int:
+            case types::EType::Int:
                 return compileConstantExpr((IntExprAST* const)expr);
-            case types::TypeNames::Float:
+            case types::EType::Float:
                 return compileConstantExpr((FloatExprAST* const)expr);
-            case types::TypeNames::Double:
+            case types::EType::Double:
                 return compileConstantExpr((DoubleExprAST* const)expr);
-            case types::TypeNames::Char:
+            case types::EType::Char:
                 return compileConstantExpr((CharExprAST* const)expr);
-            case types::TypeNames::Array:
+            case types::EType::Array:
                 return compileConstantExpr((ArrayExprAST* const)expr);
             default:
                 return nullptr;
@@ -334,7 +330,7 @@ namespace vire
         for(auto& elem : expr->getElements())
         {
             llvm::Constant* constant;
-            if(elem->getType()->getType() == types::TypeNames::Array)
+            if(elem->getType()->getType() == types::EType::Array)
             {
                 constant=compileConstantExpr((ArrayExprAST* const)elem.get(), false);
             }
@@ -426,7 +422,7 @@ namespace vire
             ty=named->getAllocatedType();
         }
 
-        if(expr->getType()->getType()==types::TypeNames::Array)
+        if(expr->getType()->getType()==types::EType::Array)
         {
             auto* alloca=(llvm::AllocaInst*)val;
             ty=getLLVMType(expr->getType());
@@ -499,7 +495,7 @@ namespace vire
                 auto* memcpy=Builder.CreateMemCpy(lhs, lhs_align, alloca_rhs, lhs_align, llvm::ConstantInt::get(CTX, size));
             }
         }
-        else if(def->getType()->getType()==types::TypeNames::Array)
+        else if(def->getType()->getType()==types::EType::Array)
         {
             if(value->asttype==ast_call)
             {
@@ -546,7 +542,7 @@ namespace vire
             ptr=load_inst->getPointerOperand();
             load_inst->eraseFromParent();
         }
-        else if(assign->getLHS()->getType()->getType()==types::TypeNames::Custom) // If lhs is a struct
+        else if(assign->getLHS()->getType()->getType()==types::EType::Custom) // If lhs is a struct
         {
             auto* alloca_lhs=(llvm::AllocaInst*)getValueAsAlloca(lhs);
             auto* alloca_rhs=(llvm::AllocaInst*)getValueAsAlloca(value);
@@ -914,7 +910,7 @@ namespace vire
         auto* expr_val=compileExpr(expr->getValue());
 
         if(types::isUserDefined(currentFunctionAST->getReturnType()) 
-        || currentFunctionAST->getReturnType()->getType()==types::TypeNames::Array)
+        || currentFunctionAST->getReturnType()->getType()==types::EType::Array)
         {
             llvm::Value* arg0=currentFunction->getArg(0);
             
@@ -956,7 +952,7 @@ namespace vire
         llvm::Type* func_ret_type;
         bool func_rets_ty=false;
 
-        if((types::isUserDefined(proto->getReturnType()) || proto->getReturnType()->getType()==types::TypeNames::Array) && !proto->isConstructor())
+        if((types::isUserDefined(proto->getReturnType()) || proto->getReturnType()->getType()==types::EType::Array) && !proto->isConstructor())
         {
             auto* ty=getLLVMType(proto->getReturnType());
             func_ret_type=llvm::Type::getVoidTy(CTX);
@@ -1058,11 +1054,11 @@ namespace vire
         auto& func_args=func->getArgs();
 
         namedValues.clear();
-        bool func_ret_ty=((func_ty==types::TypeNames::Custom || func_ty==types::TypeNames::Array) && !func->isConstructor());
+        bool func_ret_ty=((func_ty==types::EType::Custom || func_ty==types::EType::Array) && !func->isConstructor());
 
         // Create return value
         llvm::Type* ret_type=getLLVMType(func->getReturnType());
-        bool func_returns=(func_ty!=types::TypeNames::Void && !func_ret_ty && !func->isConstructor());
+        bool func_returns=(func_ty!=types::EType::Void && !func_ret_ty && !func->isConstructor());
         if(func_returns)
         {
             auto* ret_val=Builder.CreateAlloca(ret_type, nullptr, "retval");

@@ -48,7 +48,7 @@ public:
     }
     virtual bool refreshType(types::Base* t)
     {
-        if(t->getType()==types::TypeNames::Void)
+        if(t->getType()==types::EType::Void)
         {
             auto* voidty=(types::Void*)t;
             if(types::isTypeinMap(voidty->getName()))

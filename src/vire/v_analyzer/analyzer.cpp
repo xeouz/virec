@@ -175,7 +175,7 @@ namespace vire
             {
                 auto* binop=((BinaryExprAST*)expr);
 
-                if(binop->getType()->getType()!=types::TypeNames::Void)
+                if(binop->getType()->getType()!=types::EType::Void)
                     return binop->getType();
 
                 auto* t=binop->getOpType();
@@ -187,17 +187,17 @@ namespace vire
 
                     if(binop->getOp()->type==tok_div)
                     {
-                        bool lhs_double=lhs->getType()==types::TypeNames::Double;
-                        bool rhs_double=rhs->getType()==types::TypeNames::Double;
+                        bool lhs_double=lhs->getType()==types::EType::Double;
+                        bool rhs_double=rhs->getType()==types::EType::Double;
 
                         if(lhs_double || rhs_double)
                         {
-                            binop->setType(types::construct(types::TypeNames::Double));
+                            binop->setType(types::construct(types::EType::Double));
                             return binop->getType();
                         }
                         else
                         {
-                            binop->setType(types::construct(types::TypeNames::Float));
+                            binop->setType(types::construct(types::EType::Float));
                             return binop->getType();
                         }
                     }
@@ -306,7 +306,7 @@ namespace vire
     std::unique_ptr<ExprAST> VAnalyzer::tryCreateImplicitCast(types::Base* target, types::Base* base, std::unique_ptr<ExprAST> expr)
     {
         bool types_are_user_defined=(types::isUserDefined(target) || types::isUserDefined(base));
-        bool types_are_arrays=(target->getType()==types::TypeNames::Array || base->getType()==types::TypeNames::Array);
+        bool types_are_arrays=(target->getType()==types::EType::Array || base->getType()==types::EType::Array);
         if(!types_are_user_defined && !types_are_arrays)
         {
             auto src_type=types::copyType(base);
@@ -385,7 +385,7 @@ namespace vire
                 bool type_is_given=true;
                 auto* ty=var->getType();
 
-                type_is_void=(ty->getType()==types::TypeNames::Void);
+                type_is_void=(ty->getType()==types::EType::Void);
                 if(type_is_void)
                 {
                     auto* voidty=(types::Void*)ty;
@@ -409,7 +409,7 @@ namespace vire
                     return false;
                 }
             }
-            types::Base* type=var->getType();
+            auto* type=var->getType();
             types::Base* value_type;
 
             auto const& value=var->getValue();
@@ -423,7 +423,7 @@ namespace vire
                 return true;
             }
 
-            bool is_auto=(type->getType()==types::TypeNames::Void);
+            bool is_auto=(type->getType()==types::EType::Void);
             if(is_auto && is_var)
             {
                 std::cout << "`any` type not implement yet" << std::endl;
@@ -449,9 +449,7 @@ namespace vire
                         return false;
                     }
                     else
-                    {
                         var->setValue(std::move(new_cast_value));
-                    }
                 }
             }
             else
@@ -521,7 +519,7 @@ namespace vire
         auto const& indices=access->getIndices();
         auto* type=getType(access->getExpr());
         
-        if(type->getType()!=types::TypeNames::Array)
+        if(type->getType()!=types::EType::Array)
         {
             std::cout << "Error: Variable is not an array" << std::endl;
             return false;
@@ -544,7 +542,7 @@ namespace vire
 
                     auto* index_type=getType(index.get());
                     
-                    if(index_type->getType() == types::TypeNames::Int)
+                    if(index_type->getType() == types::EType::Int)
                     {
                         if(index->asttype==ast_int)
                         {
@@ -892,7 +890,7 @@ namespace vire
             // Type is not valid
             is_valid=false;
         }
-        else if(proto->getReturnType()->getType() == types::TypeNames::Void)
+        else if(proto->getReturnType()->getType() == types::EType::Void)
         {
             auto* void_ty=(types::Void*)proto->getReturnType();
 
@@ -1208,7 +1206,7 @@ namespace vire
         StructExprAST* st=nullptr;
 
         auto* ptype=getType(access->getParent());
-        if(ptype->getType() != types::TypeNames::Custom)
+        if(ptype->getType() != types::EType::Custom)
         {
             std::cout << "Parent is not a type" << std::endl;
             return false;
@@ -1276,9 +1274,9 @@ namespace vire
         
         auto* cond_type=getType(cond);
 
-        if(cond_type->getType()!=types::TypeNames::Bool)
+        if(cond_type->getType()!=types::EType::Bool)
         {
-            auto bool_type=types::construct(types::TypeNames::Bool);
+            auto bool_type=types::construct(types::EType::Bool);
             auto cast=tryCreateImplicitCast(bool_type.get(), cond_type, if_then->moveCondition());
 
             if(!cast)

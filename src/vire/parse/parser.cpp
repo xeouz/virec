@@ -109,7 +109,7 @@ namespace vire
             getNextToken(tok_rbrack);
         }
 
-        if(main_type->getType() == types::TypeNames::Void)
+        if(main_type->getType() == types::EType::Void)
         {
             ((types::Void*)main_type.get())->setName(proto::IName(main_type_tok->value).get());
         }
@@ -715,7 +715,7 @@ namespace vire
         }
         else
         {
-            return_type=types::construct(types::TypeNames::Void);
+            return_type=types::construct(types::EType::Void);
         }
 
         return std::make_unique<PrototypeAST>(std::move(fn_name), std::move(args), std::move(return_type));
