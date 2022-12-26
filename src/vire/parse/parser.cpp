@@ -94,7 +94,6 @@ namespace vire
 
     std::unique_ptr<types::Base> VParser::ParseTypeIdentifier()
     {
-        // int[3][3]
         auto main_type_tok=copyCurrentToken();
         auto main_type=types::construct(main_type_tok->value);
         getNextToken(tok_id);
@@ -415,10 +414,21 @@ namespace vire
     std::unique_ptr<ExprAST> VParser::ParseParenExpr()
     {
         getNextToken(tok_lparen); // consume '('
-        auto stm=ParseExpression();
-
+        auto stm=ParsePrimary();
         if(!stm)
             return nullptr;
+
+        if(current_token->type==tok_as)
+        {
+            getNextToken();
+            auto type=ParseTypeIdentifier();
+            stm=std::make_unique<CastExprAST>(std::move(stm), std::move(type), true);
+        }
+        else
+        {
+            stm=ParseBinopExpr(0 , std::move(stm));
+        }
+        
         if(current_token->type!=tok_rparen)
             return LogError("Expected ')' left-parenthesis");
         

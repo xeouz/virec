@@ -634,13 +634,13 @@ namespace vire
             {
                 if(is_dest_fp)
                 {
-                    auto* si_to_fp=Builder.CreateSIToFP(expr, getLLVMType(dest_type));
-                    return si_to_fp;
+                    if(src_type->is_signed) return Builder.CreateSIToFP(expr, getLLVMType(dest_type));
+                    else                    return Builder.CreateUIToFP(expr, getLLVMType(dest_type));
                 }
                 else
                 {
-                    auto* fp_to_si=Builder.CreateFPToSI(expr, getLLVMType(dest_type));
-                    return fp_to_si;
+                    if(dest_type->is_signed) return Builder.CreateFPToSI(expr, getLLVMType(dest_type));
+                    else                     return Builder.CreateFPToUI(expr, getLLVMType(dest_type));
                 }
             }
             else if(is_dest_fp and is_src_fp)

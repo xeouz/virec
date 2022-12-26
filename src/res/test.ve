@@ -1,9 +1,8 @@
 extern puti(n: int);
+extern putd(n: double);
 
-let a=120;
-let b=2;
+let a=true;
 
-if(a==10 || b==20)
-{
-    puti(42);
-}
+let b=(a as double);
+
+putd(b);

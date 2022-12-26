@@ -64,10 +64,11 @@ public:
 
     ModuleAST* const getSourceModule();
 
-    // Verification functions
+    ///- Verification functions -///
     ReturnExprAST* const getReturnStatement(std::vector<std::unique_ptr<ExprAST>> const& block);
     std::unique_ptr<ExprAST> tryCreateImplicitCast(types::Base* t1, types::Base* t2, std::unique_ptr<ExprAST> expr);
 
+    // Variable related varifications
     bool verifyVar(VariableExprAST* const var);
     bool verifyIncrementDecrement(IncrementDecrementAST* const incrdecr);
     bool verifyVariableDef(VariableDefAST* const var, bool add_to_scope=true);
@@ -97,9 +98,10 @@ public:
     bool verifyFunction(FunctionAST* const func);
     bool verifyReturn(ReturnExprAST* const return_);
 
-    // Operator verifications
+    // Operator and Cast verifications
     bool verifyUnop(UnaryExprAST* const unop);
     bool verifyBinop(BinaryExprAST* const binop);
+    bool verifyCastExpr(CastExprAST* const cast);
 
     // Class verifications
     bool verifyClass(ClassAST* const class_);

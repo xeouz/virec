@@ -61,12 +61,14 @@ protected:
 public:
     int8_t precedence;
     bool is_const;
+    bool is_signed;
     
     Base(bool _is_const=true)
     {
         type = TypeNames::Void;
         size = 0;
         is_const = _is_const;
+        is_signed = true;
     }
 
     virtual ~Base()=default;
@@ -182,6 +184,7 @@ public:
         type = TypeNames::Bool;
         size = 1;
         is_const=_is_const;
+        is_signed=false;
     }
 };
 

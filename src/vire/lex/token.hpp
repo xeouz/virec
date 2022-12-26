@@ -34,12 +34,11 @@ enum token
     tok_mul=-21,
     tok_div=-22,
     tok_mod=-23,
-    
-    tok_incr=-24,
-    tok_decr=-25,
+    tok_or=-24,
+    tok_and=-25,
 
-    tok_or=-26,
-    tok_and=-27,
+    tok_incr=-26,
+    tok_decr=-27,
 
     tok_colon=-28,
     tok_comma=-29,
@@ -98,6 +97,8 @@ enum token
     tok_modeq=-67,
 
     tok_constructor=-68,
+
+    tok_as=-69,
 };
 
 static const char* tokToStr(int tok);

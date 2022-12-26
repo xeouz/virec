@@ -256,6 +256,10 @@ public:
             {
                 toktype=tok_false;
             }
+            else if(id_str=="as")
+            {
+                toktype=tok_as;
+            }
             else if(id_str=="new")
             {
                 toktype=tok_new;

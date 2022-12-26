@@ -256,6 +256,8 @@ namespace vire
                 return st->getMember(access->getChild()->getIName())->getType();
             }
 
+            case ast_cast: return ((CastExprAST*)expr)->getType();
+
             default:
             {
                 std::cout<<"Error: Unknown expr in getType()"<<std::endl;
@@ -429,6 +431,7 @@ namespace vire
             
             if(!verifyExpr(value))
             {
+                std::cout << "Variable definition's value is invalid" << std::endl;
                 return false;
             }
             
@@ -594,6 +597,15 @@ namespace vire
         std::size_t size=elem_size*elems.size();
         array->getType()->setSize(size);
 
+        return true;
+    }
+    bool VAnalyzer::verifyCastExpr(CastExprAST* const cast)
+    {
+        if(!verifyExpr(cast->getExpr()))
+            return false;
+        auto* ty=getType(cast->getExpr());
+        cast->setSourceType(types::copyType(ty));
+        
         return true;
     }
 
@@ -1561,6 +1573,8 @@ namespace vire
             case ast_return: return verifyReturn((ReturnExprAST*const&)expr);
 
             case ast_ifelse: return verifyIf((IfExprAST*const&)expr);
+            
+            case ast_cast: return verifyCastExpr((CastExprAST*const&)expr);
 
             default: return false;
         }
