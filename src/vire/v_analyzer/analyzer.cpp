@@ -764,7 +764,7 @@ namespace vire
 
     bool VAnalyzer::verifyReturn(ReturnExprAST* const ret)
     {
-        auto* func=(FunctionAST*)getFunction(ret->getName());
+        auto* func=(FunctionAST*)getFunction(ret->getIName().name);
         auto* ret_type=func->getReturnType();
 
         if(!verifyExpr(ret->getValue()))

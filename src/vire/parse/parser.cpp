@@ -280,7 +280,7 @@ namespace vire
             
             if(current_token->type==tok_incr || current_token->type==tok_decr)
             {
-                bool is_increment=(current_token->type=tok_incr);
+                bool is_increment=(current_token->type==tok_incr);
                 getNextToken();
                 expr=std::make_unique<IncrementDecrementAST>(std::move(expr), false, is_increment);
             }

@@ -1,6 +1,20 @@
 extern puti(n: int);
-extern putd(n: double);
 
-let a:short = 123;
-
-putd(a);
+let a=70;
+if(a==69)
+{
+    puti(a);
+}
+else
+{
+    a--;
+}
+if(a==69)
+{
+    puti(a);
+}
+else
+{
+    a--;
+}
+puti(a);

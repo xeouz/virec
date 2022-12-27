@@ -252,7 +252,10 @@ public:
 
     void setName(std::string name) {func_name = name;}
     void setName(proto::IName const& name) {func_name = name;}
+
     std::string const& getName() const {return func_name.get();}
+    proto::IName const& getIName() const {return func_name;}
+
     ExprAST* const getValue() const {return expr.get();}
     std::unique_ptr<ExprAST> const moveValue() { return std::move(expr); }
     void setValue(std::unique_ptr<ExprAST> t) { expr=std::move(t); }
