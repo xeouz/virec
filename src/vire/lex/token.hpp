@@ -80,7 +80,7 @@ enum token
     tok_reference=-55,
 
     tok_try=-56,
-    tok_catch=-57,
+    tok_except=-57,
 
     tok_dot=-58,
 

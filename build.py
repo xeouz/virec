@@ -101,7 +101,7 @@ def build_cxx(opts):
     
     cmd_text=commands["cxx-run"]
     if opts.debug:
-        cmd_text="valgrind "+cmd_text
+        cmd_text="valgrind --num-callers=25 "+cmd_text
     run_command(cmd_text.split(), run_verbose=True, cwd="./build")
     if opts.run_argument == "gen":
         run_command(commands["cxx-run-gen"].split(), run_verbose=True, cwd="./build")

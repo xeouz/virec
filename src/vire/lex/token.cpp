@@ -18,7 +18,7 @@ public:
     std::size_t line;
     std::size_t charpos;
 
-    VToken(std::string value, int type) 
+    VToken(std::string const& value, int type) 
     : value(value), type(type), line(0), charpos(0)
     {
         if(type>=0)
@@ -26,7 +26,7 @@ public:
             this->invalid=1;
         }
     }
-    VToken(std::string value, int type, std::size_t line, std::size_t charpos) 
+    VToken(std::string const& value, int type, std::size_t line, std::size_t charpos) 
     : value(value), type(type), line(line), charpos(charpos)
     {
         if(type>=0)
@@ -35,7 +35,7 @@ public:
         }
     }
 
-    static std::unique_ptr<VToken> construct(std::string _name, int _type=tok_id, std::size_t _line=0, std::size_t _charpos=0)
+    static std::unique_ptr<VToken> construct(std::string const& _name, int _type=tok_id, std::size_t _line=0, std::size_t _charpos=0)
     {
         return std::make_unique<VToken>(_name, _type, _line, _charpos);
     }
@@ -146,7 +146,7 @@ static const char* tokToStr(int tok)
         case tok_reference: return "tok_reference";
 
         case tok_try: return "tok_try";
-        case tok_catch: return "tok_catch";
+        case tok_except: return "tok_except";
 
         case tok_dot: return "tok_dot";
 

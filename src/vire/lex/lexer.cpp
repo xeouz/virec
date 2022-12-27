@@ -10,6 +10,7 @@
 #include "token.cpp"
 
 #include "vire/errors/include.hpp"
+#include "vire/config/config.hpp"
 
 namespace vire
 {
@@ -22,6 +23,7 @@ protected:
     std::size_t line;
     std::size_t charpos;
     errors::ErrorBuilder* builder; // error builder
+    std::unique_ptr<Config> config;
 public:
     bool jit;
     std::string code;
@@ -31,7 +33,15 @@ public:
     : builder(builder), jit(false)
     {
         this->code=code;
+        config=std::make_unique<Config>();
+        config->installDefaultBinops();
+        config->installDefaultKeywords();
         reset();
+    }
+
+    Config* const getConfig()
+    {
+        return config.get();
     }
 
     void reset()
@@ -213,136 +223,9 @@ public:
         // Checks
         if(isalpha(this->cur) || this->cur=='_')
         {
+            // id_str is not inlined into the `makeTokenInplace` for quick debugging
             auto id_str=gatherId();
-            int toktype=0;
-            std::unique_ptr<VToken> tok;
-            if(id_str=="func")
-            {
-                toktype=tok_func;
-            }
-            else if(id_str=="and")
-            {
-                toktype=tok_and;
-            }
-            else if(id_str=="or")
-            {
-                toktype=tok_or;
-            }
-            else if(id_str=="if")
-            {
-                toktype=tok_if;
-            }
-            else if(id_str=="else")
-            {
-                toktype=tok_else;
-            }
-            else if(id_str=="var")
-            {
-                toktype=tok_vardef;
-            }
-            else if(id_str=="let")
-            {
-                toktype=tok_let;
-            }
-            else if(id_str=="const")
-            {
-                toktype=tok_const;
-            }
-            else if(id_str=="true")
-            {
-                toktype=tok_true;
-            }
-            else if(id_str=="false")
-            {
-                toktype=tok_false;
-            }
-            else if(id_str=="as")
-            {
-                toktype=tok_as;
-            }
-            else if(id_str=="new")
-            {
-                toktype=tok_new;
-            }
-            else if(id_str=="delete")
-            {
-                toktype=tok_delete;
-            }
-            else if(id_str=="class")
-            {
-                toktype=tok_class;
-            }
-            else if(id_str=="union")
-            {
-                toktype=tok_union;
-            }
-            else if(id_str=="struct")
-            {
-                toktype=tok_struct;
-            }
-            else if(id_str=="extern")
-            {
-                toktype=tok_extern;
-            }
-            else if(id_str=="for")
-            {
-                toktype=tok_for;
-            }
-            else if(id_str=="while")
-            {
-                toktype=tok_while;
-            }
-            else if(id_str=="return")
-            {
-                toktype=tok_return;
-            }
-            else if(id_str=="break")
-            {
-                toktype=tok_break;
-            }
-            else if(id_str=="continue")
-            {
-                toktype=tok_continue;
-            }
-            else if(id_str=="returns")
-            {
-                toktype=tok_returns;
-            }
-            else if(id_str=="proto")
-            {
-                toktype=tok_proto;
-            }
-            else if(id_str=="extends")
-            {
-                toktype=tok_extends;
-            }
-            else if(id_str=="try")
-            {
-                toktype=tok_try;
-            }
-            else if(id_str=="catch")
-            {
-                toktype=tok_catch;
-            }
-            else if(id_str=="except")
-            {
-                toktype=tok_catch;
-            }
-            else if(id_str=="unsafe")
-            {
-                toktype=tok_unsafe;
-            }
-            else if(id_str=="constructor")
-            {
-                toktype=tok_constructor;
-            }
-            else
-            {
-                toktype=tok_id;
-            }
-
-            tok=makeTokenInplace(id_str, toktype);
-            return std::move(tok);
+            return makeTokenInplace(id_str, config->getKeywordToken(id_str));
         }
 
         if(isdigit(this->cur))

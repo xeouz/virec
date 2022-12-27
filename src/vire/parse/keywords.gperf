@@ -1,0 +1,52 @@
+%{
+    // Using GNU gperf for generating a perfect hash function for mapping keywords to tokens.
+
+    #pragma once
+    #include "vire/lex/token.hpp"
+    #include "keyword_wrapper.hpp"
+    #include <stdlib.h>
+    #include <string.h>
+
+    namespace vire
+    {
+    typedef struct KeywordTokenCode KeywordTokenCode;
+%}
+
+struct KeywordCode
+{
+    const char *Keyword;
+    int KeywordCode;
+};
+
+%%
+func, KeywordTokenCode::kw_func
+and, KeywordTokenCode::kw_and
+or, KeywordTokenCode::kw_or
+if, KeywordTokenCode::kw_if
+else, KeywordTokenCode::kw_else
+var, KeywordTokenCode::kw_var
+let, KeywordTokenCode::kw_let
+const, KeywordTokenCode::kw_const
+true, KeywordTokenCode::kw_true
+false, KeywordTokenCode::kw_false
+as, KeywordTokenCode::kw_as
+new, KeywordTokenCode::kw_new
+delete, KeywordTokenCode::kw_delete
+class, KeywordTokenCode::kw_class
+union, KeywordTokenCode::kw_union
+struct, KeywordTokenCode::kw_struct
+extern, KeywordTokenCode::kw_extern
+for, KeywordTokenCode::kw_for
+while, KeywordTokenCode::kw_while
+return, KeywordTokenCode::kw_return
+break, KeywordTokenCode::kw_break
+continue, KeywordTokenCode::kw_continue
+returns, KeywordTokenCode::kw_returns
+proto, KeywordTokenCode::kw_proto
+extends, KeywordTokenCode::kw_extends
+try, KeywordTokenCode::kw_try
+except, KeywordTokenCode::kw_except
+unsafe, KeywordTokenCode::kw_unsafe
+constructor, KeywordTokenCode::kw_constructor
+%%
+}

@@ -14,8 +14,8 @@ message(STATUS "Using LLVMConfig.cmake in ${LLVM_DIR}")
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED true)
 
-get_filename_component(SRC_DIR ./ ABSOLUTE
-set(CMAKE_CXX_FLAGS_RELEASE "-O3"))
+get_filename_component(SRC_DIR ./ ABSOLUTE)
+set(CMAKE_CXX_FLAGS_RELEASE "-Ofast")
 set(CXX_COMPILE_FLAGS "-I${SRC_DIR}/src")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CXX_COMPILE_FLAGS}")
 
@@ -44,11 +44,11 @@ set(VIRE_SRC_PATH "${SRC_DIR}/src/vire")
 
 # -- Compiling Parser, Proto, Analyzer, ErrorBuilder libs
 include(${VIRE_SRC_PATH}/api/VApi.cmake)
+include(${VIRE_SRC_PATH}/config/Config.cmake)
 include(${VIRE_SRC_PATH}/parse/Parser.cmake)
 include(${VIRE_SRC_PATH}/proto/Proto.cmake)
 include(${VIRE_SRC_PATH}/v_analyzer/VAnalyzer.cmake)
 include(${VIRE_SRC_PATH}/errors/ErrorBuilder.cmake)
-include(${VIRE_SRC_PATH}/config/Config.cmake)
 include(${VIRE_SRC_PATH}/v_compiler/VCompiler.cmake)
 
 # -- Copy the resources to the build directory

@@ -16,7 +16,9 @@ int entry()
         return 1;
     }
 
-    s=api->compileSourceModule("./test.o", true, vire::Optimization::O0);
+    return 0;
+
+    s=api->compileSourceModule("./test.o", true, vire::Optimization::O3);
     api->getErrorBuilder()->showErrors();
     if(!s)
     {

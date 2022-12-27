@@ -16,30 +16,23 @@ namespace vire
 class VParser
 {
     std::unique_ptr<VLexer> lexer;
-    std::unique_ptr<Config> config;
+    Config* config;
     bool parse_success;
 public:
     std::unique_ptr<VToken> current_token;
     const proto::IName* current_func_name;
 
-    VParser(VLexer* lexer) 
-    : lexer(lexer), current_token() {
-        config=std::make_unique<Config>();
-        config->installDefaultBinops();
+    VParser(VLexer* _lexer, Config* _config=nullptr)
+    : lexer(_lexer), current_token() {
+        if(_config) config=_config;
+        else config=lexer->getConfig();
     }
-    VParser(std::unique_ptr<VLexer> lexer) 
-    : lexer(std::move(lexer)), current_token(std::make_unique<VToken>("",tok_eof)) {
-        config=std::make_unique<Config>();
-        config->installDefaultBinops();
+    VParser(std::unique_ptr<VLexer> _lexer, Config* _config=nullptr) 
+    : lexer(std::move(_lexer)), current_token(std::make_unique<VToken>("",tok_eof)) {
+        if(_config) config=_config;
+        else config=lexer->getConfig();
     }
     
-    VParser(VLexer* lexer, Config* config)
-    : lexer(lexer), config(config), current_token(std::make_unique<VToken>("",tok_eof)) {}
-    VParser(std::unique_ptr<VLexer> lexer, Config* config)
-    : lexer(std::move(lexer)), config(config), current_token(std::make_unique<VToken>("",tok_eof)) {}
-    VParser(std::unique_ptr<VLexer> lexer, std::unique_ptr<Config> config)
-    : lexer(std::move(lexer)), config(std::move(config)), current_token(std::make_unique<VToken>("",tok_eof)) {}
-
     std::unique_ptr<ExprAST> LogError(const char* str,...);
     std::unique_ptr<PrototypeAST> LogErrorP(const char* str,...);
     std::unique_ptr<FunctionAST> LogErrorF(const char* str,...);
