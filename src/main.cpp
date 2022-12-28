@@ -16,8 +16,6 @@ int entry()
         return 1;
     }
 
-    return 0;
-
     s=api->compileSourceModule("./test.o", true, vire::Optimization::O3);
     api->getErrorBuilder()->showErrors();
     if(!s)
@@ -27,7 +25,6 @@ int entry()
     }
 
     std::cout << "Compiled" << std::endl;
-    std::cout << api->getCompiledLLVMIR() << std::endl;
     std::cout << "---" << std::endl;
 
     return 0;

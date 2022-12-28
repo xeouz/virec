@@ -1114,9 +1114,7 @@ namespace vire
         {
             Builder.CreateRetVoid();
         }
-        auto& bbend=function->getBasicBlockList().back();
-        currentFunctionEndBB->moveAfter(&bbend); // Put the end block after the 
-                                                 // last block of the function
+
         if(func->getIName().name=="main")
         {
             function->removeFnAttr("wasm-export-name");
@@ -1311,7 +1309,7 @@ namespace vire
         {
             if(!pre_main_func->getReturnType()->isVoidTy())
             {
-                auto* retval=Builder.CreateCall(pre_main_func, llvm::None, "retval");
+                auto* retval=Builder.CreateCall(pre_main_func, std::nullopt, "retval");
                 Builder.CreateBr(currentFunctionEndBB);
                 Builder.SetInsertPoint(currentFunctionEndBB);
                 Builder.CreateRet(retval);
