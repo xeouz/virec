@@ -2,7 +2,7 @@
 *It seems that you have clicked on the wrong repo,
 oh you haven't ?*
 
-Run it in your browser! - https://github.com/xeouz/virec
+[Run it in your browser!](https://vire-lang.web.app/)
 
 I added a google document so that you can learn its syntax: https://docs.google.com/document/d/1rOWaFbiwEMJ1P3Kho6rANaR0Qqln93tmBB4grQYO7VM/edit?usp=sharing
 
