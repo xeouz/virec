@@ -1,1 +1,0 @@
-export async function loadModuleAsync(): Promise<any>;

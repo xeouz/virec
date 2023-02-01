@@ -3,7 +3,6 @@ cmake_minimum_required(VERSION 3.16.3)
 
 project(VIRELANG VERSION 3.5.1)
 
-find_package(ZLIB REQUIRED)
 find_package(LLVM REQUIRED CONFIG)
 message(STATUS "Found LLVM: ${LLVM_VERSION}")
 message(STATUS "Using LLVMConfig.cmake in ${LLVM_DIR}")
@@ -16,10 +15,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED true)
 get_filename_component(SRC_DIR ../ ABSOLUTE)
 message(${SRC_DIR})
 set(CXX_COMPILE_FLAGS "-I${SRC_DIR}/src -lembind")
-set(CXX_COMPILE_FLAGS "${CXX_COMPILE_FLAGS} -s MODULARIZE -s WASM=1 -s EXPORT_ES6 -s ENVIRONMENT=web -s EXPORT_NAME=\"createGlobalModule\"")
+set(CXX_COMPILE_FLAGS "${CXX_COMPILE_FLAGS} -sMODULARIZE -sWASM=1 -sEXPORT_ES6 -sENVIRONMENT=web -sFILESYSTEM=0 -sUSE_ZLIB=1 -sEXPORT_NAME=\"createGlobalModule\"")
 set(CXX_COMPILE_FLAGS "${CXX_COMPILE_FLAGS} --pre-js ${SRC_DIR}/wasm-lib/emcc-pre.js --extern-pre-js ${SRC_DIR}/wasm-lib/emcc-extern-pre.js")
 set(CXX_COMPILE_FLAGS "${CXX_COMPILE_FLAGS} -s -Wno-unused-command-line-argument -sERROR_ON_UNDEFINED_SYMBOLS=0 -sNO_DISABLE_EXCEPTION_CATCHING")
-set(CXX_COMPILE_FLAGS "${CXX_COMPILE_FLAGS} --closure 1 --closure-args=--compilation_level=SIMPLE_OPTIMIZATIONS -Oz -sFILESYSTEM=0 -ferror-limit=2")
+set(CXX_COMPILE_FLAGS "${CXX_COMPILE_FLAGS} --closure 1 --closure-args=--compilation_level=SIMPLE_OPTIMIZATIONS -Oz")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CXX_COMPILE_FLAGS}")
 
 # -- LLVM
@@ -29,11 +28,12 @@ add_definitions(${LLVM_DEFINITIONS_LIST})
 
 # -- Add main executable
 add_compile_definitions(VIRE_USE_EMCC)
+add_compile_definitions(VIRE_NO_PASSES)
 add_executable(VIRELANG ${SRC_DIR}/src/main.cpp)
 
 # -- LLVM Libraries
 link_libraries()
-execute_process(COMMAND llvm-config --libs WebAssembly Passes OUTPUT_VARIABLE LIBS)
+execute_process(COMMAND llvm-config --libs WebAssembly OUTPUT_VARIABLE LIBS)
 execute_process(COMMAND llvm-config --system-libs OUTPUT_VARIABLE SYS_LIBS)
 execute_process(COMMAND llvm-config --ldflags OUTPUT_VARIABLE LDF)
 

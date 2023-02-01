@@ -1,5 +1,10 @@
 #include "VApi.hpp"
 
+#include <iostream>
+#include <ostream>
+#include <string>
+#include "llvm/IR/Verifier.h"
+
 namespace vire
 {
 void VApi::internal_setup()
@@ -70,7 +75,7 @@ bool VApi::verifySourceModule()
     bool success=compiler->getAnalyzer()->verifySourceModule(std::move(ast));
     return success;
 }
-bool VApi::compileSourceModule(std::string output_file_path, bool write_to_file, Optimization opt_level, bool enable_lto)
+bool VApi::compileSourceModule(std::string const& output_file_path, bool write_to_file, Optimization opt_level, bool enable_lto)
 {
     std::string out_file_path;
 
@@ -97,7 +102,7 @@ bool VApi::compileSourceModule(std::string output_file_path, bool write_to_file,
 
     if(errs.size())
     {
-        std::cout << errs << std::endl;
+        // std::cout << errs << std::endl;
     }
     
     if(!failure && write_to_file)
@@ -110,6 +115,10 @@ bool VApi::compileSourceModule(std::string output_file_path, bool write_to_file,
     }
 
     return !failure;
+}
+bool VApi::compileSourceModuleStringOpt(std::string const& output_file_path, bool write_to_file, std::string const& opt_level, bool enable_lto)
+{
+    return compileSourceModule(output_file_path, write_to_file, str_to_optimization[opt_level], enable_lto);
 }
 std::vector<unsigned char> const& VApi::getByteOutput()
 {
@@ -142,7 +151,7 @@ EMSCRIPTEN_BINDINGS(VAPI)
     .constructor<>()
     .function("ParseSourceModule", &VApi::parseSourceModule)
     .function("VerifySourceModule", &VApi::verifySourceModule)
-    .function("CompileSourceModule", &VApi::compileSourceModule)
+    .function("CompileSourceModule", &VApi::compileSourceModuleStringOpt)
     .function("getByteOutput", &VApi::getByteOutput)
     .function("getCompiledLLVMIR", &VApi::getCompiledLLVMIR)
     .function("showErrors", &VApi::showErrors)
@@ -151,6 +160,7 @@ EMSCRIPTEN_BINDINGS(VAPI)
     .class_function("loadFromText", &VApi::loadFromText)
     ;
 }
+
 #endif
 
 }

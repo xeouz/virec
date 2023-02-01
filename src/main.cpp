@@ -1,6 +1,7 @@
 #include "vire/includes.hpp"
 
 #include <iostream>
+#include <ostream>
 #include <memory>
 
 int entry()
@@ -8,7 +9,7 @@ int entry()
     auto api=vire::VApi::loadFromFile("res/test.ve", "sys");
 
     api->parseSourceModule();
-
+    
     bool s=api->verifySourceModule();
     if(!s)
     {

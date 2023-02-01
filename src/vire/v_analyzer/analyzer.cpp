@@ -1,5 +1,6 @@
 #include "analyzer.hpp"
 
+#include <ostream>
 #include <string>
 #include <memory>
 #include <vector>
@@ -338,7 +339,7 @@ namespace vire
     }
 
     // Verification Functions
-    bool VAnalyzer::verifyVar(VariableExprAST* const var)
+    bool VAnalyzer::verifyVariable(VariableExprAST* const var)
     {
         // Check if it is defined
         if(!isVariableDefined(var->getIName()))
@@ -367,7 +368,7 @@ namespace vire
         
         return true;
     }
-    bool VAnalyzer::verifyVariableDef(VariableDefAST* const var, bool add_to_scope)
+    bool VAnalyzer::verifyVariableDefinition(VariableDefAST* const var, bool add_to_scope)
     {
         if(var->getIName().name=="self")
         {
@@ -403,8 +404,7 @@ namespace vire
                 {
                     // Requires a variable for definiton
                     unsigned char islet = var->isLet() ? 1 : 0;
-                    builder->addError<errors::analyze_requires_type>
-                    (this->code, islet, var->getName(), var->getLine(), var->getCharpos());
+                    // builder->addError<errortypes::analyze_requires_type>(this->code, islet, var->getName(), var->getLine(), var->getCharpos());
 
                     return false;
                 }
@@ -920,7 +920,7 @@ namespace vire
                 std::cout << "Type cannot be `auto` or `any`" << std::endl;
             }
 
-            if(!verifyVariableDef(arg.get(), false))
+            if(!verifyVariableDefinition(arg.get(), false))
             {
                 std::cout << "Verification Error: Function Prototype argument is not valid" << std::endl;
 
@@ -1370,7 +1370,7 @@ namespace vire
         bool is_valid=true;
         for(auto const& member : members)
         {
-            if(!verifyVariableDef((VariableDefAST*const&)member))
+            if(!verifyVariableDefinition((VariableDefAST*const&)member))
             {
                 // Member is not valid
                 return false;
@@ -1553,8 +1553,8 @@ namespace vire
             case ast_unop: return verifyUnop((UnaryExprAST*const&)expr);
 
             case ast_incrdecr: return verifyIncrementDecrement((IncrementDecrementAST*const&)expr);
-            case ast_var: return verifyVar((VariableExprAST*const&)expr);
-            case ast_vardef: return verifyVariableDef((VariableDefAST*const&)expr);
+            case ast_var: return verifyVariable((VariableExprAST*const&)expr);
+            case ast_vardef: return verifyVariableDefinition((VariableDefAST*const&)expr);
             case ast_varassign: return verifyVarAssign((VariableAssignAST*const&)expr);
             case ast_array_access: return verifyVarArrayAccess((VariableArrayAccessAST*const&)expr);
 

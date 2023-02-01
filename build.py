@@ -27,9 +27,9 @@ class options:
     debug = False
 commands = {
     "cxx-cmake": "cmake . -GNinja -Bbuild ",
-    "wasm-cmake": "emcmake cmake ./wasm-lib -Wno-dev -GNinja -Bbuild -DZLIB_LIBRARY=/home/dev0/Programming/emsdk/upstream/emscripten/cache/sysroot/lib/wasm32-emscripten/libz.a -DZLIB_INCLUDE_DIR=/usr/include/ -DLLVM_DIR=/home/dev0/Programming/llvm-project/build-wasm/lib/cmake/llvm",
-    "cxx-build": "ninja -Cbuild -j8",
-    "wasm-build": "ninja -Cbuild -j8",
+    "wasm-cmake": "emcmake cmake ./wasm-lib -Wno-dev -GNinja -Bbuild -DLLVM_DIR=/home/dev0/Programming/llvm-project/build-wasm/lib/cmake/llvm",
+    "cxx-build": "ninja -Cbuild",
+    "wasm-build": "ninja -Cbuild",
     "wasm-copy-wasm": "cp ./build/VIRELANG.wasm ./wasm-build/VIRELANG.wasm",
     "wasm-copy-js": "cp ./build/VIRELANG.js ./wasm-build/VIRELANG.js",
     "wasm-zip-wasm": "gzip -k --best -f ./VIRELANG.wasm",

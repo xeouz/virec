@@ -5,10 +5,8 @@
 
 namespace vire
 {
-namespace errors
-{
-
-enum errortypes
+    
+enum class errortypes
 {
     lex_unknown_char,
 
@@ -17,6 +15,9 @@ enum errortypes
 
     analyze_requires_type,
 };
+
+namespace errors
+{
 
 class ErrorBuilder
 {

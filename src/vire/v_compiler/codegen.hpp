@@ -1,5 +1,9 @@
 #pragma once
 
+#include <iostream>
+#include <ostream>
+#include <string>
+
 #include "vire/ast/include.hpp"
 #include "vire/v_analyzer/include.hpp"
 
@@ -15,37 +19,21 @@
     #define SPECIFIC_INIT_ASM_PRINTER(target) __SPECIFIC_INIT_MACRO(target, AsmPrinter)
 #endif
 
-// LLVM
-#include "llvm/ADT/APFloat.h"
-#include "llvm/ADT/STLExtras.h"
-#include "llvm/IR/BasicBlock.h"
-#include "llvm/IR/Constants.h"
-#include "llvm/IR/DerivedTypes.h"
-#include "llvm/IR/Function.h"
-#include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/LLVMContext.h"
+#include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Module.h"
-#include "llvm/IR/Type.h"
-#include "llvm/IR/Verifier.h"
-#include "llvm/Support/raw_ostream.h"
-#include "llvm/Support/Host.h"
-#include "llvm/IR/LegacyPassManager.h"
-#include "llvm/MC/TargetRegistry.h"
-#include "llvm/Support/TargetSelect.h"
-#include "llvm/Target/TargetMachine.h"
-#include "llvm/Support/FileSystem.h"
-#include "llvm/Target/TargetOptions.h"
-#include "llvm/Transforms/InstCombine/InstCombine.h"
-#include "llvm/Transforms/Scalar.h"
-#include "llvm/Transforms/Scalar/GVN.h"
-#include "llvm/Transforms/Utils.h"
-#include "llvm/Analysis/LoopAnalysisManager.h"
-#include "llvm/Analysis/CGSCCPassManager.h"
-#include "llvm/Passes/PassBuilder.h"
-#include "llvm/IR/PassManager.h"
-#include "llvm/Analysis/AliasAnalysis.h"
-#include "llvm/Transforms/Scalar/DeadStoreElimination.h"
-#include "llvm/Support/JSON.h"
+#include "llvm/IR/DataLayout.h"
+
+namespace llvm
+{
+    class Function;
+    class Constant;
+    class AllocaInst;
+    class StructType;
+    class Value;
+    class TargetMachine;
+}
+
 
 #include <memory>
 #include <map>
@@ -53,16 +41,6 @@
 
 namespace vire
 {
-
-enum class Optimization
-{
-    O0,
-    O1,
-    O2,
-    O3,
-    Os,
-    Oz,
-};
 
 class VCompiler
 {
@@ -130,8 +108,8 @@ public:
     llvm::AllocaInst* createEntryBlockAlloca(llvm::Function* function, std::string const& varname, llvm::Type* type);
     
     llvm::Value* compileIncrementDecrement(IncrementDecrementAST* const expr);
-    llvm::Value* compileVariableExpr(VariableExprAST* const expr);
-    llvm::Value* compileVariableDef(VariableDefAST* const var);
+    llvm::Value* compileVariable(VariableExprAST* const expr);
+    llvm::Value* compileVariableDefinition(VariableDefAST* const var);
     llvm::Value* compileVariableAssign(VariableAssignAST* const var);
     llvm::Value* compileVariableArrayAccess(VariableArrayAccessAST* const var);
     llvm::Value* compileCastExpr(CastExprAST* const var);

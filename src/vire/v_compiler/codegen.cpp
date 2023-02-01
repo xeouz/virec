@@ -1,5 +1,37 @@
 #include "codegen.hpp"
 
+// LLVM
+#include "llvm/ADT/APFloat.h"
+#include "llvm/ADT/STLExtras.h"
+#include "llvm/IR/Attributes.h"
+#include "llvm/IR/BasicBlock.h"
+#include "llvm/IR/Constants.h"
+#include "llvm/IR/DerivedTypes.h"
+#include "llvm/IR/Type.h"
+#include "llvm/IR/Verifier.h"
+#include "llvm/Support/raw_ostream.h"
+#include "llvm/Support/Host.h"
+#include "llvm/IR/LegacyPassManager.h"
+#include "llvm/MC/TargetRegistry.h"
+#include "llvm/Support/TargetSelect.h"
+#include "llvm/Target/TargetMachine.h"
+#include "llvm/Support/FileSystem.h"
+#include "llvm/Target/TargetOptions.h"
+
+#ifndef VIRE_NO_PASSES
+#include "llvm/Transforms/InstCombine/InstCombine.h"
+#include "llvm/Transforms/Scalar.h"
+#include "llvm/Transforms/Scalar/GVN.h"
+#include "llvm/Transforms/Utils.h"
+#include "llvm/Analysis/LoopAnalysisManager.h"
+#include "llvm/Analysis/CGSCCPassManager.h"
+#include "llvm/Passes/PassBuilder.h"
+#include "llvm/IR/PassManager.h"
+#include "llvm/Analysis/AliasAnalysis.h"
+#include "llvm/Transforms/Scalar/DeadStoreElimination.h"
+#include "llvm/Support/JSON.h"
+#endif
+
 //-- CHANGES REQUIRED: STRUCT PACKING --//
 
 namespace vire
@@ -241,9 +273,9 @@ namespace vire
             case ast_incrdecr:
                 return compileIncrementDecrement((IncrementDecrementAST* const)expr);
             case ast_var:
-                return compileVariableExpr((VariableExprAST* const)expr);
+                return compileVariable((VariableExprAST* const)expr);
             case ast_vardef:
-                return compileVariableDef((VariableDefAST* const)expr);
+                return compileVariableDefinition((VariableDefAST* const)expr);
             case ast_varassign:
                 return compileVariableAssign((VariableAssignAST* const)expr);
             case ast_array_access:
@@ -400,7 +432,7 @@ namespace vire
             return expr;
         }
     }
-    llvm::Value* VCompiler::compileVariableExpr(VariableExprAST* const expr)
+    llvm::Value* VCompiler::compileVariable(VariableExprAST* const expr)
     { 
         auto* var=currentFunctionAST->getVariable(expr->getName());
         if(var->isReturned() && !var->isArgument() && current_func_single_sret)
@@ -439,7 +471,7 @@ namespace vire
 
         return Builder.CreateLoad(ty, val, expr->getName());
     }
-    llvm::Value* VCompiler::compileVariableDef(VariableDefAST* const def) // CHANGES REQUIRED: SRET ATTRIBUTE FOR ARRAYS
+    llvm::Value* VCompiler::compileVariableDefinition(VariableDefAST* const def) // CHANGES REQUIRED: SRET ATTRIBUTE FOR ARRAYS
     {
         llvm::Value* lhs;
         llvm::MaybeAlign lhs_align;
@@ -1348,6 +1380,8 @@ namespace vire
 
     void VCompiler::runOptimizationPasses(llvm::TargetMachine* tm, Optimization opt_level, bool enable_lto)
     {
+        #ifndef VIRE_NO_PASSES
+        
         llvm::LoopAnalysisManager lam;
         llvm::FunctionAnalysisManager fam;
         llvm::CGSCCAnalysisManager cam;
@@ -1404,6 +1438,8 @@ namespace vire
         }
 
         passmgr.run(*Module, mam);
+
+        #endif
     }
     llvm::TargetMachine* VCompiler::compileInternal(std::string const& target_str)
     {

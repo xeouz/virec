@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include <iostream>
+#include <ostream>
 
 namespace vire
 {
@@ -69,6 +70,7 @@ namespace errors
         return result;
     } 
 
+    /*
     template<>
     void ErrorBuilder::addError<lex_unknown_char>(const std::string& code, char _char, char fix, std::size_t line, std::size_t column)
     {
@@ -146,7 +148,7 @@ namespace errors
 
         errors.push_back(error);
     }
-
+    */
     void ErrorBuilder::showErrors()
     {
         for(auto& error : this->errors)

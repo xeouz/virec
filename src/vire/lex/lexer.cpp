@@ -1,6 +1,7 @@
 #pragma once
 
-#include <iostream> // cout, endl
+#include <iostream>
+#include <ostream> // cout, endl
 #include <string> // string
 #include <memory> // unique_ptr
 #include <cctype> // isspace
@@ -173,7 +174,7 @@ public:
 
             if(this->cur==EOF)
             {
-                builder->addError<errors::lex_unknown_char>(code, ' ', '\0', line, charpos);
+                // builder->addError<errors::lex_unknown_char>(code, ' ', '\0', line, charpos);
                 return nullptr;
             }
         }
@@ -306,7 +307,7 @@ public:
             case EOF: return makeToken("",tok_eof);
 
             default: {
-                builder->addError<errors::lex_unknown_char>(this->code, this->cur,' ', this->line, this->charpos);
+                // builder->addError<errors::lex_unknown_char>(this->code, this->cur,' ', this->line, this->charpos);
                 advanceNext();
                 return nullptr;
             }

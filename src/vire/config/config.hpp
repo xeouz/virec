@@ -18,6 +18,36 @@
 namespace vire
 {
 
+enum class Optimization
+{
+    O0,
+    O1,
+    O2,
+    O3,
+    Os,
+    Oz,
+};
+
+inline std::unordered_map<std::string, Optimization> str_to_optimization=
+{
+    {"O0", Optimization::O0},
+    {"O1", Optimization::O1},
+    {"O2", Optimization::O2},
+    {"O3", Optimization::O3},
+    {"Os", Optimization::Os},
+    {"Oz", Optimization::Oz},
+};
+
+inline std::unordered_map<Optimization, std::string> optimization_to_str=
+{
+    {Optimization::O0, "O0"},
+    {Optimization::O1, "O1"},
+    {Optimization::O2, "O2"},
+    {Optimization::O3, "O3"},
+    {Optimization::Os, "Os"},
+    {Optimization::Oz, "Oz"},
+};
+
 class Config
 {
 public:

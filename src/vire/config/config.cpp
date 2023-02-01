@@ -1,6 +1,7 @@
 // Contains common functions and variables used by parser and compiler
 #include "config.hpp"
 #include <iostream>
+#include <ostream>
 
 namespace vire
 {

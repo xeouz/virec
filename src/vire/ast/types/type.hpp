@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include <string>
 #include <iostream>
+#include <ostream>
 #include <memory>
 
 namespace vire
@@ -36,7 +37,7 @@ inline std::unordered_map<std::string, EType> type_map=
     {"float", EType::Float},
     {"double", EType::Double},
     {"bool", EType::Bool},
-    {"any", EType::Any}
+    {"any", EType::Any},
 };
 inline std::unordered_map<EType, std::string> typestr_map=
 {

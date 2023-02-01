@@ -1,13 +1,3 @@
 extern puti(n: int);
 
-func test(a: int): int
-{
-    if(a==10)
-    {
-        return a;
-    }
-    return a+20;
-}
-
-puti(test(10));
-puti(test(20));
+const a;
