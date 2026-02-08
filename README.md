@@ -1,6 +1,46 @@
-# Vire Programming Language
+## Vire Programming Language
 
 **Vire** is a custom programming language I designed and implemented, featuring a complete compilation pipeline targeting **WebAssembly** and **LLVM**.
 
 - Run it directly in your browser: [Vire Web Demo](https://vire-lang.web.app/)  
 - Learn the syntax here: [Vire Syntax Guide](https://docs.google.com/document/d/1rOWaFbiwEMJ1P3Kho6rANaR0Qqln93tmBB4grQYO7VM/edit?usp=sharing)
+
+## Code Snippet
+extern puti(n: int);
+
+struct Vector {
+    float x;
+    float y;
+}
+
+func sqrt(n: float) returns float {
+    if (n < 0) { return 0.0; }
+
+    let x = n;
+    let y = 1.0;
+    let precision = 0.000001;
+
+    while((x - y) > precision) {
+        x += y;
+        x /= 2.0;
+        y = n / x;
+    }
+
+    return x;
+}
+
+let vec: Vector;
+vec.x = 10.5;
+vec.y = 20.4;
+
+let squared_sum = (vec.x * vec.x + vec.y * vec.y);
+let magnitude_of_vector = sqrt(squared_sum);
+if (magnitude_of_vector > 0.0) {
+    vec.x /= magnitude_of_vector;
+    vec.y /= magnitude_of_vector;
+}
+
+vec.x *= 100;
+vec.y *= 100;
+puti(vec.x);
+puti(vec.y);
