@@ -2,12 +2,33 @@
 
 **Vire** is a custom programming language I designed and implemented, featuring a complete compilation pipeline targeting **WebAssembly** and **LLVM**.
 
+```rust
+extern puti(n: int);
+
+puti(42); 
+```
+
 - Run it directly in your browser: [Vire Web Demo](https://vire-lang.web.app/)  
 - Source code for website frontend: [Vire Web Frontend Code](https://github.com/xeouz/virelang-website)
-- Learn the syntax here: [Vire Syntax Guide](https://docs.google.com/document/d/1rOWaFbiwEMJ1P3Kho6rANaR0Qqln93tmBB4grQYO7VM/edit?usp=sharing)
+- [Vire Syntax Guide](https://docs.google.com/document/d/1rOWaFbiwEMJ1P3Kho6rANaR0Qqln93tmBB4grQYO7VM/edit?usp=sharing)
 
+## Language Features 🛠️
 
-## Code Snippet
+- **Primitive Types**: `bool`, `int`, `double`, `float`, and `char` with support for type casting.
+- **Data Structures**: `structs` with dot-member access and `Array` indexing.
+- **Control Flow**: `if`/`else-if`/`else` blocks, `for`/`while` loops, and `break`/`continue` statements.
+- **Interoperability**: C-style interop via the `extern` keyword.
+
+## Technical Overview 💻
+
+| Component | Technology | Description |
+| :--- | :--- | :--- |
+| **Backend** | LLVM | Handles IR generation and optimization. |
+| **Frontend** | Custom Parser | Manual implementation of semantic analysis and error reporting. |
+| **Web Port** | WASM | Ported via `Emscripten` for browser execution. |
+| **Architecture** | C++ | ~7,500 lines focusing on `unique_ptr` and `RAII`. |
+
+## Code Snippet 📜
 A quick demo about this language. Implementing the Square Root Algorithm.
 ```rust
 extern puti(n: int);
@@ -49,3 +70,17 @@ vec.y *= 100;
 puti(vec.x);
 puti(vec.y);
 ```
+
+### Build & Tooling ⚙️
+
+| Target | Command | Description |
+| :--- | :--- | :--- |
+| **Native** | `python3 build.py --compile` | Default native build via `CMake` and `Ninja`. |
+| **Web** | `python3 build.py --wasm` | Cross compiles to `WASM` with `Emscripten` |
+| **Debug** | `python3 build.py --debug` | Runs the build with `Valgrind` for memory leak analysis. |
+
+*This script handles automated cache clearing, file compression, and cross-compilation linking for the LLVM-WASM backend.*
+
+### Final Thoughts ✉️
+
+I’m looking for technical feedback or criticism regarding the architecture. If you have pointers on making the design more modular or industry-standard, feel free to reach out!
