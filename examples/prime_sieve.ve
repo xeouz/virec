@@ -1,0 +1,23 @@
+extern puti(n: int);
+
+func main() {
+    let is_prime: bool[1001];
+    for (let i=0; i<1001; i++) { is_prime[i] = true; }
+    
+    is_prime[0] = false;
+    is_prime[1] = false;
+    
+    for (let p=2; p*p <= 1000; p++) {
+        if (is_prime[p]) {
+            for (let x=p*p; x <= 1000; x+=p) {
+                is_prime[x] = false;
+            }
+        }
+    }
+    
+    for (let i=2; i<1000; i++) {
+        if (is_prime[i]) {
+            puti(i);
+        }
+    }
+}

@@ -1,0 +1,38 @@
+extern puti(n: int);
+
+struct Vector {
+    float x;
+    float y;
+}
+
+func sqrt(n: float) returns float {
+    if (n < 0) { return 0.0; }
+
+    let x = n;
+    let y = 1.0;
+    let precision = 0.000001;
+
+    while((x - y) > precision) {
+        x += y;
+        x /= 2.0;
+        y = n / x;
+    }
+
+    return x;
+}
+
+let vec: Vector;
+vec.x = 10.5;
+vec.y = 20.4;
+
+let squared_sum = (vec.x * vec.x + vec.y * vec.y);
+let magnitude_of_vector = sqrt(squared_sum);
+if (magnitude_of_vector > 0.0) {
+    vec.x /= magnitude_of_vector;
+    vec.y /= magnitude_of_vector;
+}
+
+vec.x *= 100;
+vec.y *= 100;
+puti(vec.x);
+puti(vec.y);
