@@ -71,8 +71,20 @@ puti(vec.x);
 puti(vec.y);
 ```
 
-### Build & Tooling ⚙️
+### Prerequisites 📋
+#### System Dependencies:
+- **LLVM**: Verified on **LLVM 23.0.0-git**. (Should support 18.0+ with minor adjustments, but 23.0 is recommended for the current build)
+- Ensure `llvm-config` is in your PATH.
+- **CMake & Ninja**: For high-speed native builds.
+- **Clang/GCC**: A modern compiler supporting C++20.
+- **Emscripten**: (Optional) Required only for WASM builds.
+#### Python Environment: 
+The build.py script requires Python 3.10+ and the `halo` module for build status UI.
+```bash
+pip install halo
+```
 
+### Build & Tooling ⚙️
 | Target | Command | Description |
 | :--- | :--- | :--- |
 | **Native** | `python3 build.py --compile` | Default native build via `CMake` and `Ninja`. |

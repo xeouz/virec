@@ -75,9 +75,8 @@ public:
     : analyzer(std::move(analyzer)), Builder(llvm::IRBuilder<>(CTX))
     {
         Module = std::make_unique<llvm::Module>(name, CTX);
-        data_layout = std::make_unique<llvm::DataLayout>(Module.get());
-        CTX.setOpaquePointers(true);
-        file_type=llvm::CGFT_ObjectFile;
+        data_layout = std::make_unique<llvm::DataLayout>(Module->getDataLayoutStr());
+        file_type=llvm::CodeGenFileType::ObjectFile;
     }
 
     // Compilation Functions

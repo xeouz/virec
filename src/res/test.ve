@@ -1,3 +1,3 @@
 extern puti(n: int);
 
-const a;
+puti(42);

@@ -10,7 +10,7 @@
 #include "llvm/IR/Type.h"
 #include "llvm/IR/Verifier.h"
 #include "llvm/Support/raw_ostream.h"
-#include "llvm/Support/Host.h"
+#include "llvm/TargetParser/Host.h"
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/MC/TargetRegistry.h"
 #include "llvm/Support/TargetSelect.h"
@@ -61,7 +61,7 @@ namespace vire
                 auto* ty=definedStructs[custom->getName()];
 
                 if(allow_opaque_ptr)
-                    return llvm::PointerType::get(ty, 0);
+                    return llvm::PointerType::get(CTX, 0);
                 
                 return ty;
             }
@@ -385,7 +385,7 @@ namespace vire
         gbl->setInitializer(llvm::ConstantArray::get(atype, constants));
         gbl->setUnnamedAddr(llvm::GlobalValue::UnnamedAddr::Global);
         gbl->setAlignment(llvm::Align(4));
-        Module->getGlobalList().push_back(gbl);
+        Module->insertGlobalVariable(gbl);
 
         return gbl;
     }
@@ -1341,7 +1341,7 @@ namespace vire
         {
             if(!pre_main_func->getReturnType()->isVoidTy())
             {
-                auto* retval=Builder.CreateCall(pre_main_func, std::nullopt, "retval");
+                auto* retval=Builder.CreateCall(pre_main_func, {}, "retval");
                 Builder.CreateBr(currentFunctionEndBB);
                 Builder.SetInsertPoint(currentFunctionEndBB);
                 Builder.CreateRet(retval);
@@ -1402,7 +1402,7 @@ namespace vire
         pass_builder.registerLoopAnalyses(lam);
         pass_builder.crossRegisterProxies(lam, fam, cam, mam);
 
-        pass_builder.registerOptimizerLastEPCallback([&] (llvm::ModulePassManager& mpm, llvm::OptimizationLevel)
+        pass_builder.registerOptimizerLastEPCallback([&] (llvm::ModulePassManager& mpm, llvm::OptimizationLevel level, llvm::ThinOrFullLTOPhase phase)
         {
             mpm.addPass(llvm::createModuleToFunctionPassAdaptor(llvm::DSEPass{}));
         });
@@ -1412,7 +1412,9 @@ namespace vire
 
         if(opt_level == Optimization::O0)
         {
-            passmgr=pass_builder.buildO0DefaultPipeline(llvm::OptimizationLevel::O0, enable_lto);
+            auto lto_phase = enable_lto ? llvm::ThinOrFullLTOPhase::FullLTOPreLink : llvm::ThinOrFullLTOPhase::None;
+    
+            passmgr = pass_builder.buildO0DefaultPipeline(llvm::OptimizationLevel::O0, lto_phase);
         }
         else
         {
@@ -1469,7 +1471,7 @@ namespace vire
     #endif
         
         std::string error;
-        auto* target=llvm::TargetRegistry::lookupTarget(target_triple, error);
+        auto* target=llvm::TargetRegistry::lookupTarget(llvm::Triple(target_triple), error);
 
         if(!target)
         {
@@ -1486,12 +1488,12 @@ namespace vire
     #endif
 
         llvm::TargetOptions opt;
-        auto rm=llvm::Optional<llvm::Reloc::Model>();
+        auto rm=std::optional<llvm::Reloc::Model>();
 
-        auto* target_machine=target->createTargetMachine(target_triple, cpu, features, opt, rm);
+        auto* target_machine=target->createTargetMachine(llvm::Triple(target_triple), cpu, features, opt, rm);
 
         Module->setDataLayout(target_machine->createDataLayout());
-        Module->setTargetTriple(target_triple);
+        Module->setTargetTriple(llvm::Triple(target_triple));
 
         return target_machine;
     }

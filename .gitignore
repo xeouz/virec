@@ -1,5 +1,20 @@
+# Build Directories
 build/
 mingw-build/
 wasm-lib/
-gitignore/
+
+# CMake & Ninja Junk
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+compile_commands.json
+*.ninja
+.ninja_deps
+.ninja_log
+
+# Python
+__pycache__/
+
+# Local Test Files
 test.cpp
+virec_output

@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import os
 import sys
 import subprocess
 from io import TextIOBase
@@ -25,9 +26,11 @@ class options:
     clean_build = False
     keep_cache = True
     debug = False
+
+llvm_dir = os.environ.get("LLVM_DIR", "/usr/lib/llvm-17/lib/cmake/llvm")
 commands = {
     "cxx-cmake": "cmake . -GNinja -Bbuild ",
-    "wasm-cmake": "emcmake cmake ./wasm-lib -Wno-dev -GNinja -Bbuild -DLLVM_DIR=/home/dev0/Programming/llvm-project/build-wasm/lib/cmake/llvm",
+    "wasm-cmake": f"emcmake cmake ./wasm-lib -Wno-dev -GNinja -Bbuild -DLLVM_DIR={llvm_dir}",
     "cxx-build": "ninja -Cbuild",
     "wasm-build": "ninja -Cbuild",
     "wasm-copy-wasm": "cp ./build/VIRELANG.wasm ./wasm-build/VIRELANG.wasm",
