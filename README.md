@@ -1,4 +1,4 @@
-# Vire Programming Language
+# `Vire Programming Language`
 
 **Vire** is a custom programming language I designed and implemented, featuring a complete compilation pipeline targeting **WebAssembly** and **LLVM**.
 
@@ -12,14 +12,14 @@ puti(42);
 - Source code for website frontend: [Vire Web Frontend Code](https://github.com/xeouz/virelang-website)
 - [Vire Syntax Guide](https://docs.google.com/document/d/1rOWaFbiwEMJ1P3Kho6rANaR0Qqln93tmBB4grQYO7VM/edit?usp=sharing)
 
-## Language Features 🛠️
+## `Language Features 🛠️`
 
 - **Primitive Types**: `bool`, `int`, `double`, `float`, and `char` with support for type casting.
 - **Data Structures**: `structs` with dot-member access and `Array` indexing.
 - **Control Flow**: `if`/`else-if`/`else` blocks, `for`/`while` loops, and `break`/`continue` statements.
 - **Interoperability**: C-style interop via the `extern` keyword.
 
-## Technical Overview 💻
+## `Technical Overview 💻`
 
 | Component | Technology | Description |
 | :--- | :--- | :--- |
@@ -28,7 +28,7 @@ puti(42);
 | **Web Port** | WASM | Ported via `Emscripten` for browser execution. |
 | **Architecture** | C++ | ~7,500 lines focusing on `unique_ptr` and `RAII`. |
 
-## Code Snippet 📜
+## `Code Snippet 📜`
 A quick demo about this language. Implementing the Square Root Algorithm.
 ```rust
 extern puti(n: int);
@@ -71,20 +71,20 @@ puti(vec.x);
 puti(vec.y);
 ```
 
-### Prerequisites 📋
-#### System Dependencies:
+## `Prerequisites 📋`
+### System Dependencies:
 - **LLVM**: Verified on **LLVM 23.0.0-git**. (Should support 18.0+ with minor adjustments, but 23.0 is recommended for the current build)
 - Ensure `llvm-config` is in your PATH.
 - **CMake & Ninja**: For high-speed native builds.
 - **Clang/GCC**: A modern compiler supporting C++20.
 - **Emscripten**: (Optional) Required only for WASM builds.
-#### Python Environment: 
+### Python Environment: 
 The build.py script requires Python 3.10+ and the `halo` module for build status UI.
 ```bash
 pip install halo
 ```
 
-### Build & Tooling ⚙️
+## `Build & Tooling ⚙️`
 | Target | Command | Description |
 | :--- | :--- | :--- |
 | **Native** | `python3 build.py --compile` | Default native build via `CMake` and `Ninja`. |
@@ -93,6 +93,6 @@ pip install halo
 
 *This script handles automated cache clearing, file compression, and cross-compilation linking for the LLVM-WASM backend.*
 
-### Final Thoughts ✉️
+## `Final Thoughts ✉️`
 
 I’m looking for technical feedback or criticism regarding the architecture. If you have pointers on making the design more modular or industry-standard, feel free to reach out!
